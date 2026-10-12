@@ -42,10 +42,10 @@ def _calcul_stress(cle, _res):
 # ----------------------------------------------------------------------
 # Point d'entrée
 # ----------------------------------------------------------------------
-def afficher(res, cle):
+def afficher(res, cle, cible=None, session_compte=None):
     onglets = st.tabs([t("Fiscalité"), t("Stress tests")])
     with onglets[0]:
-        _fiscalite(res)
+        _fiscalite(res, cible, session_compte)
     with onglets[1]:
         _stress(res, cle)
 
@@ -53,21 +53,61 @@ def afficher(res, cle):
 # ----------------------------------------------------------------------
 # 1. Fiscalité des enveloppes
 # ----------------------------------------------------------------------
-def _fiscalite(res):
+def _dates_enregistrees(cible, session_compte):
+    """Dates d'ouverture du PEA et de souscription de l'assurance-vie déjà saisies pour ce
+    portefeuille : {"PEA": "AAAA-MM-JJ", "Assurance-vie": …}. Espace personnel : gardées (chiffrées)
+    dans les préférences du compte ; sinon pour la session."""
+    if cible and cible.get("type") == "perso" and session_compte is not None:
+        return session_compte.preference(f"enveloppes_{cible['id']}", {}) or {}
+    cle = (cible or {}).get("origine", "")
+    return st.session_state.get("dates_enveloppes", {}).get(cle, {})
+
+
+def _enregistrer_dates(cible, session_compte, dates):
+    if cible and cible.get("type") == "perso" and session_compte is not None:
+        session_compte.definir_preference(f"enveloppes_{cible['id']}", dates)
+    else:
+        st.session_state.setdefault("dates_enveloppes", {})[(cible or {}).get("origine", "")] = dates
+
+
+def _fiscalite(res, cible=None, session_compte=None):
+    import datetime
     resume = res["resume"]
-    anciennete = (res["historique"].index[-1] - res["date_ouverture"]).days / 365.25
+    fin = res["historique"].index[-1]
+    premier_ordre = res["date_ouverture"]
 
     with st.container(border=True):
-        html(ui.titre_section(t("Hypothèses"), t("Portefeuille ouvert le {date} (ancienneté : {n} ans) · taux 2026",
-                                                  date=langues.date(res["date_ouverture"]),
-                                                  n=nombre(anciennete, 1))))
+        html(ui.titre_section(t("Hypothèses"), t("Premier ordre le {date} · taux 2026",
+                                                  date=langues.date(premier_ordre))))
+        # « Date 1 » de l'avantage fiscal : la date d'ouverture de l'enveloppe, pas celle du premier ordre
+        enregistrees = _dates_enregistrees(cible, session_compte)
+        c, d = st.columns(2)
+        dates = {}
+        for colonne, enveloppe, libelle, aide in (
+                (c, "PEA", t("Date d'ouverture du PEA"),
+                 t("C'est elle qui compte pour les 5 ans du PEA, pas la date du premier ordre")),
+                (d, "Assurance-vie", t("Date de souscription de l'assurance-vie"),
+                 t("C'est elle qui compte pour les 8 ans de l'assurance-vie, pas la date du premier versement en "
+                   "bourse"))):
+            defaut = pd.Timestamp(enregistrees.get(enveloppe) or premier_ordre).date()
+            dates[enveloppe] = colonne.date_input(libelle, value=defaut, min_value=datetime.date(1980, 1, 1),
+                                                  max_value=fin.date(), format="DD/MM/YYYY", help=aide,
+                                                  key=f"date_{enveloppe}_{(cible or {}).get('id') or (cible or {}).get('origine')}")
+        a_garder = {k: v.isoformat() for k, v in dates.items()}
+        if a_garder != {k: enregistrees.get(k, pd.Timestamp(premier_ordre).date().isoformat()) for k in dates}:
+            _enregistrer_dates(cible, session_compte, a_garder)
+        anciennetes = {"CTO": (fin - premier_ordre).days / 365.25,
+                       "PEA": (fin - pd.Timestamp(dates["PEA"])).days / 365.25,
+                       "Assurance-vie": (fin - pd.Timestamp(dates["Assurance-vie"])).days / 365.25}
+        st.caption(t("Ancienneté : PEA {pea} ans · assurance-vie {av} ans", pea=nombre(anciennetes["PEA"], 1),
+                     av=nombre(anciennetes["Assurance-vie"], 1)))
         a, b = st.columns(2)
         situation = a.radio(t("Situation familiale (abattement assurance-vie)"), ["célibataire", "couple"],
                             horizontal=True, format_func=lambda s: td(s).capitalize())
         croissance = b.slider(t("Rendement annuel supposé pour les sorties futures (%)"), 0.0, 10.0, 5.0, 0.5) / 100
 
     # Sortie aujourd'hui
-    lignes = fiscalite.comparer_enveloppes(resume["gain_total"], resume["montant_investi"], anciennete,
+    lignes = fiscalite.comparer_enveloppes(resume["gain_total"], resume["montant_investi"], anciennetes,
                                            resume["dividendes"], situation)
     cartes = []
     for ligne in lignes:
@@ -103,7 +143,7 @@ def _fiscalite(res):
         courbes[enveloppe] = []
         for n in annees:
             gain = resume["gain_total"] + valeur * ((1 + croissance) ** n - 1)
-            impot = fiscalite.impot_sortie(gain, anciennete + n, enveloppe, resume["dividendes"], situation)
+            impot = fiscalite.impot_sortie(gain, anciennetes[enveloppe] + n, enveloppe, resume["dividendes"], situation)
             courbes[enveloppe].append(gain - impot["total"])
     gauche, droite = st.columns([3, 2], gap="medium")
     with gauche, st.container(border=True):

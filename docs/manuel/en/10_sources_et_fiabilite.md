@@ -389,6 +389,19 @@ Performance attribution uses the regional weights of the MSCI ACWI IMI as of 30/
 
 The software does not provide a screen for changing the classification of a security. From the source code, you can add or correct a line of `data/referentiel.csv`, respecting its columns: it will take priority over the local database. In the installed version, this file is in the program's `data` folder and would be replaced by a new installation.
 
+### Automatic classification (since the October 2026 version)
+
+To reduce « Non classé » (unclassified), each security goes through these steps, in order:
+
+1. the record from the reference file or the local database, with a sector brought back to the project's 11 sectors whatever its original name (GICS, ICB, Yahoo, in English or French: « Financial Services » → Finance, « Consumer Cyclical » → Consumer discretionary, « Banques » → Finance…);
+2. for an **ETF** (recognised by its ticker or its name: ETF, UCITS, iShares, Amundi, Lyxor, Xtrackers…): **the index tracked**, read from the name. An S&P 500 ETF is classified « United States », an emerging-markets ETF « Emerging », a government-bond ETF « Bonds », a sector ETF in its sector, a broad-index ETF in « Diversified ETF »;
+3. for a **French share**: a table of the CAC 40, SBF 120 and common mid-cap stocks (ORPEA → Health care, Stellantis → Consumer discretionary…);
+4. with Internet: the sector and country given by **Yahoo Finance**, kept in memory in `data/cache_classement.csv`.
+
+### PEA-eligible ETFs through a « swap »
+
+An ETF such as « Amundi PEA S&P 500 » legally holds a basket of European shares (which makes it PEA-eligible) and exchanges its performance, through a swap contract, for that of the S&P 500. The software therefore classifies it by the **index tracked** (United States), not by the basket held, and counts it **PEA-eligible** (known ETFs, or « PEA » in the name). An ETF listed in Paris on a non-European index without « PEA » in its name is not counted eligible.
+
 ## Benchmark indices and composite indices
 <!-- fiche: sources-indices | questions: which benchmark indices are offered ; how is the 60 40 blended index calculated ; does the benchmark include dividends ; why compare with an ETF rather than the index ; composite index rebalanced every month ; how do I change the benchmark ; the cac 40 excludes dividends ; where does the index history come from | mots: benchmark, benchmark index, composite, blended, 60/40, monthly rebalancing, MSCI World, CAC 40, €STR, dividends reinvested -->
 

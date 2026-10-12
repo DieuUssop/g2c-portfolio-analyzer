@@ -440,6 +440,18 @@ def test_date_dans_le_futur_refusee():
     assert lp.lire_par_le_contenu(texte)[0]["sur"] is False
 
 
+def test_symbole_interactive_brokers_lu_en_majuscules():
+    """« ESEEd » (symbole IBKR du BNP Paribas Easy S&P 500 à Paris) lu « ESEED » par la reconnaissance
+    de caractères : ramené à « ESE », comme les autres lignes du même ETF."""
+    from pathlib import Path
+    texte = (Path(__file__).resolve().parent / "donnees" / "vrais_avis" / "interactive_brokers_ocr.txt").read_text(
+        encoding="utf-8").replace("ESEEd", "ESEED")
+    operations = lp.lire_lignes_operations(texte)
+    assert len(operations) == 17 and "ESEED" not in {o["isin"] for o in operations}
+    assert sum(o["isin"] == "ESE" for o in operations) == 8
+    assert lp._symbole_ramene("ESEED", set()) == "ESE"                  # même seul dans le relevé
+
+
 def test_page_en_mode_sombre_remise_en_noir_sur_blanc():
     from PIL import Image, ImageDraw
     image = Image.new("L", (900, 200), 30)                    # fond sombre, texte clair, une bordure claire

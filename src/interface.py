@@ -61,11 +61,18 @@ def pastille(texte, sens="neutre"):
     return f'<span class="pastille {sens}">{escape(texte)}</span>'
 
 
-def entete(titre, surtitre, sous_titre, source, date_donnees):
-    """Bandeau bleu en haut de la page."""
+def entete(titre, surtitre, sous_titre, source, date_donnees, date_cours=None):
+    """Bandeau bleu en haut de la page. Hors connexion, le badge donne la date des cours utilisés
+    (date_cours : derniers cours connus, gardés en mémoire)."""
     en_direct = "direct" in source.lower()
     point = "point-vert" if en_direct else "point-orange"
-    libelle = t("Cours en direct · Yahoo Finance") if en_direct else t("Cours en cache (hors ligne)")
+    if en_direct:
+        libelle = t("Cours en direct · Yahoo Finance")
+    elif date_cours is not None:
+        from .langues import date as date_lisible
+        libelle = t("Hors ligne · cours du {date}", date=date_lisible(date_cours))
+    else:
+        libelle = t("Cours en cache (hors ligne)")
     return (
         '<div class="entete">'
         '<div class="entete-gauche">'

@@ -304,12 +304,12 @@ In the example: `341 / 1,657.50 = +20.57%`. Note: the denominator is the cost of
 This is possible: profitable past sales or dividends can offset unrealised losses.
 
 ## Dividends, coupons and fees: how are they counted?
-<!-- fiche: analyse-dividendes-frais | questions: are dividends counted in the performance ; gross amounts received what does it mean ; are dividends net of tax ; where can i see my brokerage fees ; are fees deducted from performance ; dividend on a holding that was sold ; are bond coupons included ; why do my total fees look high | mots: dividends, coupons, distributions, brokerage fees, total fees, gross, net, withholding, performance, cost | aller: Analyse du portefeuille/Vue d'ensemble | chiffres: dividendes, frais_totaux, gain_total -->
+<!-- fiche: analyse-dividendes-frais | questions: are dividends counted in the performance ; gross amounts received what does it mean ; are dividends net of tax ; where can i see my brokerage fees ; are fees deducted from performance ; dividend on a holding that was sold ; are bond coupons included ; why do my total fees look high | mots: dividends, coupons, distributions, brokerage fees, total fees, gross, net, withholding, performance, cost | aller: Analyse du portefeuille/Vue d'ensemble | chiffres: dividendes, dividendes_bruts, retenues, frais_totaux, gain_total -->
 
 ### Dividends and coupons
 
 - They are entered as DIVIDENDE (dividend) transactions, with the **total amount received** in the price.
-- The **Dividends and coupons** card in the [[Overview]] tab adds up these amounts, less any fees entered on the same line. Its subtitle "Gross amounts received" means that the software deducts **no tax**: the figure is the one you entered.
+- The **Dividends and coupons** card in the [[Overview]] tab gives the **net** amount (gross − amounts withheld entered in the `frais` column). When amounts are withheld, its subtitle details « Net · gross … · withheld … »; the question mark recalls the formula. The software computes **no tax** itself: only the amounts withheld shown on your rows (or read from your dividend notices) are deducted.
 - The "Dividends" column of the holdings table gives the total per holding still held.
 - Dividends from a holding sold since then remain counted in the total.
 
@@ -317,7 +317,7 @@ They enter the performance in two ways: in the total gain, and in the TWR and IR
 
 ### Brokerage fees
 
-The **Brokerage fees** card ("Since inception") adds up the fees on all transactions: purchases, sales and dividends. They are always entered **in euros**, even for a security in dollars.
+The **Brokerage fees** card ("Since inception") adds up the fees on purchases and sales. They are entered **in euros**, even for a security in dollars. Amounts withheld on dividends (withholding tax, levies) are not brokerage fees: they are counted separately, in the dividends card.
 
 They are not deducted a second time: they are already taken into account in the PRU (purchases), in the realised gain (sales) and in the net amount of dividends. In daily returns, the fees on a purchase appear on the day of the transaction, since the money paid out (fees included) exceeds the value of the securities received.
 
@@ -347,12 +347,46 @@ Example: you buy a share at USD 100 when €1 is worth USD 1.00, i.e. €100. A 
 ### Where to see it
 
 - "Currency" column of the [[Holdings]] tab: the trading currency. The PRU, price, value and gains are in euros.
-- [[Transactions]] tab: the "Currency" and "Price in currency" columns show the price entered before conversion.
+- [[Transactions]] tab: the "Currency", "Price in currency" and « Exchange rate » columns show the price entered before conversion and the rate used.
+- [[Positions]] tab: the « Market effect and currency effect » box separates the two effects (see the next fiche).
 - [[Exposures]] tab, [[Currencies and rates]] sub-tab: the real currency exposure, ETFs included.
 
 ### Limit
 
 The rate used is a daily market rate, not the one actually applied by your broker, which often adds a margin. The details of the conversion are explained in the chapter on sources and reliability.
+
+## Market effect and currency effect: where does a foreign security's gain come from?
+<!-- fiche: analyse-effet-change | questions: what is the currency effect ; market effect and currency effect ; does my gain come from the dollar ; how much did the fall of the dollar cost me ; break down the performance of a us share ; purchase rate current rate ; of which currency effect on the gains card ; isolate the exchange-rate effect | mots: currency effect, market effect, exchange effect, currency risk, purchase exchange rate, current rate, breakdown, unrealised gain, dollar, Positions | aller: Analyse du portefeuille/Positions | chiffres: effet_change, pv_latentes -->
+
+For each security listed outside the euro area, the unrealised gain (in euros) is split in two:
+
+- the **market effect**: what the security gained **in its own currency**, valued at the purchase exchange rate (purchase fees deducted);
+- the **currency effect**: what the currency's move against the euro gained or lost.
+
+### The formulas
+
+With q the quantity held, P₁ the current price in currency, X₀ the exchange rate at purchase and X₁ the current rate (€1 = X units of the currency):
+
+```
+currency effect = q × P₁ × (1 / X₁ − 1 / X₀)
+market effect   = unrealised gain − currency effect
+```
+
+X₀ is the **average rate of the purchases still held**: total cost in currency ÷ total cost in euros (PRU method: a sale removes its share of the cost without changing this rate). The rate of each transaction's day is shown in the « Exchange rate » column of the [[Transactions]] tab.
+
+### Example
+
+10 shares bought at $100 when €1 = $1.25 (cost €800). Today the share is worth $120 (+20%) but €1 = $1.50: the holding is worth 1,200 / 1.50 = €800, a nil gain. Market effect: 10 × (120 − 100) / 1.25 = **+€160**; currency effect: 10 × 120 × (1/1.50 − 1/1.25) = **−€160**. The share did rise, but the fall of the dollar wiped it all out.
+
+### Where to see it
+
+- **Unrealised gains** card of the [[Overview]] tab: « of which currency effect … » under the amount.
+- [[Positions]] tab: the **Market effect and currency effect** box lists each security in currency with its purchase rate, current rate, market effect, currency effect and gain.
+- PDF report: the card « Dont effet change (titres en devise) ».
+
+### Remember
+
+A currency that **falls** against the euro (the « €1 in currency » rate rises) gives a **negative** currency effect. The currency effect only concerns the unrealised gain of the securities still held; the rate used is the day's market rate, not your broker's.
 
 ## Why do my figures differ from my broker's?
 <!-- fiche: analyse-ecart-courtier | questions: why are my figures different from my bank ; my broker doesnt show the same capital gain ; the pru is not the same as on my broker app ; valuation gap with my statement ; my portfolio value doesnt match my account ; my performance is different from my life insurance ; are the figures wrong | mots: gap, broker, bank, statement, difference, reconciliation, valuation, PRU, exchange rate, reliability | aller: Analyse du portefeuille/Positions | chiffres: valeur_actuelle, gain_total -->
@@ -404,6 +438,10 @@ The blue bar is at full length for the largest holding; the others are proportio
 ### Region and sector different from the overview?
 
 The table classes a world ETF under the region "World"; the overview rings and the [[Exposures]] tab split it **on a look-through basis** between the countries of its index. Both are correct: they answer two different questions.
+
+### Row colours
+
+Each row is tinted according to its unrealised gain: **pastel green** if it is positive, **pastel red** if it is negative (darker tints in night mode), to spot gaining and losing holdings at a glance.
 
 ## What does the Performance tab contain?
 <!-- fiche: analyse-onglet-performance | questions: what does the performance tab contain ; how do i know if im beating the index ; what is the base 100 chart for ; what does the warning about the bond index mean ; the five cards at the bottom of the performance tab ; how to read the performance tab ; where do i see my performance by year | mots: performance, TWR, IRR, TRI, benchmark index, base 100, annual return, drawdown, beta, alpha, comparison | aller: Analyse du portefeuille/Performance | chiffres: twr_total, twr_annualise, tri_annuel -->

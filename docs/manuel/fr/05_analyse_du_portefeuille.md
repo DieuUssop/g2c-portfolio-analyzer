@@ -304,12 +304,12 @@ Dans l'exemple : `341 / 1 657,50 = +20,57 %`. Attention : le dénominateur est l
 C'est possible : des ventes passées gagnantes ou des dividendes peuvent compenser des moins-values latentes.
 
 ## Dividendes, coupons et frais : comment sont-ils comptés ?
-<!-- fiche: analyse-dividendes-frais | questions: les dividendes sont ils comptés dans la performance ; montants bruts perçus ça veut dire quoi ; les dividendes sont ils nets d'impôt ; ou voir mes frais de courtage ; les frais sont ils déduits de la performance ; dividende d'une ligne vendue ; coupons d'obligation pris en compte ; pourquoi mes frais totaux semblent élevés | mots: dividendes, coupons, distributions, frais de courtage, frais totaux, brut, net, prélèvements, performance, coût | aller: Analyse du portefeuille/Vue d'ensemble | chiffres: dividendes, frais_totaux, gain_total -->
+<!-- fiche: analyse-dividendes-frais | questions: les dividendes sont ils comptés dans la performance ; montants bruts perçus ça veut dire quoi ; les dividendes sont ils nets d'impôt ; ou voir mes frais de courtage ; les frais sont ils déduits de la performance ; dividende d'une ligne vendue ; coupons d'obligation pris en compte ; pourquoi mes frais totaux semblent élevés | mots: dividendes, coupons, distributions, frais de courtage, frais totaux, brut, net, prélèvements, performance, coût | aller: Analyse du portefeuille/Vue d'ensemble | chiffres: dividendes, dividendes_bruts, retenues, frais_totaux, gain_total -->
 
 ### Les dividendes et coupons
 
 - Ils sont saisis comme des opérations DIVIDENDE, avec le **montant total reçu** dans le prix.
-- La carte **Dividendes et coupons** de l'onglet [[Vue d'ensemble]] additionne ces montants, diminués des frais éventuellement saisis sur la même ligne. Son sous-titre « Montants bruts perçus » signifie que le logiciel ne déduit **aucun impôt** : le chiffre est celui que vous avez saisi.
+- La carte **Dividendes et coupons** de l'onglet [[Vue d'ensemble]] donne le montant **net** (brut − retenues saisies dans la colonne `frais`). Quand des retenues existent, son sous-titre détaille « Nets · brut … · retenues … » ; le point d'interrogation rappelle la formule. Le logiciel ne calcule **aucun impôt** lui-même : seules les retenues indiquées sur vos lignes (ou lues sur vos avis de dividende) sont déduites.
 - La colonne « Dividendes » du tableau des positions donne le total par ligne détenue.
 - Les dividendes d'une ligne vendue depuis restent comptés dans le total.
 
@@ -317,7 +317,7 @@ Ils entrent dans la performance de deux façons : dans le gain total, et dans le
 
 ### Les frais de courtage
 
-La carte **Frais de courtage** (« Depuis l'origine ») additionne les frais de toutes les opérations : achats, ventes et dividendes. Ils sont toujours saisis **en euros**, même pour un titre en dollars.
+La carte **Frais de courtage** (« Depuis l'origine ») additionne les frais des achats et des ventes. Ils sont saisis **en euros**, même pour un titre en dollars. Les retenues sur dividendes (retenue à la source, prélèvements) ne sont pas des frais de courtage : elles sont comptées à part, dans la carte des dividendes.
 
 Ils ne sont pas retirés une seconde fois : ils sont déjà pris en compte dans le PRU (achats), dans la plus-value réalisée (ventes) et dans le montant net des dividendes. Dans les rendements quotidiens, les frais d'un achat apparaissent le jour de l'opération, puisque l'argent sorti (frais compris) dépasse la valeur des titres reçus.
 
@@ -347,12 +347,46 @@ Exemple : vous achetez une action à 100 USD quand 1 € vaut 1,00 USD, soit 100
 ### Où le voir
 
 - Colonne « Devise » de l'onglet [[Positions]] : la devise de cotation. Le PRU, le cours, la valeur et les plus-values sont, eux, en euros.
-- Onglet [[Transactions]] : les colonnes « Devise » et « Prix en devise » montrent le prix saisi avant conversion.
+- Onglet [[Transactions]] : les colonnes « Devise », « Prix en devise » et « Taux de change » montrent le prix saisi avant conversion et le taux utilisé.
+- Onglet [[Positions]] : l'encadré « Effet marché et effet change » sépare les deux effets (voir la fiche suivante).
 - Onglet [[Expositions]], sous-onglet [[Devises et taux]] : l'exposition réelle aux devises, ETF compris.
 
 ### Limite
 
 Le taux utilisé est un taux de marché quotidien, pas celui réellement appliqué par votre courtier, qui y ajoute souvent une marge. Le détail de la conversion est expliqué dans le chapitre sur les sources et la fiabilité.
+
+## Effet marché et effet change : d'où vient la plus-value d'un titre étranger ?
+<!-- fiche: analyse-effet-change | questions: c'est quoi l'effet change ; effet marché et effet change ; ma plus-value vient elle du dollar ; combien m'a coûté la baisse du dollar ; décomposer la performance d'une action américaine ; taux à l'achat taux actuel ; dont effet change sur la carte des plus-values ; isoler l'effet de change | mots: effet change, effet marché, effet devise, risque de change, taux de change à l'achat, taux actuel, décomposition, plus-value latente, dollar, Positions | aller: Analyse du portefeuille/Positions | chiffres: effet_change, pv_latentes -->
+
+Pour chaque titre coté hors de la zone euro, la plus-value latente (en euros) est séparée en deux :
+
+- l'**effet marché** : ce qu'a gagné le titre **dans sa devise**, compté au taux de change de l'achat (frais d'achat déduits) ;
+- l'**effet change** : ce que la variation de la devise face à l'euro a fait gagner ou perdre.
+
+### Les formules
+
+Avec q la quantité détenue, P₁ le cours actuel en devise, X₀ le taux de change à l'achat et X₁ le taux actuel (1 € = X unités de la devise) :
+
+```
+effet change = q × P₁ × (1 / X₁ − 1 / X₀)
+effet marché = plus-value latente − effet change
+```
+
+X₀ est le **taux moyen des achats encore détenus** : coût total en devise ÷ coût total en euros (méthode du PRU : une vente retire sa part du coût sans changer ce taux). Le taux du jour de chaque opération est visible dans la colonne « Taux de change » de l'onglet [[Transactions]].
+
+### Exemple
+
+10 actions achetées 100 $ quand 1 € = 1,25 $ (coût 800 €). Aujourd'hui l'action vaut 120 $ (+20 %) mais 1 € = 1,50 $ : la ligne vaut 1 200 / 1,50 = 800 €, plus-value nulle. Effet marché : 10 × (120 − 100) / 1,25 = **+160 €** ; effet change : 10 × 120 × (1/1,50 − 1/1,25) = **−160 €**. Le titre a bien monté, mais la baisse du dollar a tout effacé.
+
+### Où le voir
+
+- Carte **Plus-values latentes** de l'onglet [[Vue d'ensemble]] : « dont effet change … » sous le montant.
+- Onglet [[Positions]] : l'encadré **Effet marché et effet change** liste chaque titre en devise avec son taux à l'achat, son taux actuel, l'effet marché, l'effet change et la plus-value.
+- Rapport PDF : la carte « Dont effet change (titres en devise) ».
+
+### À retenir
+
+Une devise qui **baisse** face à l'euro (le taux « 1 € en devise » monte) donne un effet change **négatif**. L'effet change ne concerne que la plus-value latente des titres encore détenus ; le taux utilisé est le taux de marché du jour, pas celui de votre courtier.
 
 ## Pourquoi mes chiffres diffèrent-ils de ceux de mon courtier ?
 <!-- fiche: analyse-ecart-courtier | questions: pourquoi mes chiffres sont différents de ma banque ; mon courtier n'affiche pas la même plus-value ; le pru n'est pas le même que sur boursorama ; écart de valorisation avec mon relevé ; la valeur de mon portefeuille ne correspond pas à mon compte ; ma performance est différente de celle de mon assurance vie ; les chiffres sont ils faux | mots: écart, courtier, banque, relevé, différence, réconciliation, valorisation, PRU, taux de change, fiabilité | aller: Analyse du portefeuille/Positions | chiffres: valeur_actuelle, gain_total -->
@@ -404,6 +438,10 @@ La barre bleue est à pleine longueur pour la plus grosse ligne ; les autres son
 ### Région et secteur différents de la vue d'ensemble ?
 
 Le tableau classe un ETF monde en région « Monde » ; les anneaux de la vue d'ensemble et l'onglet [[Expositions]] le répartissent **en transparence** entre les pays de son indice. Les deux sont justes : ils répondent à deux questions différentes.
+
+### Couleurs des lignes
+
+Chaque ligne est teintée selon sa plus-value latente : **vert pastel** si elle est positive, **rouge pastel** si elle est négative (teintes plus sombres en mode nuit), pour repérer d'un coup d'œil les lignes en gain et en perte.
 
 ## Que contient l'onglet Performance ?
 <!-- fiche: analyse-onglet-performance | questions: que contient l'onglet performance ; comment savoir si je bats l'indice ; à quoi sert le graphique base 100 ; que veut dire l'avertissement sur l'indice obligataire ; les cinq cartes en bas de l'onglet performance ; comment lire l'onglet performance ; ou voir mes performances par année | mots: performance, TWR, TRI, indice de référence, base 100, rendement annuel, drawdown, bêta, alpha, comparaison | aller: Analyse du portefeuille/Performance | chiffres: twr_total, twr_annualise, tri_annuel -->

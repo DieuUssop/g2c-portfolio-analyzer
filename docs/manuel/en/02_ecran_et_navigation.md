@@ -296,7 +296,7 @@ In the analysis spaces, the main area begins with a blue banner.
 | Badge | Meaning |
 |---|---|
 | Green dot, "Live prices · Yahoo Finance" | The latest prices were downloaded from Yahoo Finance during the analysis |
-| Orange dot, "Cached prices (offline)" | Yahoo Finance did not respond: the software is using the latest prices saved on the computer |
+| Orange dot, « Offline · prices of 08 Oct 2026 » | Yahoo Finance did not respond: the software is using the latest prices saved on the computer, at the date shown (« Cached prices (offline) » if that date is unknown) |
 
 Under the badge, the "Data as of" line gives the date of the last price in the history: this is the date at which the portfolio is valued.
 

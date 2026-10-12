@@ -207,3 +207,134 @@ def appliquer_division(source, ticker, date, facteur):
     tableau.loc[concernees, "quantite"] = tableau.loc[concernees, "quantite"] * facteur
     tableau.loc[concernees, "prix"] = tableau.loc[concernees, "prix"] / facteur
     return tableau, int(concernees.sum())
+
+
+def divisions_non_appliquees(transactions, divisions, prix_hist, tolerance=0.25):
+    """Divisions d'actions (connues de Yahoo Finance) dont les opérations du fichier ne tiennent
+    pas compte.
+
+    Les cours de Yahoo sont ajustés : avant une division par 10, ils sont divisés par 10. Si le prix
+    d'achat d'une opération antérieure est environ 10 fois le cours ajusté de ce jour-là, c'est que
+    l'opération est restée dans les unités d'avant la division. Si le prix colle au cours ajusté,
+    la division a déjà été appliquée (rien à faire).
+
+    transactions : opérations (prix et cours dans la même devise, par exemple tout en euros) ;
+    divisions : {ticker: [(date, facteur), …]} ; prix_hist : cours ajustés (colonnes = tickers).
+    Renvoie [{"ticker", "nom", "date", "facteur", "operations"}] (une entrée par division à appliquer)."""
+    a_appliquer = []
+    for ticker, liste in divisions.items():
+        if ticker not in prix_hist.columns:
+            continue
+        cours = prix_hist[ticker].dropna().sort_index()
+        operations = transactions[(transactions["ticker"] == ticker) & transactions["type"].isin(["ACHAT", "VENTE"])
+                                  & (transactions["prix"] > 0)]
+        if cours.empty or operations.empty:
+            continue
+        non_ajustees, comptees = [], 0
+        for _, op in operations.iterrows():
+            # facteur cumulé des divisions postérieures à l'opération (le cours ajusté en tient compte)
+            cumule = 1.0
+            for date, facteur in liste:
+                if date > op["date"]:
+                    cumule *= facteur
+            position = cours.index.searchsorted(op["date"])
+            if cumule == 1.0 or position >= len(cours):
+                continue
+            comptees += 1
+            rapport = op["prix"] / cours.iloc[position]
+            # opération restée dans les unités d'avant : rapport prix / cours ajusté ≈ facteur cumulé
+            if abs(rapport / cumule - 1) < tolerance and abs(rapport - 1) > tolerance:
+                non_ajustees.append(op["date"])
+        if non_ajustees and len(non_ajustees) * 2 > comptees:
+            premiere = min(non_ajustees)
+            for date, facteur in liste:
+                if date > premiere:
+                    n = int(((operations["date"] < date)).sum())
+                    a_appliquer.append({"ticker": ticker, "nom": str(operations["nom"].iloc[0]), "date": date,
+                                        "facteur": facteur, "operations": n})
+    # Titres sans division connue (hors connexion, ou Yahoo ne la donne pas) : la division se
+    # déduit des cours eux-mêmes (ORPEA : 2 000 actions à 0,0145 € alors que le cours ajusté du jour
+    # vaut 14,50 € → regroupement de 1 000 en 1 non appliqué)
+    deja = {d["ticker"] for d in a_appliquer}
+    for ticker in sorted(set(transactions["ticker"]) - deja):
+        deduite = division_deduite(transactions, ticker, prix_hist)
+        if deduite:
+            a_appliquer.append(deduite)
+    return a_appliquer
+
+
+FACTEURS_RONDS = sorted({f for b in (2, 3, 4, 5, 8, 10, 15, 20, 25, 30, 40, 50, 100, 200, 250, 500, 1000, 2000,
+                                       5000, 10000, 20000, 100000) for f in (float(b), 1 / b)})
+
+
+def _facteur_rond(rapport, tolerance):
+    """Le facteur de division « rond » (10, 1/1000…) le plus proche du rapport, ou None. Sans la
+    date de Yahoo, on reste prudent : seulement un écart d'au moins 5 fois (une division par 2 ou 3
+    se confondrait avec un prix mal saisi ou un titre qui a beaucoup bougé)."""
+    if not rapport or rapport != rapport or 0.2 < rapport < 5:
+        return None
+    meilleur = min(FACTEURS_RONDS, key=lambda f: abs(rapport / f - 1))
+    return meilleur if abs(rapport / meilleur - 1) < tolerance else None
+
+
+def division_deduite(transactions, ticker, prix_hist, tolerance=0.15):
+    """Division ou regroupement non appliqué, déduit des cours : toutes les opérations d'un titre
+    jusqu'à une date ont un prix égal à un même facteur rond (10, 1/1000…) fois le cours ajusté du
+    jour, et les suivantes collent au cours. Renvoie la division à appliquer (date : le lendemain de
+    la dernière opération concernée, la date exacte n'étant pas connue) ou None."""
+    if ticker not in prix_hist.columns:
+        return None
+    cours = prix_hist[ticker].dropna().sort_index()
+    operations = transactions[(transactions["ticker"] == ticker) & transactions["type"].isin(["ACHAT", "VENTE"])
+                              & (transactions["prix"] > 0)].sort_values("date")
+    if cours.empty or operations.empty:
+        return None
+    facteurs = []
+    for _, op in operations.iterrows():
+        position = cours.index.searchsorted(op["date"])
+        if position >= len(cours) or not cours.iloc[position]:
+            return None
+        rapport = op["prix"] / cours.iloc[position]
+        facteurs.append((op["date"], _facteur_rond(rapport, tolerance), abs(rapport - 1) <= tolerance))
+    # les premières opérations avec un même facteur, puis seulement des opérations au bon cours
+    premier = facteurs[0][1]
+    if premier is None:
+        return None
+    k = 0
+    while k < len(facteurs) and facteurs[k][1] == premier:
+        k += 1
+    if not all(au_cours for _, _, au_cours in facteurs[k:]):
+        return None
+    derniere = facteurs[k - 1][0]
+    return {"ticker": ticker, "nom": str(operations["nom"].iloc[0]),
+            "date": pd.Timestamp(derniere) + pd.Timedelta(days=1), "facteur": premier, "operations": k,
+            "deduite": True}
+
+
+def corriger_sauts_de_cours(prix_hist, colonnes):
+    """Regroupement d'actions que Yahoo Finance n'a pas ajusté dans son historique : le cours fait
+    un bond d'un facteur rond (×10, ×100, ×1 000…) d'un jour à l'autre et reste à ce niveau. Les
+    cours d'avant sont alors ramenés dans les nouvelles unités (multipliés par ce facteur), comme
+    Yahoo le fait d'habitude. Seuls les bonds vers le HAUT d'au moins ×10 sont corrigés : une
+    hausse de 900 % en un jour n'arrive pas en bourse, alors qu'une chute de 90 % peut être réelle.
+    Renvoie (cours corrigés, [{"ticker", "date", "facteur"}])."""
+    corriges, notes = prix_hist.copy(), []
+    for ticker in colonnes:
+        if ticker not in corriges.columns:
+            continue
+        serie = corriges[ticker].dropna()
+        if len(serie) < 3:
+            continue
+        rapports = (serie / serie.shift(1)).iloc[1:]
+        for date, rapport in rapports[rapports >= 9].items():
+            facteur = min((f for f in FACTEURS_RONDS if f >= 10), key=lambda f: abs(rapport / f - 1))
+            if abs(rapport / facteur - 1) > 0.1:
+                continue
+            # le nouveau niveau tient (pas un point aberrant isolé)
+            apres = serie[serie.index >= date].iloc[:5]
+            if (apres < serie.loc[date] / 3).any():
+                continue
+            avant = corriges.index < date
+            corriges.loc[avant, ticker] = corriges.loc[avant, ticker] * facteur
+            notes.append({"ticker": ticker, "date": pd.Timestamp(date), "facteur": facteur})
+    return corriges, notes

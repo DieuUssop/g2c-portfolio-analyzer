@@ -10,7 +10,7 @@ calculs (régions, stratégies...) passent par td() à l'affichage.
 import pandas as pd
 import streamlit as st
 
-from . import attribution, backtest, budget_risque
+from . import attribution, backtest, budget_risque, langues
 from . import graphiques_interactifs as gi
 from . import interface as ui
 from .interface import euros, nombre, pct
@@ -54,13 +54,85 @@ def _calcul_backtest(cle, _res, frais, capital, nb_mois, taux_sans_risque):
 # Point d'entrée
 # ----------------------------------------------------------------------
 def afficher(res, cle, taux_sans_risque):
-    onglets = st.tabs([t("Attribution de performance"), t("Budget de risque"), t("Backtest de stratégies")])
+    onglets = st.tabs([t("Performance par classe et secteur"), t("Attribution de performance"),
+                       t("Budget de risque"), t("Backtest de stratégies")])
     with onglets[0]:
-        _attribution(res, cle)
+        _par_classe_et_secteur(res)
     with onglets[1]:
-        _budget(res, cle, taux_sans_risque)
+        _attribution(res, cle)
     with onglets[2]:
+        _budget(res, cle, taux_sans_risque)
+    with onglets[3]:
         _backtest(res, cle, taux_sans_risque)
+
+
+# ----------------------------------------------------------------------
+# 0. Performance par classe d'actifs et par secteur
+# ----------------------------------------------------------------------
+def _tableau_groupes(tableau, intitule):
+    """Tableau d'une performance par groupe, lignes en vert / rouge pastel selon le gain."""
+    from . import theme
+    lignes = pd.DataFrame({
+        intitule: [td(g) for g in tableau.index],
+        t("Lignes"): tableau["lignes"].astype(int),
+        t("Poids actuel"): tableau["poids"] * 100,
+        t("Valeur"): tableau["valeur"],
+        t("Gain"): tableau["gain"],
+        t("Rendement"): tableau["rendement"] * 100,
+        t("Contribution"): tableau["contribution"] * 100,
+    })
+    fond_gain, fond_perte = (("rgba(76, 175, 80, 0.18)", "rgba(229, 115, 115, 0.20)") if theme.nuit()
+                             else ("#EAF6EC", "#FCEBEA"))
+    style = lignes.style.apply(lambda l: [f"background-color: {fond_gain if l[t('Gain')] > 0 else fond_perte}"
+                                          if l[t("Gain")] != 0 else ""] * len(l), axis=1)
+    st.dataframe(style, hide_index=True, width="stretch", column_config={
+        t("Poids actuel"): st.column_config.NumberColumn(format=langues.pct_colonne("%.1f")),
+        t("Valeur"): st.column_config.NumberColumn(format=langues.eur_colonne("%.0f")),
+        t("Gain"): st.column_config.NumberColumn(format=langues.eur_colonne("%+.0f"),
+                                                 help=t("Plus-values latentes et réalisées, dividendes nets, frais "
+                                                        "déduits")),
+        t("Rendement"): st.column_config.NumberColumn(format=langues.pct_colonne("%+.1f"),
+                                                      help=t("Gain rapporté au capital moyen engagé dans le groupe "
+                                                             "(méthode de Dietz modifiée)")),
+        t("Contribution"): st.column_config.NumberColumn(
+            format=langues.pct_colonne("%+.2f"),
+            help=t("Part de la performance du portefeuille apportée par le groupe : les contributions "
+                   "s'additionnent")),
+    })
+
+
+def _par_classe_et_secteur(res):
+    classement = res.get("classement")
+    if classement is None or classement.empty:
+        st.info(t("Classement des titres indisponible."))
+        return
+    valeurs = res["positions"]["valeur"].to_dict()
+    fin = res["historique"].index[-1]
+    par_classe = attribution.performance_par_groupe(res["transactions"], valeurs, classement["classe"].to_dict(),
+                                                    fin=fin)
+    par_secteur = attribution.performance_par_groupe(res["transactions"], valeurs, classement["secteur"].to_dict(),
+                                                     fin=fin)
+    total = par_classe["contribution"].sum()
+    html(ui.grille([
+        ui.carte(t("Rendement du portefeuille"), pct(total),
+                 detail=t("Depuis le {date} · Dietz modifiée", date=langues.date(res["date_ouverture"])),
+                 aide=t("Somme des contributions de toutes les classes d'actifs")),
+        ui.carte(t("Meilleure classe"), td(par_classe.index[0]), detail=pct(par_classe["contribution"].iloc[0])),
+        ui.carte(t("Meilleur secteur"), td(par_secteur.index[0]), detail=pct(par_secteur["contribution"].iloc[0])),
+        ui.carte(t("Secteur le plus pénalisant"), td(par_secteur.index[-1]),
+                 detail=pct(par_secteur["contribution"].iloc[-1])),
+    ]))
+    with st.container(border=True):
+        html(ui.titre_section(t("Par classe d'actifs"), t("Actions, obligations, or… depuis l'ouverture, titres vendus "
+                                                          "compris")))
+        _tableau_groupes(par_classe, t("Classe"))
+    with st.container(border=True):
+        html(ui.titre_section(t("Par secteur d'activité"), t("Les ETF sont classés selon leur indice suivi (« ETF diversifié » "
+                                                             "pour un indice large)")))
+        _tableau_groupes(par_secteur, t("Secteur"))
+    html(ui.note(t("Lecture : le rendement d'un groupe rapporte son gain au capital moyen qui y a été engagé ; sa "
+                   "contribution est la part de la performance du portefeuille qu'il a apportée. Un groupe peut avoir "
+                   "un bon rendement mais une petite contribution s'il pèse peu.")))
 
 
 # ----------------------------------------------------------------------

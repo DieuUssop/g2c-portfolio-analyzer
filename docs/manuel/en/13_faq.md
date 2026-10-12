@@ -583,7 +583,7 @@ The language is kept during the session. The "The screen and navigation" chapter
 ## Are stock splits and corporate actions handled?
 <!-- fiche: faq-divisions | questions: are stock splits handled ; stock split ; my stock did a split ; reverse split ; company merger ; bonus share allocation ; 90% loss after a split | mots: stock split, split, reverse split, merger, spin-off, corporate action, bonus shares -->
 
-**Partly.** The software only knows three transaction types: buy, sell and dividend, and it does not detect a split by itself. But it can adjust your transactions from the split or reverse split notice sent by your broker.
+**Yes for splits and reverse splits.** With Internet, the software detects by itself a split that your transactions have not taken into account (« Stock split or reverse split detected » box at the top of the [[Overview]]) and offers to adjust the earlier transactions; it can also do it from the notice sent by your broker.
 
 ### The problem
 
@@ -599,7 +599,7 @@ Express the transaction in securities as they are after the split, **without cha
 
 ### Other corporate actions
 
-Mergers, spin-offs, ticker changes or bonus share allocations: to be translated by yourself into purchases and sales.
+Mergers and ticker changes: to be translated by yourself into purchases and sales. Spin-offs and bonus share allocations: the security received without a purchase price is flagged (see the fiche « Spin-off or free allotment »).
 
 ## Why is the MSCI World the default benchmark index?
 <!-- fiche: faq-indice-defaut | questions: why msci world by default ; why compare with an etf ; which index should I choose for my portfolio ; why not the cac 40 ; suitable benchmark index ; change index | mots: benchmark index, MSCI World, CW8, benchmark, CAC 40, reinvested dividends, choice of index | aller: Analyse du portefeuille/Performance -->

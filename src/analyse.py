@@ -15,11 +15,12 @@ from pathlib import Path
 import pandas as pd
 
 from . import config, indices
-from .devises import (convertir_cours, convertir_prix_historiques, convertir_transactions,
+from .devises import (convertir_cours, decomposer_change, convertir_prix_historiques, convertir_transactions,
                       detecter_devises, devises_etrangeres, ticker_change)
 from .market_data import obtenir_cours, obtenir_historique
 from .metrics import (calculer_indicateurs, calculer_indicateurs_avances,
                       matrice_correlation)
+from .classement import classer_tous
 from .portfolio import Portfolio
 
 
@@ -53,6 +54,14 @@ def charger_referentiel():
     return pd.read_csv(CHEMIN_REFERENTIEL).set_index("ticker")
 
 
+def _date_du_cache(source):
+    """Cours hors connexion : la date des derniers cours connus (« cache local du 2026-10-08 »),
+    sinon None (cours en direct)."""
+    import re
+    m = re.search(r"(\d{4})-(\d{2})-(\d{2})", source or "")
+    return pd.Timestamp(f"{m.group(1)}-{m.group(2)}-{m.group(3)}") if m and "direct" not in source.lower() else None
+
+
 def analyse_complete(source_csv,
                      indice=config.INDICE_REFERENCE,
                      taux_sans_risque=config.TAUX_SANS_RISQUE,
@@ -82,6 +91,9 @@ def analyse_complete(source_csv,
     if manquants:
         raise ValueError(f"Taux de change introuvables : {manquants}")
 
+    # regroupements d'actions non ajustés par Yahoo (bond ×1 000 du cours) : historique corrigé
+    from .mouvements import corriger_sauts_de_cours
+    prix_hist_brut, cours_corriges = corriger_sauts_de_cours(prix_hist_brut, titres)
     taux_hist = prix_hist_brut[tickers_change].copy()
     taux_hist.columns = etrangeres
     # On ne garde que les jours où au moins un titre a coté (les marchés des
@@ -105,22 +117,28 @@ def analyse_complete(source_csv,
     taux_actuels = {d: prix.pop(t) for d, t in zip(etrangeres, tickers_change) if t in prix}
     if len(taux_actuels) < len(etrangeres):
         raise ValueError("Taux de change actuels introuvables.")
+    prix_locaux = dict(prix)                       # cours dans la devise de cotation
     prix = convertir_cours(prix, info_devises, taux_actuels)
     positions = portefeuille.valoriser(prix)
     positions["devise"] = [info_devises.get(t, ("EUR", 1.0))[0] for t in positions.index]
-    # Classement de chaque ligne (utile pour un portefeuille très diversifié)
+    # Classement de chaque titre (classe d'actifs, région, pays, secteur : src/classement.py) :
+    # fiche du référentiel ou de la base locale, ETF selon l'indice suivi, valeurs françaises,
+    # puis Yahoo Finance (avec Internet) pour les titres restés non classés
     referentiel = charger_fiches()
-    for colonne in ["region", "secteur", "pays"]:
-        positions[colonne] = positions.index.map(referentiel[colonne].to_dict()).fillna("Non classé") \
-            if colonne in referentiel.columns else "Non classé"
-    # Classe d'actifs (Actions, Obligations, Or) : un titre absent du référentiel
-    # est considéré comme une action (hypothèse prudente pour le profil de risque).
-    positions["classe"] = positions.index.map(referentiel["classe"].to_dict()).fillna("Actions") \
-        if "classe" in referentiel.columns else "Actions"
+    noms = dict(zip(portefeuille.transactions["ticker"], portefeuille.transactions["nom"].astype(str)))
+    classement = classer_tous(list(portefeuille.positions.index), noms, referentiel,
+                              en_ligne="direct" in str(source_cours).lower())
+    for colonne in ["region", "secteur", "pays", "classe", "pea_synthetique"]:
+        positions[colonne] = positions.index.map(classement[colonne].to_dict())
     # Duration (sensibilité aux taux) des fonds obligataires, en années
     positions["duration"] = pd.to_numeric(positions.index.map(referentiel["duration"].to_dict()), errors="coerce") \
         if "duration" in referentiel.columns else float("nan")
     resume = portefeuille.resume_valorise(prix)
+    # Titres en devise : la plus-value latente séparée en effet marché et effet change
+    effet_change = decomposer_change(positions, portefeuille.transactions, prix_locaux, info_devises, taux_actuels)
+    positions["effet_change"] = effet_change["effet_change"].reindex(positions.index).fillna(0.0)
+    positions["effet_marche"] = positions["pv_latente"] - positions["effet_change"]
+    resume["effet_change"] = float(positions["effet_change"].sum())
 
     # Étape 3 (suite) : historique du portefeuille, en euros
     histo = portefeuille.historique(prix_hist)
@@ -146,5 +164,10 @@ def analyse_complete(source_csv,
         "devises": info_devises,
         "taux_actuels": taux_actuels,
         "source_cours": source_cours,
+        "date_cours": _date_du_cache(source_cours),
+        "effet_change": effet_change,
+        "alertes": portefeuille.alertes,
+        "classement": classement,
+        "cours_corriges": cours_corriges,
         "source_historique": source_hist,
     }

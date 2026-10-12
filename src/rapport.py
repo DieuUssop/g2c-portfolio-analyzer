@@ -233,10 +233,13 @@ def generer_rapport(res, destination, nom_indice, taux_sans_risque, niveau_var,
         ("Montant investi (au PRU)", euros(resume["montant_investi"])),
         ("Plus-values latentes", euros(resume["pv_latentes"], signe=True), _couleur(resume["pv_latentes"])),
         ("Plus-values réalisées", euros(resume["pv_realisees"], signe=True), _couleur(resume["pv_realisees"])),
-        ("Dividendes perçus (bruts)", euros(resume["dividendes"])),
+        ("Dividendes perçus (nets)", euros(resume["dividendes"])),
+        ("Dividendes bruts / retenues", f"{euros(resume.get('dividendes_bruts', resume['dividendes']))} / "
+                                        f"{euros(resume.get('retenues', 0))}"),
         ("Frais de courtage", euros(resume["frais_totaux"])),
         ("Source des cours", res["source_cours"].split(" (")[0]),
-    ]))
+    ] + ([("Dont effet change (titres en devise)", euros(resume["effet_change"], signe=True),
+           _couleur(resume["effet_change"]))] if resume.get("effet_change") else [])))
     story.append(PageBreak())
 
     # ---------------- Page 2 : positions ----------------

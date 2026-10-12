@@ -30,7 +30,7 @@ from pathlib import Path
 import pandas as pd
 import streamlit as st
 
-from src import config, images, langues, lecture, theme
+from src import config, images, langues, lecture, market_data, mouvements, theme
 from src import graphiques_interactifs as gi
 from src import interface as ui
 from src import (expositions, fond_de_carte, import_fichier, indices, vues_compte, vues_conseil, vues_transactions,
@@ -120,6 +120,12 @@ def graphique(figure):
 @st.cache_data(ttl=3600, show_spinner=False)
 def charger(contenu_csv, indice, taux_sans_risque, niveau_var):
     return analyse_complete(io.BytesIO(contenu_csv), indice, taux_sans_risque, niveau_var)
+
+
+@st.cache_data(show_spinner=False, ttl=86400)
+def divisions_connues(tickers):
+    """Divisions d'actions connues de Yahoo Finance (une fois par jour et par portefeuille)."""
+    return market_data.divisions(list(tickers))
 
 
 @st.cache_data(show_spinner=False, ttl=3600)
@@ -260,6 +266,16 @@ with st.sidebar:
                "(JPG, PNG). Plusieurs fichiers à la fois : "
                "leurs opérations sont réunies. Prioritaire sur le portefeuille choisi ci-dessus."),
     ) or []
+    # fichiers dont l'utilisateur a annulé la lecture (« Annuler ») : mis de côté
+    annules = [f for f in fichiers_envoyes if vues_pdf.est_annule(f.getvalue())]
+    fichiers_envoyes = [f for f in fichiers_envoyes if f not in annules]
+    for f in annules:
+        colonne_texte, colonne_bouton = st.columns([3, 2], vertical_alignment="center")
+        colonne_texte.caption(t("Lecture annulée : {nom}", nom=f.name))
+        if colonne_bouton.button(t("Reprendre"), key=f"reprendre_{f.name}", type="tertiary",
+                                 help=t("Relire ce fichier")):
+            vues_pdf.reprendre(f.getvalue())
+            st.rerun()
     fichier_envoye = fichiers_envoyes[0] if len(fichiers_envoyes) == 1 else None
     lot_envoye = fichiers_envoyes if len(fichiers_envoyes) > 1 else None
     # Emplacement réservé juste sous l'envoi : le bouton « Enregistrer dans mon espace »
@@ -429,6 +445,8 @@ try:
         res = charger(contenu, code_indice, taux_sans_risque, niveau_var)
 except Exception as erreur:  # message clair plutôt qu'un plantage
     st.error(t("Impossible d'analyser le portefeuille : {erreur}", erreur=erreur))
+    if fichier_envoye is not None:
+        vues_pdf.bouton_annuler(vues_pdf.version_lisible(fichier_envoye.getvalue()), "erreur_analyse")
     if fichier_envoye is not None and st.button(t("Ouvrir l'assistant d'import"), icon=":material/tune:",
                                                 key="assistant_erreur"):
         st.session_state["assistant_force"] = cle_import
@@ -455,8 +473,9 @@ with st.sidebar:
         (t("Fichier"), nom_fichier),
         (t("Période"), f"{date_debut} → {date_fin}"),
         (t("Opérations"), str(len(res["transactions"]))),
-        (t("Cours"), res["source_cours"] if not langues.anglais()
-         else ("Yahoo Finance (live)" if en_direct else "Local cache (Yahoo Finance unavailable)")),
+        (t("Cours"), t("Yahoo Finance (en direct)") if en_direct
+         else t("Cache local du {date} (Yahoo Finance injoignable)", date=langues.date(res["date_cours"]))
+         if res.get("date_cours") is not None else t("Cache local (Yahoo Finance injoignable)")),
     ], replie=(t("Taux de change ({n})", n=len(res["taux_actuels"])),
                [(t("1 € en {devise}", devise=devise), nombre(taux, 4))
                 for devise, taux in res["taux_actuels"].items()])))
@@ -494,6 +513,7 @@ html(ui.entete(
                  debut=date_debut, fin=date_fin, n=resume["nb_lignes"], indice=nom_court),
     source=res["source_cours"],
     date_donnees=date_fin,
+    date_cours=res.get("date_cours"),
 ))
 
 rendement_investi = resume["gain_total"] / resume["montant_investi"]
@@ -527,7 +547,7 @@ cle_calculs = (hash(contenu), code_indice, taux_sans_risque, niveau_var)
 vues_manuel.memoriser_chiffres(res)          # chiffres du portefeuille repris dans les fiches du manuel
 
 if espace == "Conseil patrimonial":
-    vues_conseil.afficher(res, cle_calculs)
+    vues_conseil.afficher(res, cle_calculs, cible_portefeuille, session_compte)
     html(ui.pied_de_page(PIED_DE_PAGE))
     st.stop()
 if espace == "Gestion d'actifs":
@@ -543,6 +563,18 @@ transparence = expositions.transparence(positions)        # ETF répartis selon 
 # 1. Vue d'ensemble
 # ----------------------------------------------------------------------
 with onglets[0]:
+    # Opérations sur titres : divisions d'actions oubliées, titres reçus sans prix (scission)
+    # (divisions connues de Yahoo Finance avec Internet ; sinon, ou si Yahoo ne la donne pas,
+    #  division déduite des cours : prix d'achat = 1 000 fois le cours ajusté, par exemple)
+    try:
+        a_ajuster = mouvements.divisions_non_appliquees(
+            res["transactions"], divisions_connues(tuple(positions.index)) if en_direct else {}, res["prix_hist"])
+    except Exception:
+        a_ajuster = []
+    if a_ajuster:
+        vues_transactions.proposer_divisions(a_ajuster, contenu, cible_portefeuille, session_compte)
+    vues_transactions.alertes_titres(res.get("alertes"))
+    vues_transactions.cours_corriges(res.get("cours_corriges"))
     gauche, droite = st.columns([2, 1], gap="medium")
     with gauche, st.container(border=True):
         html(ui.titre_section(t("Évolution du portefeuille"), t("Valeur de marché et capital investi (apports nets)")))
@@ -588,10 +620,19 @@ with onglets[0]:
 
     html(ui.grille([
         ui.carte(t("Plus-values latentes"), euros(resume["pv_latentes"], signe=True),
-                 detail=ui.pastille(t("non réalisées"), tendance(resume["pv_latentes"]))),
+                 detail=(ui.pastille(t("non réalisées"), tendance(resume["pv_latentes"]))
+                         + ((" " + t("dont effet change {montant}", montant=euros(resume["effet_change"], signe=True)))
+                            if not res["effet_change"].empty else "")),
+                 aide=t("Effet change : ce que la variation des devises a fait gagner ou perdre sur les titres "
+                        "cotés hors de la zone euro (détail dans l'onglet « Positions »)")
+                 if not res["effet_change"].empty else ""),
         ui.carte(t("Plus-values réalisées"), euros(resume["pv_realisees"], signe=True),
                  detail=ui.pastille(t("encaissées"), tendance(resume["pv_realisees"]))),
-        ui.carte(t("Dividendes et coupons"), euros(resume["dividendes"]), detail=t("Montants bruts perçus")),
+        ui.carte(t("Dividendes et coupons"), euros(resume["dividendes"]),
+                 detail=(t("Nets · brut {brut} · retenues {retenues}", brut=euros(resume["dividendes_bruts"]),
+                           retenues=euros(resume["retenues"])) if resume["retenues"] else t("Montants perçus")),
+                 aide=t("Montant net = brut − retenue à la source et prélèvements (colonne « frais » d'une ligne "
+                        "DIVIDENDE)")),
         ui.carte(t("Frais de courtage"), euros(resume["frais_totaux"]), detail=t("Depuis l'origine")),
     ]))
 
@@ -605,9 +646,15 @@ with onglets[1]:
                              "pv_latente", "pv_latente_pct", "poids_pct", "dividendes"]].reset_index()
         for colonne in ["classe", "region", "secteur"]:          # données traduites à l'affichage
             tableau[colonne] = tableau[colonne].map(td)
+        # Lignes colorées selon la plus-value latente : vert pastel (gain), rouge pastel (perte)
+        fond_gain, fond_perte = (("rgba(76, 175, 80, 0.18)", "rgba(229, 115, 115, 0.20)") if theme.nuit()
+                                 else ("#EAF6EC", "#FCEBEA"))
+        style = tableau.style.apply(
+            lambda ligne: [f"background-color: {fond_gain if ligne['pv_latente'] > 0 else fond_perte}"
+                           if ligne["pv_latente"] != 0 else ""] * len(ligne), axis=1)
         # column_config : nom affiché et format de chaque colonne.
         st.dataframe(
-            tableau, hide_index=True, width="stretch",
+            style, hide_index=True, width="stretch",
             column_config={
                 "ticker": st.column_config.TextColumn("Ticker", width="small"),
                 "nom": st.column_config.TextColumn(t("Titre"), width="medium"),
@@ -629,6 +676,8 @@ with onglets[1]:
                 "dividendes": st.column_config.NumberColumn(t("Dividendes"), format=langues.eur_colonne("%.0f")),
             },
         )
+    if not res["effet_change"].empty:
+        vues_transactions.effet_change(res["effet_change"], positions)
     with st.container(border=True):
         html(ui.titre_section(t("Plus-values latentes par ligne"), t("En euros, au dernier cours connu")))
         graphique(gi.fig_plus_values(positions))

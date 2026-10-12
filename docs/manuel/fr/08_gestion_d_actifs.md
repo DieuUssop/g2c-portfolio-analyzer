@@ -6,10 +6,11 @@ Ce chapitre présente l'espace « Gestion d'actifs », qui reprend les outils d'
 ## Que contient l'espace Gestion d'actifs ?
 <!-- fiche: gestion-presentation | questions: à quoi sert l'espace gestion d'actifs ; ou trouver le backtest ; ou est le budget de risque ; ou est l'attribution de performance ; que puis je faire dans gestion d'actifs ; différence entre gestion d'actifs et analyse du portefeuille | mots: gestion d'actifs, asset management, attribution, budget de risque, backtest, parité des risques, rééquilibrage, DCA, gérant | aller: Gestion d'actifs -->
 
-L'espace **Gestion d'actifs** se choisit dans le menu « Espace de travail » de la barre latérale. Il analyse le même portefeuille, avec les mêmes paramètres, que l'espace « Analyse du portefeuille ». Il comprend trois onglets.
+L'espace **Gestion d'actifs** se choisit dans le menu « Espace de travail » de la barre latérale. Il analyse le même portefeuille, avec les mêmes paramètres, que l'espace « Analyse du portefeuille ». Il comprend quatre onglets.
 
 | Onglet | Question à laquelle il répond |
 |---|---|
+| Performance par classe et secteur | Quelle classe d'actifs (actions, obligations, or…) et quel secteur ont rapporté le plus, ou coûté le plus ? |
 | Attribution de performance | Pourquoi le portefeuille a-t-il fait mieux (ou moins bien) qu'un indice mondial ? Choix des régions ou choix des titres ? |
 | Budget de risque | Quelles lignes apportent le plus de risque ? Que donnerait une répartition où chaque ligne apporte autant de risque ? |
 | Backtest de stratégies | Aurait-il mieux valu rééquilibrer régulièrement ? Investir en une fois ou progressivement ? |
@@ -22,6 +23,42 @@ L'espace **Gestion d'actifs** se choisit dans le menu « Espace de travail » de
 - Les principaux résultats figurent aussi dans le rapport PDF (backtest avec 0,1 % de frais et comparaison sur 10 000 € en 12 mois).
 
 En cas d'erreur, chaque onglet affiche un message « … indisponible » suivi de la cause, sans bloquer les autres.
+
+## Performance par classe d'actifs et par secteur
+<!-- fiche: gestion-classe-secteur | questions: performance par classe d'actifs ; quel secteur a le plus rapporté ; contribution de chaque secteur ; rendement des obligations de mon portefeuille ; performance de mes actions et de mes obligations séparément ; c'est quoi la contribution ; méthode de dietz modifiée ; tableau par classe et par secteur | mots: performance par classe d'actifs, performance par secteur, contribution, rendement, Dietz modifiée, capital moyen engagé, gain, classe, secteur | aller: Gestion d'actifs -->
+
+Le premier onglet de l'espace [[Gestion d'actifs]], **Performance par classe et secteur**, montre ce que chaque classe d'actifs (actions, obligations, or, monétaire) et chaque secteur d'activité a rapporté depuis l'ouverture du portefeuille, **titres vendus compris**.
+
+### Les colonnes
+
+| Colonne | Signification |
+|---|---|
+| Lignes | Nombre de titres du groupe (détenus ou vendus) |
+| Poids actuel | Part de la valeur actuelle du portefeuille |
+| Valeur | Valeur actuelle du groupe |
+| Gain | Plus-values latentes et réalisées + dividendes nets, frais déduits |
+| Rendement | Gain ÷ capital moyen engagé dans le groupe |
+| Contribution | Part de la performance du portefeuille apportée par le groupe |
+
+Les lignes sont en vert pastel quand le groupe a gagné, en rouge pastel quand il a perdu. Quatre cartes résument : le rendement du portefeuille, la meilleure classe, le meilleur secteur et le secteur le plus pénalisant.
+
+### Le calcul (méthode de Dietz modifiée)
+
+Pour un groupe, chaque flux F (achat et frais en +, vente et dividende net en −) est pondéré par la part de la période qui reste après lui :
+
+```
+gain         = valeur actuelle − Σ F
+D (groupe)   = Σ F × (jours restants après le flux / jours de la période)
+rendement    = gain / D (groupe)
+contribution = gain / D (portefeuille)        D (portefeuille) = somme des D des groupes
+```
+
+Les contributions **s'additionnent** : leur somme est le rendement (Dietz) du portefeuille entier. Un groupe peut avoir un bon rendement mais une petite contribution s'il pèse peu.
+
+### À savoir
+
+- Les ETF sont classés selon l'indice qu'ils suivent : un ETF sur un indice large est dans le secteur « ETF diversifié » (son détail par secteur est dans l'onglet Expositions, en transparence).
+- Ce rendement pondéré par l'argent n'est pas le TWR de l'onglet Performance, qui neutralise les apports.
 
 ## L'attribution de performance de Brinson-Fachler
 <!-- fiche: gestion-brinson-fachler | questions: pourquoi mon portefeuille a fait moins bien que l'indice ; c'est quoi l'effet allocation ; c'est quoi l'effet sélection ; effet interaction explication ; comment lire l'attribution de performance ; brinson fachler formule ; est ce que j'ai bien choisi mes titres ou mes régions ; d'où vient ma surperformance | mots: attribution de performance, Brinson-Fachler, effet allocation, effet sélection, effet interaction, surperformance, sous-performance, écart à l'indice, régions | aller: Gestion d'actifs/Attribution de performance | chiffres: twr_total -->

@@ -107,17 +107,17 @@ Le format du projet ne connaît que trois types d'opération. Chacun utilise les
 |---|---|---|---|
 | `ACHAT` | Nombre de titres achetés | Prix unitaire d'achat (devise de cotation) | Frais de courtage en euros |
 | `VENTE` | Nombre de titres vendus (positif) | Prix unitaire de vente (devise de cotation) | Frais de courtage en euros |
-| `DIVIDENDE` | 0 | **Montant total reçu** pour la ligne (devise de cotation) | Frais éventuels en euros (souvent 0) |
+| `DIVIDENDE` | 0 | **Montant brut total** de la ligne (devise de cotation) | Retenues : retenue à la source, prélèvements, frais (même devise que le montant) |
 
 ### Le cas du dividende
 
-Pour un dividende, la colonne `prix` ne contient pas le dividende par action mais le **montant total** encaissé. Exemple : 3 actions LVMH avec un dividende de 13 € par action donnent la ligne `2024-05-22,DIVIDENDE,MC.PA,LVMH,0,39.00,0.00` (3 × 13 = 39). Le montant est lui aussi exprimé dans la devise de cotation : en dollars pour une action américaine, en pence pour une action de Londres. Le logiciel ajoute ce montant, diminué de la colonne `frais`, au total des dividendes du titre. Les coupons d'obligations et les distributions d'ETF se saisissent de la même façon.
+Pour un dividende, la colonne `prix` ne contient pas le dividende par action mais le **montant total** encaissé. Exemple : 3 actions LVMH avec un dividende de 13 € par action donnent la ligne `2024-05-22,DIVIDENDE,MC.PA,LVMH,0,39.00,0.00` (3 × 13 = 39). Le montant est lui aussi exprimé dans la devise de cotation : en dollars pour une action américaine, en pence pour une action de Londres. Mettez dans `prix` le montant **brut** et dans `frais` ce qui a été retenu (retenue à la source étrangère, prélèvements sociaux, prélèvement forfaitaire, frais de l'établissement), dans la même devise que le montant. Le logiciel compte le **net** (brut − retenues) dans les dividendes du titre, et affiche à part le brut et les retenues ; les retenues ne sont pas comptées dans les frais de courtage. Exemple : 50 Apple, dividende brut 12,00 $, retenue à la source 1,80 $, prélèvements 1,50 $ : `2024-05-15,DIVIDENDE,AAPL,Apple,0,12.00,3.30` (net 8,70 $). Les coupons d'obligations et les distributions d'ETF se saisissent de la même façon. Un avis de dividende en PDF est lu de cette façon : brut, retenues lues à leurs intitulés (« Retenue à la source », « Prélèvements sociaux », Quellensteuer, withholding tax…) ou, à défaut, brut − net, avec le contrôle `brut − retenues − frais = net`.
 
 ### Comment les frais sont comptés
 
 - **Achat** : les frais entrent dans le prix de revient unitaire. `Nouveau PRU = (quantité détenue × ancien PRU + quantité achetée × prix + frais) / nouvelle quantité`. Exemple : 3 LVMH achetées à 780 € avec 2 € de frais donnent un PRU de (3 × 780 + 2) / 3 = 780,67 €.
 - **Vente** : les frais diminuent la plus-value réalisée. `Plus-value = quantité vendue × (prix de vente − PRU) − frais`.
-- Les frais de toutes les opérations sont additionnés dans l'indicateur « Frais de courtage ».
+- Les frais des achats et des ventes sont additionnés dans l'indicateur « Frais de courtage » (les retenues sur dividendes sont comptées à part).
 
 ### Une vente ne peut pas dépasser la quantité détenue
 
@@ -724,7 +724,7 @@ Certains courtiers produisent un relevé où **chaque ligne porte une opération
 - Sur chaque ligne, il cherche les trois nombres qui vérifient **quantité × cours = montant** au centime près. Exemple : `7 × 33,4540 = 234,18`.
 - La commission est le petit nombre décimal qui suit le montant (moins de 5 % du montant).
 - Une vente est reconnue au mot SELL / vente, ou au signe « − » de la quantité.
-- Un symbole suivi d'une minuscule ajoutée par le courtier (« LYSXd ») est ramené au symbole (« LYSX »). Le titre est ensuite identifié par ses cours (la place de cotation dont les prix collent aux prix du relevé), ou par le moteur de recherche.
+- Un symbole suivi d'une minuscule ajoutée par le courtier (« LYSXd ») est ramené au symbole (« LYSX »). « ESEEd », le symbole d'Interactive Brokers pour le BNP Paribas Easy S&P 500 coté à Paris, souvent lu « ESEED » par la reconnaissance de caractères, est ramené à « ESE » (ESE.PA). Le titre est ensuite identifié par ses cours (la place de cotation dont les prix collent aux prix du relevé), ou par le moteur de recherche.
 - Le relevé n'est retenu que si **toutes** ses lignes d'opération sont cohérentes ; sinon le formulaire « Compléter l'opération » prend le relais.
 
 ### Relevé imprimé en « mode sombre »
@@ -850,6 +850,10 @@ En validant un achat ou une vente, vous apprenez au logiciel à lire ce type de 
 ### Rien n'est inventé
 
 Chaque valeur proposée figure dans le document. Si le PDF ne contient aucun texte lisible (scan sans moteur de reconnaissance de caractères), le formulaire l'indique : « Aucun texte lisible dans ce document : saisissez l'opération à la main. ».
+
+### Annuler
+
+Le bouton [[Annuler]], en haut à droite du formulaire (et de l'assistant d'import, ou à côté d'un message d'erreur), abandonne la lecture du fichier sans rien enregistrer et revient au portefeuille affiché avant. Le fichier reste dans la zone d'envoi, mis de côté (« Lecture annulée : … ») : [[Reprendre]] le relit, la croix de la zone d'envoi le retire.
 
 ## Le logiciel apprend vos avis d'opéré : les modèles appris
 <!-- fiche: import-pdf-modeles-appris | questions: le logiciel apprend il mes avis d'opéré ; je dois remplir le formulaire à chaque fois pour le même courtier ; c'est quoi un modèle appris ; avis lu avec le modèle appris lors d'une saisie précédente ; où est stocké modeles_pdf.json ; le modèle garde t il mes montants ; sens S ou A sur mon avis d'opéré ; pourquoi le formulaire revient alors que j'ai déjà rempli ce type d'avis ; oublier un modèle appris | mots: modèle appris, apprentissage, modeles_pdf.json, intitulés, empreinte, hachage, code de sens, pdf_modele, mise en page -->
@@ -1262,9 +1266,13 @@ Cliquez sur [[Enregistrer les opérations]]. Les opérations retenues sont fusio
 ## Division ou regroupement d'actions : ajuster les opérations antérieures
 <!-- fiche: import-division-actions | questions: mon action a fait un split comment le saisir ; division d'actions par 4 que faire ; regroupement d'actions 10 pour 1 ; avis d'opération sur titres pdf ; appliquer aux opérations antérieures ça fait quoi ; après une division ma valeur est fausse ; reverse split ; parité 1 ancienne pour 4 nouvelles ; comment corriger mes quantités après un split | mots: division d'actions, split, regroupement, reverse split, opération sur titres, OST, parité, nominal, ajustement, Appliquer aux opérations antérieures -->
 
-Après une **division** (« split ») ou un **regroupement** d'actions, Yahoo Finance corrige rétroactivement ses cours. Vos anciennes opérations, elles, sont toujours exprimées dans les anciennes unités : il faut les ajuster. Le logiciel le fait à partir de l'avis d'opération sur titres envoyé par votre courtier.
+Après une **division** (« split ») ou un **regroupement** d'actions, Yahoo Finance corrige rétroactivement ses cours. Vos anciennes opérations, elles, sont toujours exprimées dans les anciennes unités : il faut les ajuster. Le logiciel le détecte seul avec Internet, et le fait aussi à partir de l'avis d'opération sur titres envoyé par votre courtier.
 
-### Comment faire
+### Détection automatique
+
+Avec Internet, le logiciel connaît les divisions de chaque titre détenu (données de Yahoo Finance) et vérifie vos opérations : si le prix d'un achat d'avant la division vaut environ le facteur de division fois le cours ajusté de ce jour-là (10 fois pour une division par 10), c'est que l'opération est restée dans les anciennes unités. Un encadré **Division ou regroupement d'actions détecté** apparaît alors en haut de la [[Vue d'ensemble]], par exemple « Division le 10/06/2024 : 1 ancienne → 10 nouvelles (3 opération(s) antérieure(s)). ». Le bouton « Ajuster les opérations de … » applique la conversion décrite plus bas, après votre clic : rien n'est modifié sans votre accord. Si vos prix collent déjà au cours ajusté, rien n'est proposé.
+
+### Comment faire (avec l'avis du courtier)
 
 1. Ouvrez la page [[Ajouter des opérations]] du portefeuille, onglet [[Depuis un fichier]].
 2. Déposez l'avis de division ou de regroupement (PDF texte) dans la zone [[Fichiers (CSV, Excel, PDF ou image)]].
@@ -1300,7 +1308,28 @@ L'ajustement est enregistré comme les autres modifications : le message « … 
 
 ### Si l'avis n'est pas reconnu
 
-Sans opération du titre avant la date d'effet, l'encadré indique qu'il n'y a rien à ajuster. Si l'avis n'est pas lu (scan, parité absente), corrigez vous-même dans l'onglet Transactions avec [[Modifier les opérations]] : quantité multipliée et prix divisé par le même facteur. Les autres opérations sur titres (fusions, scissions, attributions gratuites) ne sont pas traitées automatiquement.
+Sans opération du titre avant la date d'effet, l'encadré indique qu'il n'y a rien à ajuster. Si l'avis n'est pas lu (scan, parité absente), corrigez vous-même dans l'onglet Transactions avec [[Modifier les opérations]] : quantité multipliée et prix divisé par le même facteur. Les fusions et changements de code ne sont pas traités automatiquement ; pour les scissions et attributions gratuites, voir la fiche suivante.
+
+### Regroupement que Yahoo ne signale pas (exemple ORPEA)
+
+Certains regroupements ne figurent pas dans les données de division de Yahoo Finance, ou Yahoo n'a même pas ajusté son historique. Exemple réel : 2 000 actions ORPEA achetées 0,0145 € en décembre 2023, puis regroupement de 1 000 actions en 1. Sans correction, le logiciel valorisait 2 000 actions au cours d'aujourd'hui (environ 12 €), soit près de 24 000 € au lieu de 2 actions.
+
+- **Division déduite des cours** : si le prix de vos opérations vaut un facteur rond (au moins ×5 ou ÷5 : 10, 1 000, 1/1 000…) fois le cours ajusté du jour, et que les opérations suivantes collent au cours, l'encadré « Division ou regroupement d'actions détecté » le propose (« Regroupement constaté d'après les cours (date exacte inconnue) : 1 000 anciennes → 1 nouvelle »), même hors connexion.
+- **Historique non ajusté par Yahoo** : un cours qui fait un bond d'un facteur rond d'au moins ×10 d'un jour à l'autre, et reste à ce niveau, est un regroupement non ajusté ; les cours d'avant sont ramenés dans les nouvelles unités pour les calculs, et une note le signale. Une chute de 90 % n'est jamais « corrigée » : elle peut être réelle.
+
+## Scission (spin-off) ou attribution gratuite : un titre sans prix d'achat
+<!-- fiche: import-scission | questions: scission spin off comment saisir ; j'ai reçu des actions gratuites ; titre reçu sans prix d'achat ; pru de zéro ; vente d'un titre jamais acheté ; vente impossible titre jamais acheté ; titres reçus sans prix ; répartir le pru après une scission | mots: scission, spin-off, attribution gratuite, actions gratuites, PRU nul, prix de revient nul, vente sans achat, clé de répartition, alerte -->
+
+Lors d'une **scission** (par exemple une société qui sépare une de ses activités et vous en donne des actions) ou d'une **attribution gratuite**, vous recevez des titres sans les avoir achetés.
+
+### Ce que fait le logiciel
+
+- Une ligne saisie comme un achat à prix 0, ou détenue sans aucun achat payant, est signalée en haut de la [[Vue d'ensemble]] : « … titre(s) détenu(s) sans prix d'achat (PRU de 0) — toute sa valeur compte comme plus-value. »
+- Une **vente** d'un titre jamais acheté n'arrête plus l'analyse : les titres sont comptés reçus à un prix de revient nul (toute la vente est une plus-value réalisée), et l'encadré le signale.
+
+### Pour un calcul juste
+
+Le prix de revient de la société d'origine doit être **réparti** entre les deux titres, selon la clé publiée par l'émetteur (et retenue par l'administration fiscale). Exemple : 100 actions A achetées 50 € (coût 5 000 €) ; la scission attribue 100 actions B, avec une clé de 80 % pour A et 20 % pour B. Corrigez dans l'onglet Transactions avec [[Modifier les opérations]] : l'achat de A passe à 40 € (4 000 €), et ajoutez l'achat de 100 B à 10 € (1 000 €) à la date de la scission. Le montant total investi reste 5 000 €.
 
 ## Saisir un ordre à la main
 <!-- fiche: import-saisie-manuelle | questions: comment saisir un achat à la main ; ajouter une opération manuellement ; saisie manuelle d'un dividende ; je n'ai pas de fichier je veux taper mon ordre ; quel prix mettre dans la saisie manuelle ; titre introuvable en saisie manuelle ; saisir un ordre avec l'isin ; le prix est en euros ou en dollars dans la saisie | mots: saisie manuelle, formulaire, ordre, ajout manuel, ticker, ISIN, code Bloomberg, Ajouter à la liste -->

@@ -296,7 +296,7 @@ Dans les espaces d'analyse, la zone principale commence par un bandeau bleu.
 | Pastille | Signification |
 |---|---|
 | Point vert, « Cours en direct · Yahoo Finance » | Les derniers cours ont été téléchargés auprès de Yahoo Finance lors de l'analyse |
-| Point orange, « Cours en cache (hors ligne) » | Yahoo Finance n'a pas répondu : le logiciel utilise les derniers cours enregistrés sur l'ordinateur |
+| Point orange, « Hors ligne · cours du 08/10/2026 » | Yahoo Finance n'a pas répondu : le logiciel utilise les derniers cours enregistrés sur l'ordinateur, à la date indiquée (« Cours en cache (hors ligne) » si cette date est inconnue) |
 
 Sous la pastille, la mention « Données au » donne la date du dernier cours de l'historique : c'est la date à laquelle le portefeuille est valorisé.
 

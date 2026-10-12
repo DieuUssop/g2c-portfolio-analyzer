@@ -78,6 +78,9 @@ def _consultation(transactions, choix_types, choix_titres):
             "devise": st.column_config.TextColumn(t("Devise")),
             "prix_devise": st.column_config.NumberColumn(t("Prix en devise"), format="%.2f",
                                                          help=t("Prix saisi, avant conversion en euros")),
+            "taux_change": st.column_config.NumberColumn(t("Taux de change"), format="%.4f",
+                                                         help=t("1 € en devise, le jour de l'opération (taux "
+                                                                "utilisé pour la conversion en euros)")),
         },
     )
     # Le fichier téléchargé garde le format d'origine (types ACHAT / VENTE / DIVIDENDE)
@@ -227,3 +230,121 @@ def _bouton_annuler(cible, session_compte):
                     fusion["contenu"], fusion["precedent"] = fusion["precedent"], None
                 st.session_state["edition_operations"] = False
                 st.rerun()
+
+
+# ----------------------------------------------------------------------
+# Effet marché et effet change (titres cotés hors zone euro)
+# ----------------------------------------------------------------------
+def effet_change(tableau, positions):
+    """Plus-value latente des titres en devise, séparée en effet marché et effet change."""
+    from .interface import euros
+    lignes = tableau.join(positions[["nom"]]).reset_index()
+    total_change, total_marche = lignes["effet_change"].sum(), lignes["effet_marche"].sum()
+    with st.container(border=True):
+        html(ui.titre_section(
+            t("Effet marché et effet change"),
+            t("Titres cotés hors zone euro · effet change total {change}, effet marché {marche}",
+              change=euros(total_change, signe=True), marche=euros(total_marche, signe=True))))
+        st.dataframe(
+            lignes[["ticker", "nom", "devise", "taux_achat", "taux_actuel", "effet_marche", "effet_change",
+                    "pv_latente"]],
+            hide_index=True, width="stretch",
+            column_config={
+                "ticker": st.column_config.TextColumn("Ticker", width="small"),
+                "nom": st.column_config.TextColumn(t("Titre")),
+                "devise": st.column_config.TextColumn(t("Devise"), width="small"),
+                "taux_achat": st.column_config.NumberColumn(
+                    t("Taux à l'achat"), format="%.4f",
+                    help=t("1 € en devise : taux moyen des achats encore détenus")),
+                "taux_actuel": st.column_config.NumberColumn(t("Taux actuel"), format="%.4f",
+                                                             help=t("1 € en devise aujourd'hui")),
+                "effet_marche": st.column_config.NumberColumn(
+                    t("Effet marché"), format=langues.eur_colonne("%+.0f"),
+                    help=t("Gain du titre dans sa devise, compté au taux d'achat (frais d'achat déduits)")),
+                "effet_change": st.column_config.NumberColumn(
+                    t("Effet change"), format=langues.eur_colonne("%+.0f"),
+                    help=t("Gain ou perte dû à la variation de la devise depuis l'achat")),
+                "pv_latente": st.column_config.NumberColumn(t("+/- value"), format=langues.eur_colonne("%+.0f")),
+            },
+        )
+        st.caption(t("Effet change = quantité × cours en devise × (1 / taux actuel − 1 / taux à l'achat). "
+                     "Une devise qui baisse face à l'euro (taux qui monte) donne un effet change négatif."))
+
+
+# ----------------------------------------------------------------------
+# Opérations sur titres : divisions d'actions non appliquées, titres reçus sans prix (scission)
+# ----------------------------------------------------------------------
+def _sauver(nouveau, contenu_actuel, cible, session_compte, message):
+    contenu = mouvements.en_csv(nouveau)
+    if cible["type"] == "perso" and session_compte is not None:
+        session_compte.enregistrer(cible["nom"], contenu, identifiant=cible["id"], garder_precedente=True)
+    else:
+        st.session_state["fusion_session"] = {"origine": cible["origine"], "contenu": contenu, "nom": cible["nom"],
+                                              "precedent": contenu_actuel}
+        message += " " + t("Téléchargez le fichier mis à jour pour le garder.")
+    st.session_state["message_compte"] = message
+    st.session_state["message_transactions"] = message
+    st.rerun()
+
+
+def proposer_divisions(divisions, contenu, cible, session_compte):
+    """Divisions d'actions connues de Yahoo Finance que le fichier n'a pas prises en compte :
+    explication et bouton pour ajuster les opérations antérieures (après confirmation)."""
+    par_titre = {}
+    for d in divisions:
+        par_titre.setdefault(d["ticker"], []).append(d)
+    for ticker, liste in par_titre.items():
+        with st.container(border=True):
+            html(ui.titre_section(t("Division ou regroupement d'actions détecté"), f"{liste[0]['nom']} ({ticker})"))
+            for d in liste:
+                parite = (t("1 ancienne → {n} nouvelles", n=f"{d['facteur']:g}") if d["facteur"] > 1
+                          else t("{n} anciennes → 1 nouvelle", n=f"{1 / d['facteur']:g}"))
+                if d.get("deduite"):
+                    st.write(t("{nature} constaté d'après les cours (date exacte inconnue) : {parite} — {n} opération(s) "
+                               "à convertir, jusqu'au {date}.",
+                               nature=t("Division") if d["facteur"] > 1 else t("Regroupement"), parite=parite,
+                               n=d["operations"], date=(d["date"] - pd.Timedelta(days=1)).strftime("%d/%m/%Y")))
+                else:
+                    st.write(t("{nature} le {date} : {parite} ({n} opération(s) antérieure(s)).",
+                               nature=t("Division") if d["facteur"] > 1 else t("Regroupement"),
+                               date=d["date"].strftime("%d/%m/%Y"), parite=parite, n=d["operations"]))
+            st.caption(t("Vos prix d'achat d'avant cette date sont dans les anciennes unités, alors que les cours de "
+                         "Yahoo Finance sont ajustés : quantités, valeur et plus-values sont faussées. Ajuster convertit "
+                         "ces opérations (quantité × facteur, prix ÷ facteur) ; le montant investi ne change pas."))
+            if st.button(t("Ajuster les opérations de {ticker}", ticker=ticker), type="primary",
+                         key=f"division_{ticker}", icon=":material/call_split:"):
+                tableau, total = contenu, 0
+                for d in liste:
+                    tableau, n = mouvements.appliquer_division(tableau, ticker, d["date"], d["facteur"])
+                    total += n
+                _sauver(tableau, contenu, cible, session_compte,
+                        t("{n} opération(s) de {ticker} ajustée(s) (division d'actions).", n=total, ticker=ticker))
+
+
+def alertes_titres(alertes):
+    """Titres reçus sans prix d'achat (scission / spin-off, attribution gratuite) : signalés
+    au lieu d'arrêter le calcul."""
+    if not alertes:
+        return
+    lignes = []
+    for a in alertes:
+        if a["type"] == "pru_nul":
+            lignes.append(t("{nom} ({ticker}) : {q:g} titre(s) détenu(s) sans prix d'achat (PRU de 0) — toute sa "
+                            "valeur compte comme plus-value.", nom=a["nom"], ticker=a["ticker"], q=a["quantite"]))
+        elif a["type"] == "vente_sans_achat":
+            lignes.append(t("{nom} ({ticker}) : vente de {q:g} titre(s) le {date} sans achat enregistré — comptés "
+                            "reçus à un prix de revient nul.", nom=a["nom"], ticker=a["ticker"], q=a["quantite"],
+                            date=a["date"].strftime("%d/%m/%Y")))
+    html(ui.note(t("Titres reçus sans prix d'achat (scission, attribution gratuite ?)") + " : " + " ".join(lignes)
+                 + " " + t("Pour un calcul juste, répartissez le prix de revient de la société d'origine entre les "
+                           "deux titres selon la clé publiée par l'émetteur, avec « Modifier les opérations » dans "
+                           "l'onglet « Transactions »."), attention=True))
+
+
+def cours_corriges(notes):
+    """Historique de cours corrigé (regroupement non ajusté par Yahoo Finance) : on le dit."""
+    for n in notes or []:
+        html(ui.note(t("{ticker} : le cours fait un bond de ×{f} le {date} sans que Yahoo Finance l'ait ajusté "
+                       "(regroupement d'actions). Les cours d'avant cette date ont été ramenés dans les nouvelles "
+                       "unités pour les calculs.", ticker=n["ticker"], f=f"{n['facteur']:g}",
+                       date=n["date"].strftime("%d/%m/%Y"))))

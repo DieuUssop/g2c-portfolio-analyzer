@@ -107,11 +107,11 @@ The project format knows only three transaction types. Each uses the columns in 
 |---|---|---|---|
 | `ACHAT` | Number of securities bought | Unit purchase price (trading currency) | Brokerage fees in euros |
 | `VENTE` | Number of securities sold (positive) | Unit selling price (trading currency) | Brokerage fees in euros |
-| `DIVIDENDE` | 0 | **Total amount received** for the row (trading currency) | Any fees in euros (often 0) |
+| `DIVIDENDE` | 0 | **Total gross amount** of the row (trading currency) | Amounts withheld: withholding tax, levies, fees (same currency as the amount) |
 
 ### The case of the dividend
 
-For a dividend, the `prix` column does not contain the dividend per share but the **total amount** received. Example: 3 LVMH shares with a dividend of €13 per share give the row `2024-05-22,DIVIDENDE,MC.PA,LVMH,0,39.00,0.00` (3 × 13 = 39). The amount is also expressed in the trading currency: in dollars for a US share, in pence for a London share. The software adds this amount, less the `frais` column, to the security's total dividends. Bond coupons and ETF distributions are entered in the same way.
+For a dividend, the `prix` column does not contain the dividend per share but the **total amount** received. Example: 3 LVMH shares with a dividend of €13 per share give the row `2024-05-22,DIVIDENDE,MC.PA,LVMH,0,39.00,0.00` (3 × 13 = 39). The amount is also expressed in the trading currency: in dollars for a US share, in pence for a London share. Put the **gross** amount in `prix` and what was withheld in `frais` (foreign withholding tax, social levies, flat-rate levy, institution's fees), in the same currency as the amount. The software counts the **net** (gross − withheld) in the security's dividends, and shows the gross and the amounts withheld separately; withheld amounts are not counted as brokerage fees. Example: 50 Apple shares, gross dividend $12.00, withholding tax $1.80, levies $1.50: `2024-05-15,DIVIDENDE,AAPL,Apple,0,12.00,3.30` (net $8.70). Bond coupons and ETF distributions are entered in the same way. A dividend notice in PDF is read this way: gross, amounts withheld read from their labels (« Retenue à la source », « Prélèvements sociaux », Quellensteuer, withholding tax…) or, failing that, gross − net, with the check `gross − withheld − fees = net`.
 
 ### How fees are counted
 
@@ -724,7 +724,7 @@ Some brokers produce a statement where **each line holds a complete transaction*
 - On each line, it looks for the three numbers that satisfy **quantity × price = amount** to the cent. Example: `7 × 33.4540 = 234.18`.
 - The commission is the small decimal number after the amount (less than 5% of the amount).
 - A sale is recognised by the word SELL / vente, or by the "−" sign of the quantity.
-- A symbol followed by a lowercase letter added by the broker ("LYSXd") is reduced to the symbol ("LYSX"). The security is then identified by its prices (the exchange whose prices match those of the statement), or by the search engine.
+- A symbol followed by a lowercase letter added by the broker ("LYSXd") is reduced to the symbol ("LYSX"). « ESEEd », Interactive Brokers' symbol for the BNP Paribas Easy S&P 500 listed in Paris, often read « ESEED » by character recognition, is brought back to « ESE » (ESE.PA). The security is then identified by its prices (the exchange whose prices match those of the statement), or by the search engine.
 - The statement is used only if **all** its transaction lines are consistent; otherwise the "Complete the transaction" form takes over.
 
 ### Statement printed in "dark mode"
@@ -850,6 +850,10 @@ When you confirm a purchase or a sale, you teach the software to read this type 
 ### Nothing is invented
 
 Every suggested value appears in the document. If the PDF contains no readable text (a scan with no character recognition engine), the form says so: "No readable text in this document: enter the transaction by hand.".
+
+### Cancel
+
+The [[Cancel]] button, at the top right of the form (and of the import assistant, or next to an error message), gives up reading the file without saving anything and goes back to the portfolio shown before. The file stays in the upload area, set aside (« Reading cancelled: … »): [[Resume]] reads it again, the cross in the upload area removes it.
 
 ## The software learns your trade confirmations: learned models
 <!-- fiche: import-pdf-modeles-appris | questions: does the software learn my trade confirmations ; do I have to fill in the form every time for the same broker ; what is a learned model ; confirmation read with the model learned from a previous entry ; where is modeles_pdf.json stored ; does the model keep my amounts ; direction S or A on my confirmation ; why does the form come back when I already filled in this type of confirmation ; forget a learned model | mots: learned model, learning, modeles_pdf.json, headings, fingerprint, hashing, direction code, pdf_modele, layout -->
@@ -1264,7 +1268,11 @@ Click [[Save transactions]]. The selected transactions are merged with the exist
 
 After a **stock split** or a **reverse split** (share consolidation), Yahoo Finance corrects its prices retroactively. Your old transactions, however, are still expressed in the old units: they must be adjusted. The software does it from the corporate action notice sent by your broker.
 
-### How to do it
+### Automatic detection
+
+With Internet, the software knows the splits of each security held (Yahoo Finance data) and checks your transactions: if the price of a purchase before the split is about the split factor times the adjusted price of that day (10 times for a 10-for-1 split), the transaction is still in the old units. A **Stock split or reverse split detected** box then appears at the top of the [[Overview]], for example « Division on 10/06/2024: 1 old → 10 new (3 earlier transaction(s)). ». The « Adjust the … transactions » button applies the conversion described below, after your click: nothing is changed without your agreement. If your prices already match the adjusted price, nothing is suggested.
+
+### How to do it (with the broker's notice)
 
 1. Open the portfolio's [[Add transactions]] page, [[From a file]] tab.
 2. Drop the split or reverse split notice (text PDF) into the [[Files (CSV, Excel, PDF or image)]] area.
@@ -1300,7 +1308,28 @@ The adjustment is saved like other changes: the message "… transaction(s) of �
 
 ### If the notice is not recognised
 
-With no transaction of the security before the effective date, the box says there is nothing to adjust. If the notice is not read (scan, ratio missing), correct it yourself in the Transactions tab with [[Edit transactions]]: quantity multiplied and price divided by the same factor. Other corporate actions (mergers, spin-offs, free share allotments) are not handled automatically.
+With no transaction of the security before the effective date, the box says there is nothing to adjust. If the notice is not read (scan, ratio missing), correct it yourself in the Transactions tab with [[Edit transactions]]: quantity multiplied and price divided by the same factor. Mergers and ticker changes are not handled automatically; for spin-offs and free share allotments, see the next fiche.
+
+### Reverse split not reported by Yahoo (ORPEA example)
+
+Some reverse splits are missing from Yahoo Finance's split data, or Yahoo has not even adjusted its history. Real example: 2,000 ORPEA shares bought at €0.0145 in December 2023, then a 1,000-for-1 reverse split. Without correction, the software valued 2,000 shares at today's price (about €12), nearly €24,000 instead of 2 shares.
+
+- **Split deduced from prices**: if the price of your transactions is a round factor (at least ×5 or ÷5: 10, 1,000, 1/1,000…) times the day's adjusted price, and later transactions match the price, the « Stock split or reverse split detected » box suggests it (« Reverse split found from the prices (exact date unknown): 1,000 old → 1 new »), even offline.
+- **History not adjusted by Yahoo**: a price that jumps by a round factor of at least ×10 from one day to the next, and stays there, is an unadjusted reverse split; earlier prices are brought into the new units for the calculations, and a note says so. A 90% fall is never « corrected »: it may be real.
+
+## Spin-off or free allotment: a security without a purchase price
+<!-- fiche: import-scission | questions: how to enter a spin-off ; I received free shares ; security received without a purchase price ; cost price of zero ; sale of a security never bought ; impossible sale security never bought ; securities received without a price ; split the cost price after a spin-off | mots: spin-off, demerger, free allotment, bonus shares, zero PRU, zero cost price, sale without purchase, allocation ratio, alert -->
+
+In a **spin-off** (for example a company that separates one of its businesses and gives you shares in it) or a **free allotment**, you receive securities without having bought them.
+
+### What the software does
+
+- A holding entered as a purchase at price 0, or held without any paid purchase, is flagged at the top of the [[Overview]]: « … share(s) held without a purchase price (cost price of 0) — its whole value counts as a gain. »
+- A **sale** of a security never bought no longer stops the analysis: the securities are counted as received at a zero cost price (the whole sale is a realised gain), and the box says so.
+
+### For a correct calculation
+
+The cost price of the original company must be **split** between the two securities, using the ratio published by the issuer (and accepted by the tax authorities). Example: 100 shares of A bought at €50 (cost €5,000); the spin-off allots 100 shares of B, with a ratio of 80% for A and 20% for B. Correct it in the Transactions tab with [[Edit transactions]]: the purchase of A becomes €40 (€4,000), and add the purchase of 100 B at €10 (€1,000) on the spin-off date. The total amount invested remains €5,000.
 
 ## Entering an order by hand
 <!-- fiche: import-saisie-manuelle | questions: how do I enter a purchase by hand ; add a transaction manually ; manual entry of a dividend ; I have no file I want to type my order ; which price do I put in manual entry ; security not found in manual entry ; enter an order with the isin ; is the price in euros or dollars in the entry form | mots: manual entry, form, order, manual addition, ticker, ISIN, Bloomberg code, Add to the list -->

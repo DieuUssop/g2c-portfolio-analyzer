@@ -106,6 +106,9 @@ def page(session_compte, importer):
                                     type=["csv", "xlsx", "pdf"] + images.EXTENSIONS,
                                     accept_multiple_files=True, key="ops_fichiers")
         for f in fichiers or []:
+            if vues_pdf.est_annule(f.getvalue()):
+                st.caption(t("Lecture annulée : {nom}", nom=f.name))
+                continue
             brut = vues_pdf.version_lisible(f.getvalue())          # PDF déchiffré si mot de passe donné
             empreinte = hashlib.md5(brut).hexdigest()[:12]
             if any(a.get("source") == empreinte for a in ajoutees):

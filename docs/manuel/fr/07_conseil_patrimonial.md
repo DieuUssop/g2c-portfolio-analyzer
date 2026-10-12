@@ -94,7 +94,7 @@ après 5 ans : impôt sur le revenu = 0
 prélèvements sociaux = 18,6 % × base                   (dans tous les cas)
 ```
 
-L'ancienneté est mesurée de la date de votre **première opération** à la dernière date de l'historique, divisée par 365,25 jours.
+L'ancienneté compte à partir de la **date d'ouverture du PEA** (et, pour l'assurance-vie, de sa **date de souscription**), pas de la date du premier ordre : un PEA ouvert en 2018 avec un premier achat en 2022 a déjà plus de 5 ans. Saisissez ces deux dates dans l'encadré « Hypothèses » de l'onglet Fiscalité ([[Date d'ouverture du PEA]], [[Date de souscription de l'assurance-vie]]) ; par défaut, elles valent la date du premier ordre. Elles sont gardées avec le portefeuille (chiffrées dans votre espace personnel, ou pour la session). L'ancienneté va jusqu'à la dernière date de l'historique, divisée par 365,25 jours.
 
 ### Exemple
 

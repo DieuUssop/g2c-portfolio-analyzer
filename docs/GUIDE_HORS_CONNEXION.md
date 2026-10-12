@@ -183,3 +183,7 @@ de passe… — et 5 tests sur la base de titres).
 
 Puis, pour tester le hors connexion : construire la base, couper le Wi-Fi, lancer
 `lancer_tableau_de_bord.bat` et analyser un portefeuille.
+
+## Date des cours hors connexion
+
+Sans Internet, le bandeau en haut du tableau de bord affiche « Hors ligne · cours du JJ/MM/AAAA » : la date des derniers cours gardés en mémoire, utilisés pour la valorisation. La ligne « Cours » de la barre latérale donne la même date. La détection automatique des divisions d'actions demande Internet et ne se fait pas hors connexion.

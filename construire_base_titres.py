@@ -40,6 +40,7 @@ import pandas as pd
 from src import base_titres as base
 from src import fond_de_carte
 from src.devises import devise_par_suffixe
+from src.classement import classer_etf, normaliser_secteur
 from src.import_fichier import convertir_code_global, isin_valide
 
 DEBUT_ACTIONS = "2015-01-01"
@@ -213,7 +214,7 @@ def composition(nom_indice, url, suffixe):
             titres.append({
                 "ticker": ticker, "nom": re.sub(r"\[.*?\]", "", str(ligne[col_nom])).strip(),
                 "isin": isin if isin_valide(isin) else "", "pays": pays, "region": region,
-                "secteur": SECTEURS.get(secteur_brut.lower(), secteur_brut if secteur_brut.lower() != "nan" else ""),
+                "secteur": normaliser_secteur(secteur_brut) or SECTEURS.get(secteur_brut.lower(), ""),
                 "classe": "Actions", "devise": devise_par_suffixe(ticker), "indices": nom_indice,
             })
         if titres:
@@ -251,11 +252,10 @@ def univers(sources=SOURCES):
             print(f"   {nom:<20}  ignoré ({type(erreur).__name__})")
     for ticker, nom in ETF.items():
         suff = ticker[ticker.rfind("."):] if "." in ticker else ""
-        classe = "Obligations" if any(m in nom for m in ("Bond", "Treasury", "TIPS", "Govt", "Corp")) else \
-            ("Or" if "Gold" in nom else "Actions")
+        fiche_etf = classer_etf(ticker, nom)             # classe, région et secteur selon l'indice suivi
         ajouter({"ticker": ticker, "nom": nom, "isin": "", "pays": PAYS_PAR_SUFFIXE.get(suff, ("", ""))[0],
-                 "region": "Monde (ETF)" if classe == "Actions" else "", "secteur": "ETF diversifié" if classe == "Actions" else "",
-                 "classe": classe, "devise": devise_par_suffixe(ticker), "indices": "ETF"})
+                 "region": fiche_etf["region"], "secteur": fiche_etf["secteur"], "classe": fiche_etf["classe"],
+                 "devise": devise_par_suffixe(ticker), "indices": "ETF"})
     referentiel = charger_referentiel()
     for ticker, ligne in referentiel.iterrows():
         ajouter({"ticker": ticker, "nom": ligne.get("nom", ""), "isin": "", "pays": ligne.get("pays", ""),

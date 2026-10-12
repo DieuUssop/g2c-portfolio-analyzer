@@ -6,10 +6,11 @@ This chapter presents the "Asset management" space, which brings together the to
 ## What does the Asset management space contain?
 <!-- fiche: gestion-presentation | questions: what is the asset management space for ; where do I find the backtest ; where is the risk budget ; where is the performance attribution ; what can I do in asset management ; difference between asset management and portfolio analysis | mots: asset management, attribution, risk budget, backtest, risk parity, rebalancing, DCA, portfolio manager | aller: Gestion d'actifs -->
 
-The **Asset management** space is chosen in the "Workspace" menu of the sidebar. It analyses the same portfolio, with the same settings, as the "Portfolio analysis" space. It has three tabs.
+The **Asset management** space is chosen in the "Workspace" menu of the sidebar. It analyses the same portfolio, with the same settings, as the "Portfolio analysis" space. It has four tabs.
 
 | Tab | Question it answers |
 |---|---|
+| Performance by asset class and sector | Which asset class (equities, bonds, gold…) and which sector brought the most, or cost the most? |
 | Performance attribution | Why did the portfolio do better (or worse) than a world index? Choice of regions or choice of securities? |
 | Risk budget | Which holdings bring the most risk? What would an allocation in which every holding brings the same amount of risk look like? |
 | Strategy backtest | Would it have been better to rebalance regularly? To invest all at once or gradually? |
@@ -22,6 +23,42 @@ The **Asset management** space is chosen in the "Workspace" menu of the sidebar.
 - The main results also appear in the PDF report (backtest with 0.1% fees and comparison on €10,000 over 12 months).
 
 In case of an error, each tab displays a "… unavailable" message followed by the cause, without blocking the others.
+
+## Performance by asset class and by sector
+<!-- fiche: gestion-classe-secteur | questions: performance by asset class ; which sector brought the most ; contribution of each sector ; return of the bonds in my portfolio ; performance of my equities and bonds separately ; what is the contribution ; modified dietz method ; table by asset class and by sector | mots: performance by asset class, performance by sector, contribution, return, modified Dietz, average capital invested, gain, asset class, sector | aller: Gestion d'actifs -->
+
+The first tab of the [[Asset management]] space, **Performance by asset class and sector**, shows what each asset class (equities, bonds, gold, money market) and each business sector has brought since the portfolio was opened, **sold securities included**.
+
+### The columns
+
+| Column | Meaning |
+|---|---|
+| Rows | Number of securities in the group (held or sold) |
+| Current weight | Share of the portfolio's current value |
+| Value | Current value of the group |
+| Gain | Unrealised and realised gains + net dividends, fees deducted |
+| Return | Gain ÷ average capital invested in the group |
+| Contribution | Share of the portfolio's performance brought by the group |
+
+Rows are pastel green when the group gained, pastel red when it lost. Four cards sum up: the portfolio return, the best asset class, the best sector and the most penalising sector.
+
+### The calculation (modified Dietz method)
+
+For a group, each flow F (purchase and fees +, sale and net dividend −) is weighted by the share of the period remaining after it:
+
+```
+gain         = current value − Σ F
+D (group)    = Σ F × (days remaining after the flow / days in the period)
+return       = gain / D (group)
+contribution = gain / D (portfolio)        D (portfolio) = sum of the groups' D
+```
+
+Contributions **add up**: their sum is the (Dietz) return of the whole portfolio. A group can have a good return but a small contribution if it weighs little.
+
+### Good to know
+
+- ETFs are classified by the index they track: an ETF on a broad index is in the « Diversified ETF » sector (its sector breakdown is in the Exposures tab, look-through).
+- This money-weighted return is not the TWR of the Performance tab, which neutralises contributions.
 
 ## Brinson-Fachler performance attribution
 <!-- fiche: gestion-brinson-fachler | questions: why did my portfolio do worse than the index ; what is the allocation effect ; what is the selection effect ; interaction effect explanation ; how do I read the performance attribution ; brinson fachler formula ; did I choose my securities or my regions well ; where does my outperformance come from | mots: performance attribution, Brinson-Fachler, allocation effect, selection effect, interaction effect, outperformance, underperformance, gap to the index, regions | aller: Gestion d'actifs/Attribution de performance | chiffres: twr_total -->

@@ -96,7 +96,10 @@ def comparer_enveloppes(gain_total, capital_investi, duree_annees, dividendes=0.
     """
     lignes = []
     for enveloppe, duree_avantage in [("CTO", None), ("PEA", DUREE_PEA), ("Assurance-vie", DUREE_AV)]:
-        imp = impot_sortie(gain_total, duree_annees, enveloppe, dividendes, situation)
+        # duree_annees : une ancienneté commune, ou {enveloppe: ancienneté} (date d'ouverture du PEA,
+        # date de souscription de l'assurance-vie)
+        duree = duree_annees.get(enveloppe, 0.0) if isinstance(duree_annees, dict) else duree_annees
+        imp = impot_sortie(gain_total, duree, enveloppe, dividendes, situation)
         net = gain_total - imp["total"]
         lignes.append({
             "enveloppe": enveloppe,
@@ -108,7 +111,7 @@ def comparer_enveloppes(gain_total, capital_investi, duree_annees, dividendes=0.
             "performance_brute": gain_total / capital_investi if capital_investi else 0.0,
             "performance_nette": net / capital_investi if capital_investi else 0.0,
             "taux_effectif": imp["total"] / gain_total if gain_total > 0 else 0.0,
-            "annees_avant_avantage": None if duree_avantage is None else max(0.0, duree_avantage - duree_annees),
+            "annees_avant_avantage": None if duree_avantage is None else max(0.0, duree_avantage - duree),
         })
     return lignes
 
@@ -117,14 +120,18 @@ def eligibilite_pea(positions):
     """Part de la valeur du portefeuille éligible au PEA.
 
     Éligibles : actions de sociétés dont le siège est dans l'UE / l'EEE, et
-    fonds éligibles connus. Les actions américaines, britanniques (depuis le
+    fonds éligibles connus, dont les ETF éligibles par réplication synthétique (swap) : « Amundi PEA
+    S&P 500 » détient des actions européennes mais suit le S&P 500. Un ETF coté à Paris sur un indice
+    hors Europe sans « PEA » dans son nom n'est pas compté éligible. Les actions américaines, britanniques (depuis le
     Brexit), suisses ou japonaises ne le sont pas, ni les fonds obligataires
     et l'or (le PEA est réservé aux actions).
     Renvoie (part éligible, liste des titres non éligibles).
     """
+    from .classement import ETF_PEA_SYNTHETIQUES
     eligible = [
-        (t in ETF_ELIGIBLES_PEA)
-        or (str(p.get("pays", "")) in PAYS_EEE and p.get("classe", "Actions") == "Actions")
+        (t in ETF_ELIGIBLES_PEA) or (t in ETF_PEA_SYNTHETIQUES) or bool(p.get("pea_synthetique", False))
+        or (str(p.get("pays", "")) in PAYS_EEE and p.get("classe", "Actions") == "Actions"
+            and p.get("region", "Europe") in ("Europe", "", None))
         for t, p in positions.iterrows()
     ]
     valeurs = positions["valeur"]

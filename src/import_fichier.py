@@ -569,7 +569,56 @@ def lire_avis_opere(texte, tableaux=()):
         textes_frais = [v for k, v in champs.items() if any(x in k for x in ("courtage", "commission", "frais",
                                                                             "ttf", "taxe"))]
     frais = sum(v for v in convertir_nombres(pd.Series(textes_frais, dtype=object)) if v == v)
+    if classer_type(sens) == "DIVIDENDE":
+        montant, frais = _dividende_brut_et_retenues(texte, montant, frais)
     return [date, sens, isin, libelle[:60], quantite, cours, devise, f"{frais:.2f}" if frais else "", montant]
+
+
+# Dividende : brut − retenues (retenue à la source, prélèvements) − frais = net
+MOTIF_RETENUE = re.compile(
+    r"(?:retenue\s*(?:[àa]\s*la\s*source)?|pr[ée]l[èe]vements?\s*(?:sociaux|forfaitaires?|[àa]\s*la\s*source|"
+    r"obligatoires?|non\s*lib[ée]ratoires?)?|imp[ôo]ts?\s*(?:[ée]tranger|retenus?)?|withholding\s*tax|"
+    r"tax\s*withheld|quellensteuer|kapitalertrags?steuer|solidarit[äa]tszuschlag|kirchensteuer|"
+    r"csg|crds|\bps\b|pfu)\s*(?:\([^)]*\)\s*)?(?:\d+(?:[.,]\d+)?\s*%\s*)?[:=]?\s*-?\s*"
+    r"(\d[\d\s .,]*\d|\d)", re.IGNORECASE)
+MOTIF_DIV_BRUT = re.compile(r"(?:montant\s*brut|dividende\s*brut|brut|gross\s*amount|gross|bruttobetrag)"
+                            r"\s*[:=]?\s*(\d[\d\s .,]*\d|\d)", re.IGNORECASE)
+MOTIF_DIV_NET = re.compile(r"(?:net\s*(?:cr[ée]dit[ée]|[àa]\s*cr[ée]diter|per[çc]u|vers[ée]|pay[ée])|montant\s*net|"
+                           r"net\s*amount|net\s*credited|nettobetrag|ausmachender\s*betrag)"
+                           r"\s*[:=]?\s*(\d[\d\s .,]*\d|\d)", re.IGNORECASE)
+
+
+def _premier_nombre(motif, texte):
+    m = motif.search(texte)
+    if not m:
+        return None
+    valeur = convertir_nombres(pd.Series([m.group(1).strip()])).iloc[0]
+    return None if valeur != valeur else abs(float(valeur))
+
+
+def _dividende_brut_et_retenues(texte, montant, frais):
+    """Avis de dividende : (montant BRUT, retenues + frais). Les retenues sont lues à leurs
+    intitulés (retenue à la source, prélèvements sociaux, Quellensteuer…) ; sinon, si le brut et le
+    net sont écrits, la différence. Contrôle : brut − retenues − frais = net, au centime près ;
+    si le contrôle échoue, la retenue « déduite » n'est pas inventée."""
+    brut = _premier_nombre(MOTIF_DIV_BRUT, texte)
+    net = _premier_nombre(MOTIF_DIV_NET, texte)
+    retenues = 0.0
+    for m in MOTIF_RETENUE.finditer(texte):
+        valeur = convertir_nombres(pd.Series([m.group(1).strip()])).iloc[0]
+        if valeur == valeur and 0 < valeur < (brut or float("inf")):
+            retenues += float(valeur)
+    if brut is None and net is not None and retenues:
+        brut = net + retenues + (frais or 0)
+    if brut is not None and net is not None:
+        ecart = round(brut - net - (frais or 0), 2)
+        if not retenues and 0 < ecart < 0.6 * brut:
+            retenues = ecart                          # retenue non détaillée : brut − net
+        elif retenues and abs(brut - retenues - (frais or 0) - net) > 0.02:
+            retenues = ecart if 0 <= ecart < 0.6 * brut else retenues
+    if brut is None:
+        return montant, frais
+    return f"{brut:.2f}", round((frais or 0) + retenues, 2)
 
 
 _GRILLES_PDF = {}

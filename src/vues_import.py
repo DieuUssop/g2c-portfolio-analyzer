@@ -111,7 +111,11 @@ def _libelle_type(code):
 def afficher(brut, nom_fichier, cle, erreur_directe=None):
     """Affiche l'assistant. Quand l'utilisateur valide, le fichier converti est
     rangé dans st.session_state["imports"][cle] et la page est relancée."""
-    html(ui.titre_section(t("Assistant d'import"), t("Fichier : {nom}", nom=nom_fichier)))
+    tete, droite = st.columns([5, 1], vertical_alignment="bottom")
+    with tete:
+        html(ui.titre_section(t("Assistant d'import"), t("Fichier : {nom}", nom=nom_fichier)))
+    from . import vues_pdf
+    vues_pdf.bouton_annuler(brut, cle, droite)
     html(ui.note(t("Ce fichier n'est pas au format du projet, ou il contient des codes ISIN. Indiquez ci-dessous "
                    "comment le lire : l'outil propose une correspondance, il suffit de la vérifier.")))
     if erreur_directe:

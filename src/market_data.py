@@ -213,3 +213,32 @@ def obtenir_historique(tickers, debut, chemin_cache=None):
     if manquants:
         print(f"⚠️  Pas d'historique pour : {manquants} (ticker mal écrit ?)")
     return histo, source
+
+
+# ======================================================================
+# Divisions d'actions (splits) connues de Yahoo Finance
+# ======================================================================
+def divisions(tickers):
+    """Divisions et regroupements d'actions de chaque titre, d'après Yahoo Finance :
+    {ticker: [(date, facteur), …]} (facteur 10 = 1 action devient 10 ; 0,1 = 10 deviennent 1).
+    Sans connexion, ou si Yahoo ne répond pas pour un titre : ce titre est simplement absent."""
+    resultat = {}
+    try:
+        import yfinance as yf
+    except ImportError:
+        return resultat
+    for ticker in tickers:
+        try:
+            serie = yf.Ticker(ticker).splits
+        except Exception:
+            continue
+        if serie is None or len(serie) == 0:
+            continue
+        liste = []
+        for date, facteur in serie.items():
+            if facteur and float(facteur) > 0 and float(facteur) != 1:
+                date = pd.Timestamp(date)
+                liste.append((date.tz_localize(None) if date.tzinfo else date, float(facteur)))
+        if liste:
+            resultat[ticker] = sorted(liste)
+    return resultat

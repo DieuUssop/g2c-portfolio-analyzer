@@ -583,7 +583,7 @@ La langue est gardée pendant la session. Le chapitre « L'écran et la navigati
 ## Les divisions d'actions et opérations sur titres sont-elles gérées ?
 <!-- fiche: faq-divisions | questions: les divisions d'actions sont elles gérées ; split d'actions ; mon titre a fait un split ; regroupement d'actions ; fusion de sociétés ; attribution d'actions gratuites ; perte de 90 % après un split | mots: division d'actions, split, regroupement, fusion, scission, opération sur titres, actions gratuites -->
 
-**En partie.** Le logiciel ne connaît que trois types d'opération : achat, vente et dividende, et il ne détecte pas seul une division. Mais il sait ajuster vos opérations à partir de l'avis de division ou de regroupement envoyé par votre courtier.
+**Oui pour les divisions et regroupements.** Avec Internet, le logiciel détecte seul une division que vos opérations n'ont pas prise en compte (encadré « Division ou regroupement d'actions détecté » en haut de la [[Vue d'ensemble]]) et propose d'ajuster les opérations antérieures ; il sait aussi le faire à partir de l'avis envoyé par votre courtier.
 
 ### Le problème
 
@@ -599,7 +599,7 @@ Exprimez l'opération en titres d'après la division, **sans changer le montant*
 
 ### Les autres opérations sur titres
 
-Fusions, scissions, changements de code ou attributions gratuites : à traduire vous-même en achats et ventes.
+Fusions et changements de code : à traduire vous-même en achats et ventes. Scissions et attributions gratuites : le titre reçu sans prix d'achat est signalé (voir la fiche « Scission (spin-off) ou attribution gratuite »).
 
 ## Pourquoi le MSCI World est-il l'indice de référence par défaut ?
 <!-- fiche: faq-indice-defaut | questions: pourquoi le msci world par défaut ; pourquoi comparer à un etf ; quel indice choisir pour mon portefeuille ; pourquoi pas le cac 40 ; indice de référence adapté ; changer d'indice | mots: indice de référence, MSCI World, CW8, benchmark, CAC 40, dividendes réinvestis, choix de l'indice | aller: Analyse du portefeuille/Performance -->

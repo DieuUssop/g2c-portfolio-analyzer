@@ -94,7 +94,7 @@ after 5 years:  income tax = 0
 social contributions = 18.6% × base            (in all cases)
 ```
 
-Age is measured from the date of your **first transaction** to the last date in the history, divided by 365.25 days.
+Age counts from the **PEA opening date** (and, for life insurance, from its **subscription date**), not from the date of the first order: a PEA opened in 2018 with a first purchase in 2022 is already more than 5 years old. Enter these two dates in the « Assumptions » box of the Taxation tab ([[PEA opening date]], [[Life insurance subscription date]]); by default they equal the date of the first order. They are kept with the portfolio (encrypted in your personal space, or for the session). Age runs to the last date in the history, divided by 365.25 days.
 
 ### Example
 

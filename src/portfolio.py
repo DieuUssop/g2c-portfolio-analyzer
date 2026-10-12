@@ -61,6 +61,8 @@ class Portfolio:
         "self" désigne le portefeuille lui-même.
         """
         self.transactions = self._charger_transactions(chemin_csv)
+        # Points d'attention relevés pendant le calcul (titres reçus sans prix d'achat…)
+        self.alertes = []
         # On calcule les positions dès la création du portefeuille.
         self.positions = self._calculer_positions()
 
@@ -112,7 +114,9 @@ class Portfolio:
                     nouveau PRU = (qté × PRU + q × prix + frais) / (qté + q)
           * VENTE : le PRU ne change pas. On calcule la plus-value réalisée :
                     PV = q × (prix de vente − PRU) − frais
-          * DIVIDENDE : on ajoute le montant reçu au total des dividendes.
+          * DIVIDENDE : prix = montant BRUT, frais = retenue à la source, prélèvements et frais
+                    retenus ; le dividende NET (brut − retenues) s'ajoute au total des dividendes.
+                    Les retenues ne sont pas des frais de courtage : elles sont comptées à part.
         """
         # Un dictionnaire : pour chaque ticker, on stocke ses informations.
         positions = {}
@@ -130,17 +134,35 @@ class Portfolio:
                     "pv_realisee": 0.0,
                     "dividendes": 0.0,
                     "frais_totaux": 0.0,
+                    "dividendes_bruts": 0.0,
+                    "retenues": 0.0,
+                    "achats_payants": 0,
                 }
             p = positions[ticker]
-            p["frais_totaux"] += t["frais"]
+            if t["type"] == "DIVIDENDE":
+                p["dividendes_bruts"] += t["prix"]
+                p["retenues"] += t["frais"]
+            else:
+                p["frais_totaux"] += t["frais"]
 
             if t["type"] == "ACHAT":
+                if t["prix"] > 0:
+                    p["achats_payants"] += 1
                 cout_ancien = p["quantite"] * p["pru"]
                 cout_nouveau = t["quantite"] * t["prix"] + t["frais"]
                 p["quantite"] += t["quantite"]
                 p["pru"] = (cout_ancien + cout_nouveau) / p["quantite"]
 
             elif t["type"] == "VENTE":
+                if p["quantite"] == 0 and p["achats_payants"] == 0 and \
+                        not ((self.transactions["ticker"] == ticker) & (self.transactions["type"] == "ACHAT")).any():
+                    # Vente d'un titre jamais acheté : titres reçus sans prix (scission / spin-off,
+                    # attribution gratuite). Plutôt que d'arrêter le calcul, on les compte reçus à un
+                    # prix de revient nul — toute la vente est une plus-value — et on le signale.
+                    p["pv_realisee"] += t["quantite"] * t["prix"] - t["frais"]
+                    self.alertes.append({"type": "vente_sans_achat", "ticker": ticker, "nom": t["nom"],
+                                         "date": t["date"], "quantite": float(t["quantite"])})
+                    continue
                 if t["quantite"] > p["quantite"]:
                     raise ValueError(
                         f"Vente impossible le {t['date'].date()} : on vend "
@@ -155,6 +177,12 @@ class Portfolio:
 
             elif t["type"] == "DIVIDENDE":
                 p["dividendes"] += t["prix"] - t["frais"]
+
+        # Titres détenus sans aucun achat payant : reçus gratuitement (scission, attribution)
+        for ticker, p in positions.items():
+            if p["quantite"] > 0 and p["achats_payants"] == 0:
+                self.alertes.append({"type": "pru_nul", "ticker": ticker, "nom": p["nom"],
+                                     "quantite": float(p["quantite"])})
 
         # On transforme le dictionnaire en tableau pandas, plus pratique.
         tableau = pd.DataFrame.from_dict(positions, orient="index")
@@ -181,6 +209,8 @@ class Portfolio:
             "montant_investi": self.positions["montant_investi"].sum(),
             "pv_realisees": self.positions["pv_realisee"].sum(),
             "dividendes": self.positions["dividendes"].sum(),
+            "dividendes_bruts": self.positions["dividendes_bruts"].sum(),
+            "retenues": self.positions["retenues"].sum(),
             "frais_totaux": self.positions["frais_totaux"].sum(),
         }
 
@@ -276,7 +306,10 @@ class Portfolio:
             raise ValueError("Aucun cours disponible après la première transaction.")
         calendrier = prix.index
 
-        manquants = [t for t in self.tous_les_tickers() if t not in prix.columns]
+        recus = {(a["ticker"], a["date"]) for a in self.alertes if a["type"] == "vente_sans_achat"}
+        jamais_achetes = {a["ticker"] for a in self.alertes if a["type"] == "vente_sans_achat"} - \
+            set(self.transactions.loc[self.transactions["type"] == "ACHAT", "ticker"])
+        manquants = [t for t in self.tous_les_tickers() if t not in prix.columns and t not in jamais_achetes]
         if manquants:
             raise ValueError(f"Historique de cours manquant pour : {manquants}")
 
@@ -292,6 +325,10 @@ class Portfolio:
         # ACHAT : +quantité, VENTE : −quantité, DIVIDENDE : 0
         signe = t["type"].map({"ACHAT": 1, "VENTE": -1, "DIVIDENDE": 0})
         t["variation_qte"] = signe * t["quantite"]
+        # titres reçus sans achat (scission) puis vendus : la vente n'enlève rien de ce qui a été compté
+        if recus:
+            sans_achat = pd.Series([(tk, d) in recus for tk, d in zip(t["ticker"], t["date"])], index=t.index)
+            t.loc[sans_achat & (t["type"] == "VENTE"), "variation_qte"] = 0.0
 
         # --- d) Flux d'argent de chaque transaction (voir la docstring) ---
         montant = t["quantite"] * t["prix"]
@@ -312,6 +349,7 @@ class Portfolio:
         # --- f) Valeur du portefeuille chaque jour ---
         # ffill : un jour férié sur une seule place, on garde le dernier cours.
         # bfill : sécurité si le tout premier cours manque.
+        quantites = quantites[[c for c in quantites.columns if c in prix.columns]]
         cours = prix[quantites.columns].ffill().bfill()
         valeur_par_titre = quantites * cours
         valeur = valeur_par_titre.sum(axis=1)

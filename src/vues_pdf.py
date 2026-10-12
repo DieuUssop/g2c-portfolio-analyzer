@@ -103,6 +103,37 @@ def version_lisible(brut):
     return st.session_state.get("pdf_dechiffres", {}).get(_empreinte(brut), brut)
 
 
+def bouton_annuler(brut, cle, conteneur=None):
+    """« Annuler » : abandonne la lecture de ce fichier (PDF illisible, formulaire, assistant d'import)
+    et revient à ce qui était affiché avant, sans rien enregistrer. Le fichier reste dans la zone
+    d'envoi, mis de côté ; « Reprendre » (barre latérale) le relit."""
+    zone = conteneur or st
+    if zone.button(t("Annuler"), key=f"annuler_{cle}", icon=":material/close:",
+                   help=t("Abandonner la lecture de ce fichier et revenir au portefeuille affiché avant")):
+        annules = st.session_state.setdefault("imports_annules", set())
+        annules.add(_empreinte(brut))
+        source = st.session_state.get("images_source", {}).get(_empreinte(brut))
+        if source is not None:
+            annules.add(_empreinte(source))
+        if st.session_state.get("assistant_force") == cle:
+            st.session_state.pop("assistant_force", None)
+        st.rerun()
+
+
+def est_annule(brut_original):
+    """Vrai si l'utilisateur a annulé la lecture de ce fichier (octets tels qu'envoyés)."""
+    annules = st.session_state.get("imports_annules")
+    if not annules:
+        return False
+    return _empreinte(brut_original) in annules or _empreinte(version_lisible(brut_original)) in annules
+
+
+def reprendre(brut_original):
+    annules = st.session_state.get("imports_annules", set())
+    annules.discard(_empreinte(brut_original))
+    annules.discard(_empreinte(version_lisible(brut_original)))
+
+
 @st.cache_data(show_spinner=False, max_entries=20)
 def _image_en_pdf(brut, coins):
     return images.image_en_pdf(brut, [tuple(c) for c in coins] if coins else None)
@@ -198,6 +229,7 @@ def demander_mot_de_passe(brut, nom_fichier, cle):
     with st.container(border=True):
         html(ui.titre_section(t("PDF protégé"), nom_fichier))
         st.caption(t(import_fichier.MESSAGE_PROTEGE))
+        bouton_annuler(brut, f"mdp_{cle}")
         with st.form(f"pdf_mdp_{cle}", border=False):
             mot_de_passe = st.text_input(t("Mot de passe du PDF"), type="password", key=f"pdf_mdp_champ_{cle}")
             ouvrir = st.form_submit_button(t("Ouvrir le PDF"), type="primary")
@@ -257,8 +289,11 @@ def formulaire(brut, nom_fichier, cle, raison=None):
     """Affiche le formulaire. Renvoie l'opération validée (dict : date, type, ticker, nom,
     quantite, prix, frais) au moment de la validation, sinon None."""
     with st.container(border=True):
-        html(ui.titre_section(t("Compléter l'opération"),
-                              t("{nom} : valeurs trouvées dans le document, à vérifier", nom=nom_fichier)))
+        tete, droite = st.columns([5, 1], vertical_alignment="bottom")
+        with tete:
+            html(ui.titre_section(t("Compléter l'opération"),
+                                  t("{nom} : valeurs trouvées dans le document, à vérifier", nom=nom_fichier)))
+        bouton_annuler(brut, cle, droite)
         if raison:
             st.caption(t(raison))
         redresser_photo(brut, cle)
@@ -394,6 +429,7 @@ def lot_de_fichiers(fichiers, importer):
             else:
                 st.error(t("{nom} : {raison}", nom=nom, raison=t(resultat["raison"])))
                 st.caption(t("Envoyez ce fichier seul pour ouvrir l'assistant d'import."))
+                bouton_annuler(brut, f"lot_{empreinte}")
                 en_attente.append(nom)
         lus = [o for ops in etat["operations"].values() for o in ops]
         if en_attente:

@@ -12,14 +12,14 @@ un tableau de bord web interactif et dans un rapport PDF généré automatiqueme
 
 | Domaine | Ce que fait l'outil |
 |---|---|
-| **Suivi** | PRU, plus-values latentes et réalisées, dividendes, frais, valorisation quotidienne, titres en devises étrangères convertis en euros |
+| **Suivi** | PRU, plus-values latentes et réalisées, dividendes (brut, retenues à la source, net), frais, valorisation quotidienne, titres en devises étrangères convertis en euros avec **effet marché / effet change** séparés ; divisions d'actions oubliées détectées (Yahoo Finance) et ajustées après confirmation ; titres reçus sans prix (scission) signalés |
 | **Performance** | TWR (total, annualisé, par année civile), TRI, comparaison avec un indice de référence |
 | **Risque** | Volatilité, maximum drawdown, VaR historique, loi normale et Cornish-Fisher, CVaR ; distribution des rendements comparée à la loi normale (asymétrie, kurtosis, test de Jarque-Bera) ; corrélations |
 | **Performance relative** | Ratios de Sharpe et de Sortino, bêta, alpha de Jensen, tracking error, ratio d'information |
 | **Optimisation** | Markowitz : variance minimale, Sharpe maximal, frontière efficiente, droite de marché des capitaux ; « Répartitions comparées » (ce qu'il faudrait changer, titre par titre et par classe d'actifs, avec les montants) |
 | **Projection** | Simulation de Monte-Carlo (loi normale ou bootstrap historique), versements mensuels, objectif, nuage de points par tranche de probabilité ; distribution de la valeur finale (zone de 90 %, probabilités, échelle logarithmique) |
 | **Conseil patrimonial** | Fiscalité comparée CTO / PEA / assurance-vie (taux 2026) ; stress tests (5 crises historiques et chocs hypothétiques) |
-| **Gestion d'actifs** | Attribution de performance de Brinson-Fachler face au MSCI ACWI (lissage de Cariño) ; budget de risque et parité des risques ; backtest de stratégies de rééquilibrage et d'investissement progressif |
+| **Gestion d'actifs** | Performance par classe d'actifs et par secteur (gain, rendement et contribution, méthode de Dietz modifiée) ; attribution de performance de Brinson-Fachler face au MSCI ACWI (lissage de Cariño) ; budget de risque et parité des risques ; backtest de stratégies de rééquilibrage et d'investissement progressif |
 | **Restitution** | Tableau de bord Streamlit en 4 espaces (analyse, conseil patrimonial, gestion d'actifs, manuel et aide), mode clair / nuit, version en ligne de commande, rapport PDF de synthèse |
 | **Manuel et assistant** | Manuel complet (13 chapitres, plus de 300 fiches, français et anglais, aussi en Word et PDF) ; assistant « Poser une question » hors connexion, sans IA générative, aussi accessible depuis toutes les pages par la bulle « Aide » en bas à droite : recherche tolérante aux fautes et aux synonymes, réponses avec les chiffres du portefeuille, aveu honnête quand rien ne correspond, journal local des questions sans réponse |
 | **Langues** | Tableau de bord disponible en français et en anglais (sélecteur FR / EN dans la barre latérale) ; le rapport PDF et la version en ligne de commande restent en français |
@@ -29,7 +29,7 @@ un tableau de bord web interactif et dans un rapport PDF généré automatiqueme
 | **Expositions** | Analyse en transparence (ETF répartis selon leur indice) : carte du monde, pays, secteurs, devise réelle, concentration (règle 5/10/40), sensibilité aux taux, diversification réelle (blocs de titres corrélés, ratio de diversification) ; diagnostic vert / orange / rouge avec risques et pistes, selon le profil — voir docs/GUIDE_EXPOSITIONS.md |
 | **Indices de référence** | 14 indices : actions (monde, États-Unis, Europe, France, émergents), obligations, monétaire (€STR) et mixtes 20/80, 60/40, 80/20 calculés par l'outil |
 | **Mise à jour** | Ajout de nouvelles opérations sans renvoyer tout l'historique (avis d'opéré PDF, Excel, CSV, saisie manuelle), doublons détectés, contrôles ; suppression ou correction de n'importe quelle opération (onglet Transactions) ; annulation de la dernière modification |
-| **Fiabilité** | 235 tests automatiques, contrôle croisé du gain total, base cumulative hors ligne |
+| **Fiabilité** | 255 tests automatiques, contrôle croisé du gain total, base cumulative hors ligne |
 
 ## Démarrage rapide
 
@@ -56,7 +56,7 @@ python generer_portefeuille_mondial.py              # crée le fonds actions mon
 python generer_portefeuille_diversifie.py           # crée le portefeuille diversifié (50 lignes, depuis 2017)
 python construire_base_titres.py                    # base locale hors connexion (≈ 1 h, une fois)
 python construire_base_titres.py --mise-a-jour      # ajoute les derniers cours (quelques minutes)
-python -m pytest                                    # lance les 235 tests
+python -m pytest                                    # lance les 255 tests
 ```
 
 Python 3.11 ou plus récent est nécessaire, ainsi qu'une connexion Internet pour l'installation.
@@ -161,12 +161,13 @@ portfolio_tracker/
 │   ├── manuel.py                    # lecture du manuel et moteur de recherche de l'assistant
 │   ├── lecture_pdf.py               # lecture des avis d'opéré PDF par leur contenu (tous courtiers)
 │   ├── vues_pdf.py                  # formulaire « Compléter l'opération » (PDF non reconnu)
+│   ├── classement.py                # classe d'actifs, région, secteur (ETF selon l'indice suivi, PEA par swap)
 │   ├── images.py                    # photos et captures d'écran : redressement, éclairage, taille
 │   ├── lecture.py                   # phrases de lecture automatique des graphiques
 │   ├── theme.py                     # mode clair / nuit
 │   └── rapport.py                   # rapport PDF (reportlab)
 ├── assets/style.css · assets/icone.ico · .streamlit/config.toml   # apparence du tableau de bord
-├── tests/                           # 235 tests automatiques (pytest)
+├── tests/                           # 255 tests automatiques (pytest)
 └── docs/                            # guides pas à pas ; docs/manuel/ : le manuel (fr, en, Word, PDF)
 ```
 

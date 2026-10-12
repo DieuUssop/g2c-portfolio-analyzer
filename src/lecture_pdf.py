@@ -713,6 +713,14 @@ def lire_par_le_contenu(texte):
                               "frais": a["frais"], "montant": float(a["brut"]["valeur"]) if a["brut"] else a["net"]}
                              for a in tous[1:]],
         })
+        derniere = operations[-1]
+        if sens and imp.classer_type(sens) == "DIVIDENDE":
+            # dividende : montant brut et retenues (retenue à la source, prélèvements…), contrôlés
+            # par brut − retenues − frais = net
+            brut, retenues = imp._dividende_brut_et_retenues(segment, derniere["montant"], derniere["frais"])
+            if brut is not None and brut != derniere["montant"]:
+                derniere["montant"] = float(imp.convertir_nombres(pd.Series([brut])).iloc[0])
+            derniere["frais"] = retenues or None
         if date and tous:
             # toutes les lectures cohérentes (la meilleure comprise), quelle que soit la lecture retenue
             ALTERNATIVES[(isin, date)] = [{"quantite": float(a["quantite"]["valeur"]) * a.get("facteur", 1), "cours": float(a["cours"]["valeur"]),
@@ -1358,10 +1366,33 @@ def lire_lignes_operations(texte, minimum=2):
                            "frais": round(frais, 2) if frais else None, "montant": float(b),
                            "sur": date_plausible(les_dates[0][0]),
                            "net": None, "alternatives": []})
-    # symboles mal lus par la reconnaissance de caractères : « ESEE » alors que « ESE » figure aussi
+    # symboles du courtier ou mal lus par la reconnaissance de caractères : « ESEEd » (Interactive
+    # Brokers, cotation à Paris), lu « ESEED » en majuscules, « ESEE »… pour le même ETF que « ESE »
     symboles = {o["isin"] for o in operations}
     for o in operations:
-        s_ = o["isin"]
-        if len(s_) > 3 and s_[-1] == s_[-2] and s_[:-1] in symboles:
-            o["isin"] = o["libelle"] = s_[:-1]
+        o["isin"] = o["libelle"] = _symbole_ramene(o["isin"], symboles)
     return operations if len(operations) >= minimum else []
+
+
+# Symboles propres à un courtier -> symbole de la bourse (Interactive Brokers, Euronext Paris)
+SYMBOLES_COURTIER = {"ESEE": "ESE"}
+
+
+def _symbole_ramene(symbole, symboles):
+    """« ESEED » ou « ESEE » -> « ESE » : suffixe de place lu en majuscule (« D »), lettre lue en
+    double, symbole propre au courtier. Un ISIN n'est jamais modifié."""
+    if not symbole or imp.MOTIF_ISIN.match(symbole):
+        return symbole
+    candidats = [symbole]
+    if len(symbole) > 3 and symbole.endswith("D"):
+        candidats.append(symbole[:-1])
+    for c in list(candidats):
+        if len(c) > 3 and c[-1] == c[-2]:
+            candidats.append(c[:-1])
+    for c in candidats[1:]:
+        if c in symboles and c != symbole:
+            return c
+    for c in candidats:
+        if c in SYMBOLES_COURTIER:
+            return SYMBOLES_COURTIER[c]
+    return symbole

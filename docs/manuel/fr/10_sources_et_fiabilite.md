@@ -387,6 +387,19 @@ L'attribution de performance utilise les poids régionaux du MSCI ACWI IMI au 30
 
 Le logiciel ne propose pas d'écran pour modifier le classement d'un titre. Depuis le code source, vous pouvez ajouter ou corriger une ligne de `data/referentiel.csv`, en respectant ses colonnes : elle primera sur la base locale. Dans la version installée, ce fichier se trouve dans le dossier `data` du programme et serait remplacé par une nouvelle installation.
 
+### Le classement automatique (depuis la version d'octobre 2026)
+
+Pour réduire les « Non classé », chaque titre passe par ces étapes, dans l'ordre :
+
+1. la fiche du référentiel ou de la base locale, avec un secteur ramené aux 11 secteurs du projet, quel que soit son nom d'origine (GICS, ICB, Yahoo, en anglais ou en français : « Financial Services » → Finance, « Consumer Cyclical » → Consommation discrétionnaire, « Banques » → Finance…) ;
+2. pour un **ETF** (reconnu à son ticker ou à son nom : ETF, UCITS, iShares, Amundi, Lyxor, Xtrackers…) : **l'indice suivi**, lu dans le nom. Un ETF S&P 500 est classé « États-Unis », un ETF émergents « Émergents », un ETF d'emprunts d'État « Obligations », un ETF sectoriel dans son secteur, un ETF sur indice large dans « ETF diversifié » ;
+3. pour une **action française** : une table des valeurs du CAC 40, du SBF 120 et de valeurs moyennes courantes (ORPEA → Santé, Stellantis → Consommation discrétionnaire…) ;
+4. avec Internet : le secteur et le pays donnés par **Yahoo Finance**, gardés en mémoire dans `data/cache_classement.csv`.
+
+### Les ETF éligibles au PEA par « swap »
+
+Un ETF comme « Amundi PEA S&P 500 » détient juridiquement un panier d'actions européennes (c'est ce qui le rend éligible au PEA) et échange sa performance, par un contrat d'échange (swap), contre celle du S&P 500. Le logiciel le classe donc selon l'**indice suivi** (États-Unis), pas selon le panier détenu, et le compte **éligible au PEA** (ETF connus, ou « PEA » dans le nom). Un ETF coté à Paris sur un indice hors Europe sans « PEA » dans son nom n'est pas compté éligible.
+
 ## Les indices de référence et les indices composites
 <!-- fiche: sources-indices | questions: quels indices de référence sont proposés ; comment est calculé l'indice mixte 60 40 ; l'indice de référence inclut il les dividendes ; pourquoi comparer à un etf plutôt qu'à l'indice ; indice composite rééquilibré chaque mois ; changer d'indice de référence ; le cac 40 est hors dividendes ; d'où vient l'historique de l'indice | mots: benchmark, indice de référence, composite, mixte, 60/40, rééquilibrage mensuel, MSCI World, CAC 40, €STR, dividendes réinvestis -->
 

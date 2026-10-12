@@ -218,3 +218,52 @@ def attribution_poche_actions(res, cours_indices, poids_indice=None):
     derniere = valeurs.iloc[-1]
     resultat["part_actions"] = float(derniere[actions].sum() / derniere.sum()) if derniere.sum() else 1.0
     return resultat
+
+
+# ----------------------------------------------------------------------
+# Performance par classe d'actifs et par secteur (méthode de Dietz modifiée)
+# ----------------------------------------------------------------------
+def performance_par_groupe(transactions, valeurs_finales, groupes, debut=None, fin=None):
+    """Gain, rendement et contribution de chaque groupe de titres (classe d'actifs, secteur…)
+    depuis l'ouverture du portefeuille.
+
+    Pour un groupe : V1 = valeur aujourd'hui, F = flux nets apportés au groupe (achats + frais −
+    ventes − dividendes nets), chaque flux pondéré par la part de la période restant après lui :
+        gain        = V1 − Σ F
+        dénominateur D = Σ F_i × (T − t_i) / T          (capital moyen engagé, Dietz modifiée)
+        rendement   = gain / D
+        contribution = gain / D_portefeuille              (D_portefeuille = Σ des D des groupes)
+    Les contributions s'additionnent pour donner le rendement (Dietz) du portefeuille entier.
+
+    transactions : opérations en euros ; valeurs_finales : {ticker: valeur aujourd'hui} ;
+    groupes : {ticker: nom du groupe}. Renvoie un tableau trié par contribution."""
+    t = transactions.copy()
+    t["date"] = pd.to_datetime(t["date"])
+    debut = pd.Timestamp(debut) if debut is not None else t["date"].min()
+    fin = pd.Timestamp(fin) if fin is not None else max(t["date"].max(), debut + pd.Timedelta(days=1))
+    duree = max((fin - debut).days, 1)
+    montant = t["quantite"] * t["prix"]
+    t["flux"] = 0.0
+    t.loc[t["type"] == "ACHAT", "flux"] = montant + t["frais"]
+    t.loc[t["type"] == "VENTE", "flux"] = -(montant - t["frais"])
+    t.loc[t["type"] == "DIVIDENDE", "flux"] = -(t["prix"] - t["frais"])
+    t["poids_temps"] = ((fin - t["date"]).dt.days / duree).clip(0, 1)
+    t["groupe"] = t["ticker"].map(groupes).fillna("Non classé")
+    lignes = {}
+    for groupe, ops in t.groupby("groupe"):
+        tickers = set(ops["ticker"])
+        valeur = sum(valeurs_finales.get(tk, 0.0) for tk in tickers)
+        flux = ops["flux"].sum()
+        denominateur = (ops["flux"] * ops["poids_temps"]).sum()
+        lignes[groupe] = {"valeur": valeur, "investi": ops.loc[ops["type"] == "ACHAT", "flux"].sum(),
+                          "gain": valeur - flux, "denominateur": denominateur, "lignes": len(tickers)}
+    tableau = pd.DataFrame.from_dict(lignes, orient="index")
+    if tableau.empty:
+        return tableau
+    total_denominateur = tableau["denominateur"].sum()
+    total_valeur = tableau["valeur"].sum()
+    tableau["poids"] = tableau["valeur"] / total_valeur if total_valeur else 0.0
+    tableau["rendement"] = tableau["gain"] / tableau["denominateur"].where(tableau["denominateur"] > 0)
+    tableau["contribution"] = tableau["gain"] / total_denominateur if total_denominateur > 0 else float("nan")
+    tableau.index.name = "groupe"
+    return tableau.sort_values("contribution", ascending=False)

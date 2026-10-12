@@ -148,7 +148,9 @@ def convertir_cours(prix, info_devises, taux_actuels):
 
 
 def convertir_transactions(transactions, info_devises, taux_hist):
-    """Convertit en euros les prix des transactions, au taux du jour de l'opération.
+    """Convertit en euros les prix des transactions, au taux du jour de l'opération (et, pour un
+    dividende, ses retenues : la colonne frais d'une ligne DIVIDENDE est dans la devise du dividende ;
+    les frais de courtage des achats et ventes sont, eux, déjà en euros).
 
     Deux colonnes sont ajoutées pour garder une trace : "devise" et
     "prix_devise" (le prix d'origine, tel que saisi).
@@ -156,6 +158,7 @@ def convertir_transactions(transactions, info_devises, taux_hist):
     t = transactions.copy()
     t["devise"] = t["ticker"].map(lambda x: info_devises.get(x, ("EUR", 1.0))[0])
     t["prix_devise"] = t["prix"]
+    t["taux_change"] = 1.0                     # 1 € = taux_change unités de la devise, le jour de l'opération
     for devise in t["devise"].unique():
         masque = t["devise"] == devise
         facteurs = t.loc[masque, "ticker"].map(lambda x: info_devises[x][1])
@@ -164,4 +167,59 @@ def convertir_transactions(transactions, info_devises, taux_hist):
             continue
         taux = _taux_aligne(taux_hist, devise, pd.DatetimeIndex(t.loc[masque, "date"]))
         t.loc[masque, "prix"] = t.loc[masque, "prix"].to_numpy() * facteurs.to_numpy() / taux.to_numpy()
+        t.loc[masque, "taux_change"] = taux.to_numpy()
+        # dividende : les retenues (colonne frais) sont prélevées dans la devise du dividende
+        div = masque & (t["type"] == "DIVIDENDE")
+        if div.any():
+            taux_div = _taux_aligne(taux_hist, devise, pd.DatetimeIndex(t.loc[div, "date"]))
+            t.loc[div, "frais"] = (t.loc[div, "frais"].to_numpy()
+                                   * t.loc[div, "ticker"].map(lambda x: info_devises[x][1]).to_numpy()
+                                   / taux_div.to_numpy())
     return t
+
+
+def decomposer_change(positions, transactions, prix_locaux, info_devises, taux_actuels):
+    """Effet marché et effet change sur la plus-value latente de chaque ligne en devise étrangère.
+
+    Notations : q = quantité détenue, P0 = prix de revient en devise, P1 = cours actuel en devise,
+    X0 = taux de change moyen à l'achat et X1 = taux actuel (1 € = X unités de la devise).
+        plus-value latente (en €) = q × P1 / X1 − coût en €
+        effet change              = q × P1 × (1 / X1 − 1 / X0)
+                                    (ce que la variation de la devise a fait gagner ou perdre)
+        effet marché              = plus-value latente − effet change
+                                    = q × (P1 − P0) / X0 − frais d'achat
+                                    (ce qu'aurait donné le titre si la devise n'avait pas bougé)
+    X0 est le taux moyen pondéré des achats encore détenus : coût en devise / coût en euros
+    (hors frais, méthode du PRU : une vente retire sa part du coût, sans changer X0).
+
+    Renvoie un tableau (index : ticker) : devise, taux_achat, taux_actuel, pv_latente,
+    effet_marche, effet_change. Vide si aucune ligne n'est en devise étrangère."""
+    colonnes = ["devise", "taux_achat", "taux_actuel", "pv_latente", "effet_marche", "effet_change"]
+    lignes = {}
+    for ticker, position in positions.iterrows():
+        devise, facteur = info_devises.get(ticker, ("EUR", 1.0))
+        if devise == "EUR" or devise not in taux_actuels or ticker not in prix_locaux:
+            continue
+        quantite = cout_devise = cout_euros = 0.0
+        operations = transactions[transactions["ticker"] == ticker].sort_values("date", kind="stable")
+        for _, t in operations.iterrows():
+            if t["type"] == "ACHAT":
+                quantite += t["quantite"]
+                cout_devise += t["quantite"] * t["prix_devise"] * facteur
+                cout_euros += t["quantite"] * t["prix"]
+            elif t["type"] == "VENTE" and quantite > 0:
+                reste = max(0.0, 1 - t["quantite"] / quantite)
+                cout_devise, cout_euros = cout_devise * reste, cout_euros * reste
+                quantite -= t["quantite"]
+        if quantite <= 0 or cout_euros <= 0:
+            continue
+        taux_achat = cout_devise / cout_euros
+        taux_actuel = taux_actuels[devise]
+        cours_devise = prix_locaux[ticker] * facteur
+        effet_change = position["quantite"] * cours_devise * (1 / taux_actuel - 1 / taux_achat)
+        lignes[ticker] = {"devise": devise, "taux_achat": taux_achat, "taux_actuel": taux_actuel,
+                          "pv_latente": position["pv_latente"], "effet_change": effet_change,
+                          "effet_marche": position["pv_latente"] - effet_change}
+    tableau = pd.DataFrame.from_dict(lignes, orient="index", columns=colonnes)
+    tableau.index.name = "ticker"
+    return tableau

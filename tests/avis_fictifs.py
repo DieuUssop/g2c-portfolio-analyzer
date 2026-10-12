@@ -154,12 +154,23 @@ def _deux_operations():
                  (60, 128, "22/01/2024 VENTE FR0000120271 TOTALENERGIES 10 61,50 615,00")])
 
 
-@modele("avis_de_dividende", [A("01/04/2024", "DIVIDENDE", "FR0000120271", 40, None, montant=31.60)])
+@modele("avis_de_dividende", [A("01/04/2024", "DIVIDENDE", "FR0000120271", 40, None, frais=5.44, montant=31.60)])
 def _dividende():
     return _pdf([(60, 50, "AVIS DE PAIEMENT DE DIVIDENDE"), (60, 80, "Valeur : TOTALENERGIES SE FR0000120271"),
                  (60, 98, "Date de paiement : 01/04/2024"), (60, 116, "Nombre de titres : 40"),
                  (60, 134, "Dividende unitaire : 0,79 EUR"), (60, 152, "Montant brut : 31,60 EUR"),
                  (60, 170, "Prélèvements sociaux : 5,44 EUR"), (60, 188, "Net crédité : 26,16 EUR")])
+
+
+@modele("dividende_etranger_retenue_a_la_source",
+        [A("15/05/2024", "DIVIDENDE", "US0378331005", 50, None, frais=3.60, montant=12.00, devise="USD")])
+def _dividende_etranger():
+    """Dividende américain : retenue à la source de 15 % (convention fiscale) et frais du courtier."""
+    return _pdf([(60, 50, "AVIS DE DETACHEMENT - DIVIDENDE"), (60, 80, "APPLE INC (US0378331005)"),
+                 (60, 98, "Date de paiement : 15/05/2024"), (60, 116, "Nombre de titres : 50"),
+                 (60, 134, "Dividende unitaire : 0,24 USD"), (60, 152, "Montant brut : 12,00 USD"),
+                 (60, 170, "Retenue à la source (15 %) : 1,80 USD"), (60, 188, "Prélèvements sociaux : 1,50 USD"),
+                 (60, 206, "Frais de traitement : 0,30 USD"), (60, 224, "Net crédité : 8,40 USD")])
 
 
 @modele("montant_net_seulement", [A("08/02/2024", "ACHAT", "FR0000131104", 8, 95.40, 2.50)])
