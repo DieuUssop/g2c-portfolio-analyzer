@@ -173,7 +173,7 @@ def page_compte(s, importer=None):
                         st.rerun()
                 else:
                     st.warning(t("Ce fichier n'a pas pu être lu automatiquement. Envoyez-le depuis la barre "
-                                 "latérale (« Envoyer un fichier (CSV, Excel ou PDF) ») : l'assistant d'import vous guidera, "
+                                 "latérale (« Envoyer un fichier (CSV, Excel, PDF ou image) ») : l'assistant d'import vous guidera, "
                                  "puis le bouton « Enregistrer dans mon espace » apparaîtra sous l'envoi."))
 
     # 1. Mes portefeuilles

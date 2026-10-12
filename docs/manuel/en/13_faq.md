@@ -247,7 +247,7 @@ One portfolio per client works the same way, but the software has no client reco
 
 ### How to get your transactions into it
 
-1. **An export** from your bank or broker, as CSV or Excel: upload it with [[Upload a file (CSV, Excel or PDF)]]; the automatic import recognises most formats, otherwise the import wizard guides you.
+1. **An export** from your bank or broker, as CSV or Excel: upload it with [[Upload a file (CSV, Excel, PDF or image)]]; the automatic import recognises most formats, otherwise the import wizard guides you.
 2. **A PDF statement or trade confirmation** (several at once if you wish, even password-protected): it is read automatically, whatever the broker (text PDF, or image if character recognition is installed); if it is not recognised, the [[Complete the transaction]] form suggests the values found in the document.
 3. **Manual entry**: [[Add transactions]], [[Manual entry]] tab.
 

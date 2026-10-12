@@ -1,0 +1,6 @@
+# Photos et captures d'écran d'avis d'opéré (JPG, PNG, HEIC) : facultatif.
+# OpenCV (redressement automatique de la feuille) est déjà installé avec RapidOCR (requirements-ocr.txt).
+# - streamlit-image-coordinates : cliquer sur les 4 coins d'une photo mal redressée (sinon : curseurs)
+# - pillow-heif : photos HEIC des iPhone (sinon : convertir la photo en JPG)
+streamlit-image-coordinates
+pillow-heif

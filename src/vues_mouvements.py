@@ -19,7 +19,7 @@ import hashlib
 import pandas as pd
 import streamlit as st
 
-from . import import_fichier, lecture_pdf, mouvements, vues_pdf
+from . import images, import_fichier, lecture_pdf, mouvements, vues_pdf
 from . import interface as ui
 from .langues import t, td
 
@@ -102,7 +102,8 @@ def page(session_compte, importer):
 
     fichier_tab, saisie_tab = st.tabs([t("Depuis un fichier"), t("Saisie manuelle")])
     with fichier_tab:
-        fichiers = st.file_uploader(t("Fichiers (CSV, Excel ou PDF)"), type=["csv", "xlsx", "pdf"],
+        fichiers = st.file_uploader(t("Fichiers (CSV, Excel, PDF ou image)"),
+                                    type=["csv", "xlsx", "pdf"] + images.EXTENSIONS,
                                     accept_multiple_files=True, key="ops_fichiers")
         for f in fichiers or []:
             brut = vues_pdf.version_lisible(f.getvalue())          # PDF déchiffré si mot de passe donné

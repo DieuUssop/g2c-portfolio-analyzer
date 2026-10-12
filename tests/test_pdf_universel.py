@@ -318,6 +318,128 @@ def test_releve_interactive_brokers_lu_ligne_par_ligne():
     assert all(abs(o["quantite"] * o["cours"] - o["montant"]) <= 0.011 for o in operations)
 
 
+def test_avis_credit_agricole_pea_plusieurs_operations_par_page():
+    """Vrai avis Crédit Agricole (PEA), 10 pages, 1 ou 2 opérations par page : le sens et la date
+    sont AU-DESSUS de la ligne de l'ISIN, les frais sont « frais soumis à TVA » + « TVA 20,00% »."""
+    from pathlib import Path
+    texte = (Path(__file__).resolve().parent / "donnees" / "vrais_avis" / "credit_agricole_pea.txt").read_text(
+        encoding="utf-8")
+    grille, nature = imp.grille_depuis_textes(texte.split("\n\f\n"))
+    assert nature == "pdf_contenu"
+    lignes = [dict(zip(grille[0], l)) for l in grille[1:]]
+    attendu = [("27/05/2024", "ACHAT", "FR0000125007", "2", "81.78", "1.04"),
+               ("14/05/2024", "VENTE", "FR0000131906", "3", "49.81", "1.03"),
+               ("22/03/2024", "ACHAT", "FR001400J770", "4", "9.8", "1.02"),
+               ("22/03/2024", "ACHAT", "FR0010208488", "3", "15.392", "1.02"),
+               ("31/01/2024", "ACHAT", "FR0000131906", "1", "35.36", "1.02"),
+               ("22/01/2024", "VENTE", "FR001400MXO7", "16", "0.0001", ""),
+               ("30/01/2024", "ACHAT", "FR001400J770", "4", "12.064", "1.02"),
+               ("12/12/2023", "ACHAT", "FR0000045072", "3", "12.678", "1.02"),
+               ("12/12/2023", "ACHAT", "FR0000184798", "2000", "0.0145", "1.02"),
+               ("08/12/2023", "ACHAT", "FR0004153930", "1000", "0.03", "1.02"),
+               ("23/11/2023", "ACHAT", "FR0010208488", "2", "15.746", "1.02"),
+               ("23/11/2023", "ACHAT", "NL00150001Q9", "3", "18.614", "1.03"),
+               ("20/11/2023", "ACHAT", "FR0000131906", "2", "35.61", "1.03"),
+               ("20/11/2023", "ACHAT", "FR0000120271", "2", "62.09", "1.03")]
+    assert [(l["Date"], imp.classer_type(l["Sens"]), l["ISIN"], l["Quantité"], l["Cours"], l["Frais"])
+            for l in lignes] == attendu
+    assert lignes[0]["Libellé"] == "SAINT-GOBAIN"
+
+
+def test_cadres_decoratifs_pas_pris_pour_un_tableau():
+    """Des cadres qui coupent les mots (« ACHAT COMPT » | « ANT ») ne font pas un tableau."""
+    page = "22.03.2024 ACHAT COMPTANT NEGOCIATION SUR EURONEXT PARIS DE 4 ACTIONS AIR FRANCE-KLM AU COURS DE"
+    hache = [["22.03.2024", "ACHAT COMPT", "ANT"], ["", "NEGOCIATION", "SUR E", "URONEXT PARIS"],
+             ["", "DE 4 ACTIONS", "AIR FR", "ANCE-KLM"], ["", "AU COURS DE", ""]]
+    propre = [["22.03.2024", "ACHAT COMPTANT", ""], ["", "NEGOCIATION SUR", "EURONEXT PARIS"],
+              ["", "DE 4 ACTIONS", "AIR FRANCE-KLM"], ["", "AU COURS DE", ""]]
+    assert not imp._tableau_fidele(hache, page)
+    assert imp._tableau_fidele(propre, page)
+
+
+# ----------------------------------------------------------------------
+# Lecture ciblée (vitesse) : pages inutiles sautées, seule la bande utile relue finement
+# ----------------------------------------------------------------------
+PHRASE = "Les présentes conditions générales régissent les relations entre la banque et le client pour la tenue"
+
+
+def _boites(lignes, hauteur_ligne=20, debut=40):
+    """Boîtes de mots factices (x0, y0, x1, y1, texte), une ligne après l'autre."""
+    boites = []
+    for k, ligne in enumerate(lignes):
+        y = debut + k * hauteur_ligne
+        x = 40
+        for mot in ligne.split():
+            boites.append((x, y, x + 8 * len(mot), y + 12, mot))
+            x += 8 * len(mot) + 8
+    return boites
+
+
+def test_coup_d_oeil_saute_les_conditions_generales():
+    from PIL import Image
+    image = Image.new("L", (1000, 1400), 255)
+    decision, zone, _ = ocr.coup_d_oeil(image, _boites([PHRASE] * 30))
+    assert decision == "sauter" and zone is None
+
+
+def test_coup_d_oeil_garde_la_bande_utile():
+    from PIL import Image
+    image = Image.new("L", (1000, 1400), 255)
+    lignes = ["AVIS D'OPERE", "ACHAT AU COMPTANT", "LVMH (FR0000121014)", "Date d'exécution : 04/03/2024",
+              "Quantité : 5", "Cours : 650,20 EUR", "Montant brut : 3 251,00 EUR"] + [PHRASE] * 50
+    decision, (haut, bas), _ = ocr.coup_d_oeil(image, _boites(lignes))
+    assert decision == "zone"
+    assert haut < 40 / 1400 and 200 / 1400 < bas < 0.3   # l'avis est dedans, les phrases dessous non
+    # page tournée ou presque vide : on ne décide rien, la page entière est lue
+    assert ocr.coup_d_oeil(image, _boites(["AVIS", "12"]))[0] == "tout"
+
+
+def test_lecture_ciblee_document_avec_conditions_generales():
+    """Un scan de 3 pages : l'avis puis 2 pages de conditions générales. Les 2 dernières pages ne
+    sont pas lues, et l'opération est lue exactement."""
+    if not ocr.disponible():
+        return
+    import io as _io
+    import pypdfium2
+    from reportlab.lib.pagesizes import A4
+    from reportlab.pdfgen import canvas
+    sortie = _io.BytesIO()
+    c = canvas.Canvas(sortie, pagesize=A4)
+    h = A4[1]
+    c.setFont("Helvetica", 12)
+    for y, t in [(50, "AVIS D'OPERE"), (90, "ACHAT AU COMPTANT"), (110, "Valeur : LVMH (FR0000121014)"),
+                 (128, "Date d'exécution : 04/03/2024"), (146, "Quantité : 5"), (164, "Cours : 650,20 EUR"),
+                 (182, "Montant brut : 3 251,00 EUR"), (200, "Courtage : 9,75 EUR"),
+                 (218, "Montant net : 3 260,75 EUR")]:
+        c.drawString(60, h - y, t)
+    c.showPage()
+    for _ in range(2):
+        c.setFont("Helvetica", 9)
+        for k in range(50):
+            c.drawString(50, h - 60 - 14 * k, PHRASE)
+        c.showPage()
+    c.save()
+    document = pypdfium2.PdfDocument(sortie.getvalue())
+    images = [document[i].render(scale=200 / 72).to_pil().convert("L") for i in range(len(document))]
+    scan = _io.BytesIO()
+    images[0].save(scan, format="PDF", resolution=200, save_all=True, append_images=images[1:])
+    textes = ocr.texte_pdf(scan.getvalue())
+    assert textes[0].strip() and not textes[1].strip() and not textes[2].strip()
+    grille, nature = imp.grille_pdf(scan.getvalue())
+    ligne = dict(zip(grille[0], grille[1]))
+    quantite, cours = imp.convertir_nombres(pd.Series([ligne["Quantité"], ligne["Cours"]]))
+    assert (ligne["Date"], ligne["ISIN"], quantite, cours) == ("04/03/2024", "FR0000121014", 5.0, 650.2)
+
+
+def test_date_dans_le_futur_refusee():
+    """« 28/09/2028 » lu sur une image à la place de « 28/09/2026 » : une date d'opération dans le
+    futur est forcément mal lue, l'opération n'est pas retenue automatiquement."""
+    assert lp.date_plausible("28/09/2026") and lp.date_plausible("04.03.2024")
+    assert not lp.date_plausible("28/09/2099") and not lp.date_plausible("01/01/1901")
+    texte = "ACHAT FR0000121014 LVMH le 04/03/2099 5 650,20 3 251,00"
+    assert lp.lire_par_le_contenu(texte)[0]["sur"] is False
+
+
 def test_page_en_mode_sombre_remise_en_noir_sur_blanc():
     from PIL import Image, ImageDraw
     image = Image.new("L", (900, 200), 30)                    # fond sombre, texte clair, une bordure claire

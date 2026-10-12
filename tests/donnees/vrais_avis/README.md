@@ -15,3 +15,10 @@ Pour ajouter un document :
    (date au format JJ/MM/AAAA, sens ACHAT / VENTE / DIVIDENDE, frais vide si inconnus).
 4. Lancer `python -m pytest tests/test_pdf_universel.py` : chaque document doit être lu
    exactement comme indiqué.
+
+## Documents présents
+
+- `interactive_brokers_ocr.txt` : relevé « Trade Confirmation Report » d'Interactive Brokers (texte
+  OCR d'une impression en mode sombre, 17 opérations).
+- `credit_agricole_pea.txt` : avis d'opéré Crédit Agricole sur un PEA (10 pages, 14 opérations ;
+  texte extrait du PDF, numéros d'ordre et téléphone masqués). Le PDF d'origine n'est pas inclus.

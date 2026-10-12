@@ -11,6 +11,20 @@ accolades doivent être conservés à l'identique.
 """
 
 TEXTES = {
+    "Photo ou capture d'écran : redressement puis lecture par reconnaissance de caractères (environ 10 à 30 secondes)...": 'Photo or screenshot: straightening then character recognition (about 10 to 30 seconds)...',
+    "Photo redressée d'après les 4 coins que vous avez indiqués.": 'Photo straightened using the 4 corners you indicated.',
+    'Photo : feuille trouvée et redressée automatiquement.': 'Photo: sheet found and straightened automatically.',
+    'Photo mal lue ? Indiquez les 4 coins de la feuille': 'Photo misread? Indicate the 4 corners of the sheet',
+    "Dans l'ordre : haut gauche, haut droit, bas droit, bas gauche. La photo sera remise à plat puis relue.": 'In this order: top left, top right, bottom right, bottom left. The photo will be flattened then read again.',
+    'Cliquez sur le coin {coin}.': 'Click the {coin} corner.',
+    'haut gauche': 'top left',
+    'haut droit': 'top right',
+    'bas droit': 'bottom right',
+    'bas gauche': 'bottom left',
+    'Horizontal (%)': 'Horizontal (%)',
+    'Vertical (%)': 'Vertical (%)',
+    'Recommencer': 'Start again',
+    'Redresser et relire': 'Straighten and read again',
     # ------------------------------------------------------------------
     # Barre latérale et en-tête
     # ------------------------------------------------------------------
@@ -62,8 +76,8 @@ TEXTES = {
     "Parcourir": "Browse",
     "Aide": "Help",
     "PDF image : lecture par reconnaissance de caractères ({n} page(s), environ 10 à 30 secondes par page)...": "Image PDF: reading by character recognition ({n} page(s), about 10 to 30 seconds per page)...",
-    "Colonnes : date, type (ACHAT, VENTE, DIVIDENDE), ticker (code Yahoo Finance), nom, quantite, prix, frais. CSV à virgules ou à points-virgules, fichier Excel, ou PDF (relevé d'opérations, avis d'opéré, relevé de portefeuille). Plusieurs fichiers à la fois : leurs opérations sont réunies. Prioritaire sur le portefeuille choisi ci-dessus.":
-        "Columns: date, type (ACHAT/BUY, VENTE/SELL, DIVIDENDE/DIVIDEND), ticker (Yahoo Finance code), nom (name), quantite (quantity), prix (price), frais (fees). Comma- or semicolon-separated CSV, Excel file, or PDF (transaction statement, trade confirmation, portfolio statement). Several files at once: their transactions are combined. Takes priority over the portfolio selected above.",
+    "Colonnes : date, type (ACHAT, VENTE, DIVIDENDE), ticker (code Yahoo Finance), nom, quantite, prix, frais. CSV à virgules ou à points-virgules, fichier Excel, ou PDF (relevé d'opérations, avis d'opéré, relevé de portefeuille), ou photo / capture d'écran d'un avis (JPG, PNG). Plusieurs fichiers à la fois : leurs opérations sont réunies. Prioritaire sur le portefeuille choisi ci-dessus.":
+        "Columns: date, type (ACHAT/BUY, VENTE/SELL, DIVIDENDE/DIVIDEND), ticker (Yahoo Finance code), nom (name), quantite (quantity), prix (price), frais (fees). Comma- or semicolon-separated CSV, Excel file, or PDF (transaction statement, trade confirmation, portfolio statement), or photo / screenshot of a trade confirmation (JPG, PNG). Several files at once: their transactions are combined. Takes priority over the portfolio selected above.",
     "1 ancienne → {n} nouvelles": "1 old → {n} new",
     "Analyser les {n} opération(s) déjà lues": "Analyse the {n} transaction(s) already read",
     "Appliquer aux opérations antérieures": "Apply to earlier transactions",
@@ -786,8 +800,8 @@ TEXTES = {
     "Fichier CSV ou Excel, de n'importe quel format": "CSV or Excel file, in any layout",
     "Fichier à enregistrer": "File to save",
     "{n} opération(s) reconnue(s).": "{n} transaction(s) recognised.",
-    "Ce fichier n'a pas pu être lu automatiquement. Envoyez-le depuis la barre latérale (« Envoyer un fichier (CSV, Excel ou PDF) ») : l'assistant d'import vous guidera, puis le bouton « Enregistrer dans mon espace » apparaîtra sous l'envoi.":
-        "This file could not be read automatically. Upload it from the sidebar (\"Upload a file (CSV, Excel or PDF)\"): the "
+    "Ce fichier n'a pas pu être lu automatiquement. Envoyez-le depuis la barre latérale (« Envoyer un fichier (CSV, Excel, PDF ou image) ») : l'assistant d'import vous guidera, puis le bouton « Enregistrer dans mon espace » apparaîtra sous l'envoi.":
+        "This file could not be read automatically. Upload it from the sidebar (\"Upload a file (CSV, Excel, PDF or image)\"): the "
         "import assistant will guide you, then the \"Save to my space\" button will appear below the upload.",
     "Nom": "Name",
     "{n} opération(s) · modifié le {date}": "{n} transaction(s) · updated on {date}",
@@ -962,7 +976,7 @@ TEXTES.update({
     "Clair": "Light",
     "Nuit": "Dark",
     # --- Barre latérale épurée ---
-    "Envoyer un fichier (CSV, Excel ou PDF)": "Upload a file (CSV, Excel or PDF)",
+    "Envoyer un fichier (CSV, Excel, PDF ou image)": "Upload a file (CSV, Excel, PDF or image)",
     "Espace personnel chiffré": "Encrypted personal space",
     "Modèle de fichier": "File template",
     "Performance, risque, optimisation": "Performance, risk, optimisation",
@@ -1390,7 +1404,7 @@ TEXTES.update({
         "Upload only the new transactions: a trade confirmation (PDF), an export of recent transactions (Excel, "
         "CSV or PDF), or enter an order manually. Transactions already present are recognised and not added twice.",
     "Depuis un fichier": "From a file", "Saisie manuelle": "Manual entry",
-    "Fichiers (CSV, Excel ou PDF)": "Files (CSV, Excel or PDF)",
+    "Fichiers (CSV, Excel, PDF ou image)": "Files (CSV, Excel, PDF or image)",
     "{n} opération(s) ajoutée(s) · {total} au total ({avant} avant)":
         "{n} transaction(s) added · {total} in total ({avant} before)",
     "Enregistrer les opérations": "Save transactions", "Tout effacer": "Clear all",

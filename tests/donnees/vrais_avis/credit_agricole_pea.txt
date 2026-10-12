@@ -1,0 +1,318 @@
+AVIS D'OPERATION
+Le 27 mai 2024
+1/1
+^{PSTOCK=paper_0}
+Vos contacts
+PLATE-FORMETELEPHONIQUE : 00 00 000 000
+VOTRE COMPTE PEA
+Monsieur,
+Je vous prie de trouver ci-dessous le détail des opérations réalisées sur votre compte.
+Date Détail de l'opération Débit Crédit
+27.05.2024
+ACHAT COMPTANT
+à 09:00:06
+NEGOCIATION SUR EURONEXT PARIS N° 00000000BF00000
+*** Heure de négociation sur EURONEXT PARIS à 09:00:06 heure locale (UTC+02)
+AU PRIX DU MARCHE
+DE 2 ACTIONS SAINT-GOBAIN (FR0000125007)
+AU COURS DE 81,78 EUROS (EUR)
+MONTANT BRUT EUR 163,56
+FRAIS DE NEGOCIATION SOUMIS A TVA EUR 0,87
+TVA 20,00% EUR 0,17
+NET EN EUROS à votre compte espèces EUR 164,60
+Sous réserve de bonne fin
+*** heure de Paris UTC+1 heure d'hiver et UTC+2 heure d'été
+S’agissant des opérations assujetties, le prélèvement de la Taxe sur les Transactions Financières fait l’objet d’une information séparée.
+Je vous invite à nous contacter si vous souhaitez des informations complémentaires.
+Bien à vous.
+
+AVIS D'OPERATION
+Le 14 mai 2024
+1/1
+^{PSTOCK=paper_0}
+Vos contacts
+PLATE-FORMETELEPHONIQUE : 00 00 000 000
+VOTRE COMPTE PEA
+Monsieur,
+Je vous prie de trouver ci-dessous le détail des opérations réalisées sur votre compte.
+Date Détail de l'opération Débit Crédit
+14.05.2024
+VENTE COMPTANT
+à 17:03:37
+NEGOCIATION SUR EURONEXT PARIS N° 00000000BF00000
+*** Heure de négociation sur EURONEXT PARIS à 17:03:37 heure locale (UTC+02)
+AU PRIX DU MARCHE
+DE 3 ACTIONS RENAULT (FR0000131906)
+AU COURS DE 49,81 EUROS (EUR)
+MONTANT BRUT EUR 149,43
+FRAIS DE NEGOCIATION SOUMIS A TVA EUR 0,86
+TVA 20,00% EUR 0,17
+NET EN EUROS à votre compte espèces EUR 148,40
+Sous réserve de bonne fin
+*** heure de Paris UTC+1 heure d'hiver et UTC+2 heure d'été
+S’agissant des opérations assujetties, le prélèvement de la Taxe sur les Transactions Financières fait l’objet d’une information séparée.
+Je vous invite à nous contacter si vous souhaitez des informations complémentaires.
+Bien à vous.
+
+AVIS D'OPERATION
+Le 22 mars 2024
+1/1
+^{PSTOCK=paper_0}
+Vos contacts
+PLATE-FORMETELEPHONIQUE : 00 00 000 000
+VOTRE COMPTE PEA
+Monsieur,
+Je vous prie de trouver ci-dessous le détail des opérations réalisées sur votre compte.
+Date Détail des opérations Débit Crédit
+22.03.2024
+ACHAT COMPTANT
+à 10:23:47
+NEGOCIATION SUR EURONEXT PARIS N° 00000000BF00000
+*** Heure de négociation sur EURONEXT PARIS à 10:23:47 heure locale (UTC+01)
+AU PRIX DU MARCHE
+DE 4 ACTIONS AIR FRANCE-KLM RGP (FR001400J770)
+AU COURS DE 9,80 EUROS (EUR)
+MONTANT BRUT EUR 39,20
+FRAIS DE NEGOCIATION SOUMIS A TVA EUR 0,85
+TVA 20,00% EUR 0,17
+NET EN EUROS à votre compte espèces EUR 40,22
+22.03.2024 ACHAT COMPTANT
+à 10:25:38 NEGOCIATION SUR EURONEXT PARIS N° 00000000BF00000
+*** Heure de négociation sur EURONEXT PARIS à 10:25:38 heure locale (UTC+01)
+AU PRIX DU MARCHE
+DE 3 ACTIONS ENGIE (FR0010208488)
+AU COURS DE 15,392 EUROS (EUR)
+MONTANT BRUT EUR 46,18
+FRAIS DE NEGOCIATION SOUMIS A TVA EUR 0,85
+TVA 20,00% EUR 0,17
+NET EN EUROS à votre compte espèces EUR 47,20
+Sous réserve de bonne fin
+*** heure de Paris UTC+1 heure d'hiver et UTC+2 heure d'été
+S’agissant des opérations assujetties, le prélèvement de la Taxe sur les Transactions Financières fait l’objet d’une information séparée.
+Je vous invite à nous contacter si vous souhaitez des informations complémentaires.
+Bien à vous.
+
+AVIS D'OPERATION
+Le 31 janvier 2024
+1/1
+^{PSTOCK=paper_0}
+Vos contacts
+PLATE-FORMETELEPHONIQUE : 00 00 000 000
+VOTRE COMPTE PEA
+Monsieur,
+Je vous prie de trouver ci-dessous le détail des opérations réalisées sur votre compte.
+Date Détail de l'opération Débit Crédit
+31.01.2024
+ACHAT COMPTANT
+à 13:13:07
+NEGOCIATION SUR EURONEXT PARIS N° 00000000BF00000
+*** Heure de négociation sur EURONEXT PARIS à 13:13:07 heure locale (UTC+01)
+A LA MEILLEURE LIMITE
+DE 1 ACTION RENAULT (FR0000131906)
+AU COURS DE 35,36 EUROS (EUR)
+MONTANT BRUT EUR 35,36
+FRAIS DE NEGOCIATION SOUMIS A TVA EUR 0,85
+TVA 20,00% EUR 0,17
+NET EN EUROS à votre compte espèces EUR 36,38
+Sous réserve de bonne fin
+*** heure de Paris UTC+1 heure d'hiver et UTC+2 heure d'été
+S’agissant des opérations assujetties, le prélèvement de la Taxe sur les Transactions Financières fait l’objet d’une information séparée.
+Je vous invite à nous contacter si vous souhaitez des informations complémentaires.
+Bien à vous.
+
+AVIS D'OPERATION
+Le 22 janvier 2024
+1/1
+^{PSTOCK=paper_0}
+Vos contacts
+PLATE-FORMETELEPHONIQUE : 00 00 000 000
+VOTRE COMPTE PEA
+Monsieur,
+Je vous prie de trouver ci-dessous le détail des opérations réalisées sur votre compte.
+Date Détail de l'opération Débit Crédit
+22.01.2024
+VENTE COMPTANT
+à 09:00:20
+NEGOCIATION SUR EURONEXT PARIS N° 00000000BF00000
+*** Heure de négociation sur EURONEXT PARIS à 09:00:20 heure locale (UTC+01)
+A LA MEILLEURE LIMITE
+DE 16 DROITS ORPEA DS24 (FR001400MXO7)
+AU COURS DE 0,0001 EURO (EUR)
+MONTANT BRUT EUR 0,01
+NET EN EURO à votre compte espèces EUR 0,0
+1
+Sous réserve de bonne fin
+*** heure de Paris UTC+1 heure d'hiver et UTC+2 heure d'été
+S’agissant des opérations assujetties, le prélèvement de la Taxe sur les Transactions Financières fait l’objet d’une information séparée.
+Je vous invite à nous contacter si vous souhaitez des informations complémentaires.
+Bien à vous.
+
+AVIS D'OPERATION
+Le 30 janvier 2024
+1/1
+^{PSTOCK=paper_0}
+Vos contacts
+PLATE-FORMETELEPHONIQUE : 00 00 000 000
+VOTRE COMPTE PEA N° 96421584246
+Monsieur,
+Je vous prie de trouver ci-dessous le détail des opérations réalisées sur votre compte.
+Date Détail de l'opération Débit Crédit
+30.01.2024
+ACHAT COMPTANT
+à 17:09:11
+NEGOCIATION SUR EURONEXT PARIS N° 00000000BF00000
+*** Heure de négociation sur EURONEXT PARIS à 17:09:11 heure locale (UTC+01)
+A LA MEILLEURE LIMITE
+DE 4 ACTIONS AIR FRANCE-KLM RGP (FR001400J770)
+AU COURS DE 12,064 EUROS (EUR)
+MONTANT BRUT EUR 48,26
+FRAIS DE NEGOCIATION SOUMIS A TVA EUR 0,85
+TVA 20,00% EUR 0,17
+NET EN EUROS à votre compte espèces EUR 49,28
+Sous réserve de bonne fin
+*** heure de Paris UTC+1 heure d'hiver et UTC+2 heure d'été
+S’agissant des opérations assujetties, le prélèvement de la Taxe sur les Transactions Financières fait l’objet d’une information séparée.
+Je vous invite à nous contacter si vous souhaitez des informations complémentaires.
+Bien à vous.
+
+AVIS D'OPERATION
+Le 12 décembre 2023
+1/1
+^{PSTOCK=paper_0}
+Vos contacts
+PLATE-FORMETELEPHONIQUE : 00 00 000 000
+VOTRE COMPTE PEA
+Monsieur,
+Je vous prie de trouver ci-dessous le détail des opérations réalisées sur votre compte.
+Date Détail des opérations Débit Crédit
+12.12.2023
+ACHAT COMPTANT
+à 09:00:08
+NEGOCIATION SUR EURONEXT PARIS N° 00000000BF00000
+*** Heure de négociation sur EURONEXT PARIS à 09:00:08 heure locale (UTC+01)
+A LA MEILLEURE LIMITE
+DE 3 ACTIONS CREDIT AGRICOLE S.A. (FR0000045072)
+AU COURS DE 12,678 EUROS (EUR)
+MONTANT BRUT EUR 38,03
+FRAIS DE NEGOCIATION SOUMIS A TVA EUR 0,85
+TVA 20,00% EUR 0,17
+NET EN EUROS à votre compte espèces EUR 39,05
+12.12.2023 ACHAT COMPTANT
+à 09:00:22 NEGOCIATION SUR EURONEXT PARIS N° 00000000BF00000
+*** Heure de négociation sur EURONEXT PARIS à 09:00:22 heure locale (UTC+01)
+A LA MEILLEURE LIMITE
+DE 2 000 ACTIONS ORPEA (FR0000184798)
+AU COURS DE 0,0145 EURO (EUR)
+MONTANT BRUT EUR 29,00
+FRAIS DE NEGOCIATION SOUMIS A TVA EUR 0,85
+TVA 20,00% EUR 0,17
+NET EN EUROS à votre compte espèces EUR 30,02
+Sous réserve de bonne fin
+*** heure de Paris UTC+1 heure d'hiver et UTC+2 heure d'été
+S’agissant des opérations assujetties, le prélèvement de la Taxe sur les Transactions Financières fait l’objet d’une information séparée.
+Je vous invite à nous contacter si vous souhaitez des informations complémentaires.
+Bien à vous.
+
+AVIS D'OPERATION
+Le 8 décembre 2023
+1/1
+^{PSTOCK=paper_0}
+Vos contacts
+PLATE-FORMETELEPHONIQUE : 00 00 000 000
+VOTRE COMPTE PEA
+Monsieur,
+Je vous prie de trouver ci-dessous le détail des opérations réalisées sur votre compte.
+Date Détail de l'opération Débit Crédit
+08.12.2023
+ACHAT COMPTANT
+à 16:33:48
+NEGOCIATION SUR EURONEXT PARIS N° 00000000BF00000
+*** Heure de négociation sur EURONEXT PARIS à 16:33:48 heure locale (UTC+01)
+A LA MEILLEURE LIMITE
+DE 1 000 ACTIONS HYBRIGENICS (FR0004153930)
+AU COURS DE 0,03 EURO (EUR)
+MONTANT BRUT EUR 30,00
+FRAIS DE NEGOCIATION SOUMIS A TVA EUR 0,85
+TVA 20,00% EUR 0,17
+NET EN EUROS à votre compte espèces EUR 31,02
+Sous réserve de bonne fin
+*** heure de Paris UTC+1 heure d'hiver et UTC+2 heure d'été
+S’agissant des opérations assujetties, le prélèvement de la Taxe sur les Transactions Financières fait l’objet d’une information séparée.
+Je vous invite à nous contacter si vous souhaitez des informations complémentaires.
+Bien à vous.
+
+AVIS D'OPERATION
+Le 23 novembre 2023
+1/1
+^{PSTOCK=paper_0}
+Vos contacts
+PLATE-FORMETELEPHONIQUE : 00 00 000 000
+VOTRE COMPTE PEA
+Monsieur,
+Je vous prie de trouver ci-dessous le détail des opérations réalisées sur votre compte.
+Date Détail des opérations Débit Crédit
+23.11.2023
+ACHAT COMPTANT
+à 16:17:33
+NEGOCIATION SUR EQUIDUCT N° 00000000BF00000
+*** Heure de négociation sur EQUIDUCT à 16:17:33 heure locale (UTC+01)
+ORDRE AU MARCHE
+DE 2 ACTIONS ENGIE (FR0010208488)
+AU COURS DE 15,746 EUROS (EUR)
+MONTANT BRUT EUR 31,49
+FRAIS DE NEGOCIATION SOUMIS A TVA EUR 0,85
+TVA 20,00% EUR 0,17
+NET EN EUROS à votre compte espèces EUR 32,51
+23.11.2023 ACHAT COMPTANT
+à 09:00:03 NEGOCIATION SUR EURONEXT PARIS N° 00000000BF00000
+*** Heure de négociation sur EURONEXT PARIS à 09:00:03 heure locale (UTC+01)
+ORDRE AU MARCHE
+DE 3 ACTIONS STELLANTIS (NL00150001Q9)
+AU COURS DE 18,614 EUROS (EUR)
+MONTANT BRUT EUR 55,84
+FRAIS DE NEGOCIATION SOUMIS A TVA EUR 0,86
+TVA 20,00% EUR 0,17
+NET EN EUROS à votre compte espèces EUR 56,87
+Sous réserve de bonne fin
+*** heure de Paris UTC+1 heure d'hiver et UTC+2 heure d'été
+S’agissant des opérations assujetties, le prélèvement de la Taxe sur les Transactions Financières fait l’objet d’une information séparée.
+Je vous invite à nous contacter si vous souhaitez des informations complémentaires.
+Bien à vous.
+
+AVIS D'OPERATION
+Le 20 novembre 2023
+1/1
+^{PSTOCK=paper_0}
+Vos contacts
+PLATE-FORMETELEPHONIQUE : 00 00 000 000
+VOTRE COMPTE PEA
+Monsieur,
+Je vous prie de trouver ci-dessous le détail des opérations réalisées sur votre compte.
+Date Détail des opérations Débit Crédit
+20.11.2023
+ACHAT COMPTANT
+à 09:00:11
+NEGOCIATION SUR EURONEXT PARIS N° 00000000BF00000
+*** Heure de négociation sur EURONEXT PARIS à 09:00:11 heure locale (UTC+01)
+A LA MEILLEURE LIMITE
+DE 2 ACTIONS RENAULT (FR0000131906)
+AU COURS DE 35,61 EUROS (EUR)
+MONTANT BRUT EUR 71,22
+FRAIS DE NEGOCIATION SOUMIS A TVA EUR 0,86
+TVA 20,00% EUR 0,17
+NET EN EUROS à votre compte espèces EUR 72,25
+20.11.2023 ACHAT COMPTANT
+à 09:00:18 NEGOCIATION SUR EURONEXT PARIS N° 00000000BF00000
+*** Heure de négociation sur EURONEXT PARIS à 09:00:18 heure locale (UTC+01)
+A LA MEILLEURE LIMITE
+DE 2 ACTIONS TOTALENERGIES SE (FR0000120271)
+AU COURS DE 62,09 EUROS (EUR)
+MONTANT BRUT EUR 124,18
+FRAIS DE NEGOCIATION SOUMIS A TVA EUR 0,86
+TVA 20,00% EUR 0,17
+NET EN EUROS à votre compte espèces EUR 125,21
+Sous réserve de bonne fin
+*** heure de Paris UTC+1 heure d'hiver et UTC+2 heure d'été
+S’agissant des opérations assujetties, le prélèvement de la Taxe sur les Transactions Financières fait l’objet d’une information séparée.
+Je vous invite à nous contacter si vous souhaitez des informations complémentaires.
+Bien à vous.

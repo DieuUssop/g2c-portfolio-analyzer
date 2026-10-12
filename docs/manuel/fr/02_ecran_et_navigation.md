@@ -13,7 +13,7 @@ L'écran est divisé en deux parties : la **barre latérale**, à gauche, qui re
 1. **L'en-tête** : le monogramme « PT », le nom « Portfolio Tracker » et la mention « Master G2C ». Juste dessous, sur une même ligne, deux petits sélecteurs : la langue (FR · EN) à gauche et l'affichage (Clair · Nuit) à droite ; l'option active est en gras.
 2. **L'espace personnel** : la mention « Espace personnel chiffré » et le lien [[Se connecter]]. Une fois connecté, vos initiales, votre identifiant et les liens [[Mon compte]] et [[Déconnexion]].
 3. **Espace de travail** : le menu des quatre espaces (Analyse du portefeuille, Conseil patrimonial, Gestion d'actifs, Manuel et aide), chacun avec une ligne de description grise. L'espace affiché est surligné en bleu clair, avec un trait bleu à gauche.
-4. **Données** : la liste des portefeuilles, la zone [[Envoyer un fichier (CSV, Excel ou PDF)]] (bouton [[Parcourir]], ou glisser-déposer le fichier), puis les liens [[Ajouter des opérations]] et [[Modèle de fichier]].
+4. **Données** : la liste des portefeuilles, la zone [[Envoyer un fichier (CSV, Excel, PDF ou image)]] (bouton [[Parcourir]], ou glisser-déposer le fichier), puis les liens [[Ajouter des opérations]] et [[Modèle de fichier]].
 5. **Paramètres** : un panneau replié qui contient l'indice de référence et le taux sans risque. Son titre résume les réglages en cours. (Le niveau de confiance de la VaR se règle dans l'onglet Risque, le seul où il sert.)
 6. **Les informations** sur le portefeuille analysé : fichier, période, nombre d'opérations, provenance des cours, et les taux de change repliés sous « Taux de change ».
 7. **Les boutons** [[Rapport PDF]] et [[Actualiser les cours]].
@@ -112,7 +112,7 @@ Le portefeuille analysé se choisit dans le bloc **Données** de la barre latér
 
 ### Un fichier envoyé est prioritaire
 
-Si un fichier figure dans la zone [[Envoyer un fichier (CSV, Excel ou PDF)]], c'est **lui** qui est analysé, quel que soit le choix de la liste. Pour revenir à un portefeuille de la liste, retirez le fichier envoyé en cliquant sur la croix à côté de son nom.
+Si un fichier figure dans la zone [[Envoyer un fichier (CSV, Excel, PDF ou image)]], c'est **lui** qui est analysé, quel que soit le choix de la liste. Pour revenir à un portefeuille de la liste, retirez le fichier envoyé en cliquant sur la croix à côté de son nom.
 
 ### Mon portefeuille n'est pas dans la liste
 

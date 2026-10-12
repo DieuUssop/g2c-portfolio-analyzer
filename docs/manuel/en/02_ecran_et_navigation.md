@@ -13,7 +13,7 @@ The screen is split into two parts: the **sidebar**, on the left, which groups a
 1. **The header**: the "PT" monogram, the name "Portfolio Tracker" and the label "Master G2C". Just below, on a single line, two small selectors: language (FR · EN) on the left and display (Light · Dark) on the right; the active option is in bold.
 2. **The personal space**: the label "Encrypted personal space" and the [[Sign in]] link. Once signed in, your initials, your username and the [[My account]] and [[Sign out]] links.
 3. **Workspace**: the menu of the four workspaces (Portfolio analysis, Wealth advisory, Asset management, Manual and help), each with a grey line of description. The workspace on screen is highlighted in light blue, with a blue bar on the left.
-4. **Data**: the list of portfolios, the [[Upload a file (CSV, Excel or PDF)]] area ([[Browse]] button, or drag and drop the file), then the [[Add transactions]] and [[File template]] links.
+4. **Data**: the list of portfolios, the [[Upload a file (CSV, Excel, PDF or image)]] area ([[Browse]] button, or drag and drop the file), then the [[Add transactions]] and [[File template]] links.
 5. **Settings**: a collapsed panel that contains the benchmark index and the risk-free rate. Its title summarises the current settings. (The VaR confidence level is set in the Risk tab, the only place where it is used.)
 6. **Information** about the portfolio being analysed: file, period, number of transactions, source of prices, and the exchange rates folded under "Exchange rates".
 7. **The buttons** [[PDF report]] and [[Refresh prices]].
@@ -112,7 +112,7 @@ The portfolio to analyse is chosen in the **Data** block of the sidebar, with th
 
 ### An uploaded file takes priority
 
-If a file is present in the [[Upload a file (CSV, Excel or PDF)]] area, **it** is the one analysed, whatever the choice in the list. To return to a portfolio from the list, remove the uploaded file by clicking the cross next to its name.
+If a file is present in the [[Upload a file (CSV, Excel, PDF or image)]] area, **it** is the one analysed, whatever the choice in the list. To return to a portfolio from the list, remove the uploaded file by clicking the cross next to its name.
 
 ### My portfolio is not in the list
 

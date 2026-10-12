@@ -12,7 +12,7 @@ No portfolio is available: no file uploaded, no portfolio saved in your space, a
 
 ### Solution
 
-1. In the sidebar, under "Data", use [[Upload a file (CSV, Excel or PDF)]] to load your transactions.
+1. In the sidebar, under "Data", use [[Upload a file (CSV, Excel, PDF or image)]] to load your transactions.
 2. Or sign in with [[Sign in]]: your saved portfolios then appear in the list.
 3. If you do not have a file yet, download the [[File template]], fill it in and upload it.
 
@@ -347,7 +347,7 @@ These two pages use only **automatic** reading. They do not open the import assi
 
 ### Solution
 
-1. Upload the file from the sidebar, with [[Upload a file (CSV, Excel or PDF)]]: the import assistant will guide you.
+1. Upload the file from the sidebar, with [[Upload a file (CSV, Excel, PDF or image)]]: the import assistant will guide you.
 2. Once the file has been read, save it with the "Save to my space" button that appears under the upload.
 3. For just a few transactions, use [[Manual entry]].
 

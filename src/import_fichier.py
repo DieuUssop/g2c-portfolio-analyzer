@@ -90,9 +90,13 @@ MOTIF_DATE = re.compile(r"^\d{1,4}[/\-.]\d{1,2}[/\-.]\d{1,4}")
 
 # Types d'opération reconnus (mots-clés, sans accents, en minuscules)
 MOTS_TYPES = {
-    "ACHAT": ["achat", "buy", "bought", "purchase", "souscription", "acquisition", "achete"],
-    "VENTE": ["vente", "sell", "sold", "sale", "cession", "vendu", "rachat"],
-    "DIVIDENDE": ["dividende", "dividend", "coupon", "distribution", "detachement", "revenu"],
+    "ACHAT": ["achat", "buy", "bought", "purchase", "souscription", "acquisition", "achete",
+              "kauf", "zeichnung", "compra", "acquisto", "aankoop",
+              "sparplan", "savings plan", "round up", "saveback", "investissement programme", "piano d", "plan de inversion"],
+    "VENTE": ["vente", "sell", "sold", "sale", "cession", "vendu", "rachat",
+              "verkauf", "venta", "vendita", "verkoop", "reprise sicav", "reprise fcp", "reprise f.c.p", "reprise opc"],
+    "DIVIDENDE": ["dividende", "dividend", "coupon", "distribution", "detachement", "revenu",
+                  "ausschuttung", "dividendo"],
 }
 IGNORER = "IGNORER"
 TYPES_POSSIBLES = ["ACHAT", "VENTE", "DIVIDENDE", IGNORER]
@@ -336,6 +340,10 @@ def dechiffrer_pdf(brut, mot_de_passe):
 def message_attente(brut):
     """Message d'attente adapté : un PDF image est lu par reconnaissance de caractères, ce qui
     prend du temps (environ 10 à 30 secondes par page selon l'ordinateur)."""
+    from . import images
+    if images.est_image(brut):
+        return ("Photo ou capture d'écran : redressement puis lecture par reconnaissance de caractères "
+                "(environ 10 à 30 secondes)...", {})
     if brut[:5] == b"%PDF-" and not est_protege(brut):
         try:
             import pdfplumber
@@ -403,7 +411,8 @@ MOTIFS_AVIS = {
 }
 # Pas de limite de mot à droite : la reconnaissance de caractères colle parfois les mots
 # (« VENTECOMPTANT », « FR0013380607AM.C.C.40 ») ; la clé de contrôle trie les vrais ISIN.
-MOTIF_ISIN_TEXTE = re.compile(r"(?<![A-Z0-9])(?=([A-Z]{2}[A-Z0-9]{9}[0-9]))")
+# un ISIN est un mot à lui seul : « DE3050110801955678932 » (un IBAN) n'en contient pas
+MOTIF_ISIN_TEXTE = re.compile(r"(?<![A-Z0-9])(?=([A-Z]{2}[A-Z0-9]{9}[0-9])(?![A-Z0-9]))")
 MOTIF_SENS = re.compile(r"(?<![a-zà-ÿ])(rachat|achat|vente|souscription|buy|sell|bought|sold|dividende|dividend|"
                         r"coupon)", re.IGNORECASE)
 SYMBOLES = {"€": "EUR", "$": "USD", "£": "GBP"}
@@ -572,10 +581,13 @@ def grille_pdf(brut):
     Lève PdfIllisible si rien n'est lisible. Résultat gardé en mémoire (la lecture
     d'un PDF image prend plusieurs secondes)."""
     import hashlib
+    from . import images
     cle = hashlib.md5(brut).hexdigest()
     if cle not in _GRILLES_PDF:
         try:
-            _GRILLES_PDF[cle] = _grille_pdf(brut)
+            # photo ou capture d'écran : préparée (sens, perspective, éclairage, taille) puis mise
+            # dans un PDF d'une page, lu comme un scan (src/images.py)
+            _GRILLES_PDF[cle] = _grille_pdf(images.image_en_pdf(brut)[0] if images.est_image(brut) else brut)
         except Exception as erreur:
             _GRILLES_PDF[cle] = erreur
     resultat = _GRILLES_PDF[cle]
@@ -602,8 +614,16 @@ def _grille_pdf(brut):
             raise PdfIllisible(MESSAGE_TEXTE_CODE if texte_code else MESSAGE_SCAN)
         lignes = []
         # 1re lecture rapide ; si rien de sûr : image redressée, contrastée, en plus haute résolution
+        # seules les pages sans texte lisible passent par la reconnaissance ; les autres gardent leur texte
+        a_lire = [i for i, p in enumerate(pages)
+                  if len(p["texte"].strip()) < 20 or lecture_pdf.texte_illisible(p["texte"])] or None
+        # (le coup d'œil en basse résolution sert seulement à choisir les pages, leur sens et la bande
+        #  utile : ses chiffres ne sont jamais retenus, car une date mal lue, « 28/09/2028 » au lieu de
+        #  « 28/09/2026 », n'est pas contrôlée par quantité × cours = montant)
         for reglage in ({}, {"echelle": 4, "pretraitement": True}):
-            textes = ocr.texte_pdf(brut, **reglage)
+            textes = ocr.texte_pdf(brut, pages=a_lire, **reglage)
+            if a_lire:
+                textes = [t if i in a_lire else pages[i]["texte"] for i, t in enumerate(textes)]
             texte_ocr = "\n".join(textes)
             lignes = _par_lignes(textes)            # relevé « une ligne par opération » (plusieurs opérations)
             if not lignes:
@@ -615,6 +635,34 @@ def _grille_pdf(brut):
         if not lignes:
             raise PdfIllisible(MESSAGE_SCAN_OCR)
         return [COLONNES_AVIS] + lignes, "pdf_ocr"
+    return _lire_pages_texte(pages, texte_total)
+
+
+def grille_depuis_textes(textes):
+    """Même lecture qu'un PDF texte, à partir du texte déjà extrait de chaque page (sert au banc
+    d'essai des textes de vrais documents, tests/donnees/portfolio_performance)."""
+    from . import lecture_pdf
+    pages = [{"texte": t, "paires": "", "tableaux": [], "tableaux_bruts": []} for t in textes]
+    for p in pages:
+        lecture_pdf.lire_par_le_contenu(p["texte"])
+    return _lire_pages_texte(pages, "".join(textes))
+
+
+def _tableau_fidele(tableau, texte_page, seuil=0.15):
+    """Un « tableau » dessiné par des cadres décoratifs (avis Crédit Agricole fait avec Canva…)
+    coupe les mots au milieu : « ACHAT COMPT » | « ANT ». Si plus de 15 % des mots des cellules
+    n'existent pas tels quels dans le texte de la page, le tableau est écarté et le document
+    est lu par son contenu."""
+    mots_page = set(re.findall(r"\w+", texte_page or ""))
+    mots = [m for ligne in tableau for c in ligne for m in re.findall(r"\w+", str(c or ""))
+            if not m.isdigit()]
+    if len(mots) < 10:
+        return True
+    return sum(m not in mots_page for m in mots) / len(mots) <= seuil
+
+
+def _lire_pages_texte(pages, texte_total):
+    """Les lectures successives d'un PDF texte (voir _grille_pdf)."""
     # 0. Relevé de portefeuille (positions et prix de revient) : un portefeuille de départ
     from . import lecture_pdf as _lp
     if _lp.est_un_releve_de_positions(texte_total):
@@ -624,12 +672,19 @@ def _grille_pdf(brut):
     # 1. Relevé : les tableaux (le plus large d'abord ; lignes de même largeur mises bout à bout)
     # (un vrai tableau d'opérations contient des dates sur plusieurs lignes)
     tableaux = [t for p in pages for t in p["tableaux"]
-                if sum(any(MOTIF_DATE.match(str(c or "").strip()) for c in ligne) for ligne in t) >= 2]
+                if sum(any(MOTIF_DATE.match(str(c or "").strip()) for c in ligne) for ligne in t) >= 2
+                and _tableau_fidele(t, p["texte"])]
+    # plusieurs titres sur une même page (relevé d'opérations Bourse Direct…) : la lecture par
+    # intitulés n'en verrait qu'un ; la lecture par le contenu les sépare
+    nb_titres = len({code for code, _ in _lp.isins(texte_total)})
+    if nb_titres == 1:
+        # un seul titre mais exécuté en plusieurs fois (« Exécution fractionnée ») : autant d'opérations
+        nb_titres = max(1, sum(1 for o in _lp.lire_par_le_contenu(texte_total) if o["sur"]))
     est_un_avis = re.search(r"avis\s*d['’]\s*op[ée]r|confirmation\s*d['’]\s*(?:ex[ée]cution|ordre)|"
                             r"avis\s*d['’]\s*ex[ée]cution|trade\s*confirmation", texte_total, re.IGNORECASE)
     if est_un_avis:
         lignes = [l for l in (lire_avis_opere(_avec_paires(p), p["tableaux_bruts"]) for p in pages) if l]
-        if lignes and all(_ligne_complete(l, texte_total) for l in lignes):
+        if lignes and all(_ligne_complete(l, texte_total) for l in lignes) and len(lignes) >= nb_titres:
             return [COLONNES_AVIS] + lignes, "pdf_avis"
     if tableaux:
         largeur = max((len(t[0]) for t in tableaux), key=lambda l: sum(len(t) for t in tableaux if len(t[0]) == l))
@@ -651,7 +706,7 @@ def _grille_pdf(brut):
         ligne = lire_avis_opere("\n".join(_avec_paires(p) for p in pages),
                                 [t for p in pages for t in p["tableaux_bruts"]])
         lignes = [ligne] if ligne else []
-    if lignes and all(_ligne_complete(l, texte_total) for l in lignes):
+    if lignes and all(_ligne_complete(l, texte_total) for l in lignes) and len(lignes) >= nb_titres:
         return [COLONNES_AVIS] + lignes, "pdf_avis"
     # 3. Relevé « une ligne par opération » sans tableau reconnu (code, date, sens, quantité × cours = montant)
     lignes = _par_lignes([p["texte"] for p in pages])
@@ -695,6 +750,15 @@ def _ligne_complete(ligne, texte):
     date, sens, isin, libelle, quantite, cours, devise, frais, montant = ligne
     if not MOTIF_SENS.search(texte):
         return False
+    from .lecture_pdf import date_plausible
+    if not date_plausible(date) or pd.isna(pd.to_datetime(str(date).replace(".", "/").replace("-", "/"),
+                                                          dayfirst=True, errors="coerce")):
+        return False                              # date illisible ou dans le futur : mal lue
+    # quantité × cours très loin du montant (obligation : nominal × cours en % ; lecture de travers) :
+    # la lecture par le contenu, qui vérifie l'équation, prend le relais
+    q, c, m = convertir_nombres(pd.Series([quantite, cours, montant]))
+    if q == q and c == c and m == m and q and c and m and abs(abs(q) * abs(c) / abs(m) - 1) > 0.1:
+        return False
     return bool(str(cours).strip()) or (classer_type(sens) == "DIVIDENDE" and bool(str(montant).strip()))
 
 
@@ -713,13 +777,17 @@ MESSAGE_NON_RECONNU = ("Opération non reconnue automatiquement dans ce PDF : co
 
 
 def nature_fichier(brut):
-    """"pdf", "excel" ou "csv"."""
-    return "pdf" if brut[:5] == b"%PDF-" else "excel" if brut[:2] == b"PK" else "csv"
+    """"pdf", "excel" ou "csv". Une photo ou capture d'écran (JPG, PNG…) est lue comme un PDF image."""
+    from . import images
+    if brut[:5] == b"%PDF-" or images.est_image(brut):
+        return "pdf"
+    return "excel" if brut[:2] == b"PK" else "csv"
 
 
 def _grille(brut, feuille=None):
     """Toutes les cellules du fichier, sous forme de liste de lignes (textes)."""
-    if brut[:5] == b"%PDF-":
+    from . import images
+    if brut[:5] == b"%PDF-" or images.est_image(brut):
         return grille_pdf(brut)
     if brut[:2] == b"PK":                                # .xlsx = archive ZIP
         try:

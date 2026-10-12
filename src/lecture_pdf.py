@@ -17,6 +17,7 @@ Ce module repère ces éléments sans se fier à la mise en page. Il sert :
        dates, codes et nombres trouvés : l'utilisateur choisit, rien n'est inventé.
 """
 
+import bisect
 import itertools
 import re
 import unicodedata
@@ -30,6 +31,16 @@ from . import import_fichier as imp
 # ----------------------------------------------------------------------
 MOTS_COURANTS = re.compile(r"\b(?:le|la|les|de|des|du|et|en|au|date|cours|quantit|montant|frais|total|achat|vente|"
                            r"valeur|the|of|and|to|in|price|buy|sell|value|eur|usd)\w*", re.IGNORECASE)
+
+
+def date_plausible(date):
+    """Une date d'opération ne peut pas être dans le futur (ni avant 1990) : « 28/09/2028 » lu à la
+    place de « 28/09/2026 » sur une image est refusé, et le formulaire prend le relais."""
+    import datetime
+    jour = pd.to_datetime(str(date or "").replace(".", "/").replace("-", "/"), dayfirst=True, errors="coerce")
+    if pd.isna(jour):
+        return True                               # format inconnu : on ne bloque pas ici
+    return pd.Timestamp("1990-01-01") <= jour <= pd.Timestamp(datetime.date.today()) + pd.Timedelta(days=1)
 
 
 def texte_illisible(texte):
@@ -62,16 +73,22 @@ MOIS = {
 }
 _MOIS = "|".join(sorted(MOIS, key=len, reverse=True))
 MOTIF_DATES = re.compile(
-    r"(?<!\d)(?:(?P<j>\d{1,2})[/.\-](?P<m>\d{1,2})[/.\-](?P<a>\d{4}|\d{2})(?!\d)"
+    r"(?<![\d.])(?:(?P<j>\d{1,2})[/.\-](?P<m>\d{1,2})[/.\-](?P<a>\d{4})(?!\d)"
+    r"|(?P<j5>\d{2})(?P<sep>[/.\-])(?P<m5>\d{2})(?P=sep)(?P<a5>\d{2})(?![\d.,])"
     r"|(?P<a2>\d{4})-(?P<m2>\d{2})-(?P<j2>\d{2})(?!\d)"
     rf"|(?P<j3>\d{{1,2}})(?:er)?[\s\-]+(?P<m3>{_MOIS})\.?[\s\-]+(?P<a3>\d{{4}})"
     rf"|(?P<m4>{_MOIS})\.?\s+(?P<j4>\d{{1,2}}),?\s+(?P<a4>\d{{4}}))",
     re.IGNORECASE)
 MOTS_EXECUTION = re.compile(r"(?:ex[ée]cut\w*|n[ée]goci\w*|trade\s*date|transaction\s*date|date\s*d['’]\s*op[ée]r\w*|"
                             r"date\s*de\s*l['’]\s*op[ée]r\w*|date\s*de\s*paiement|pay(?:ment|able)\s*date|"
-                            r"achat\s*le|vente\s*le)[^\n\d]{0,30}$", re.IGNORECASE)
+                            r"achat\s*le|vente\s*le|kauf\s*am|verkauf\s*am|ausf[üu]hrung\w*|ausgef[üu]hrt|"
+                            r"handelstag|schlusstag|handelsdatum|handelszeit|trade[\s\-]*datum|trade\s*time|uitvoering|transactiedatum|trade\s*on|executed\s*on|"
+                            r"data\s*(?:di\s*)?(?:esecuzione|operazione)|fecha\s*(?:de\s*)?(?:ejecuci[óo]n|operaci[óo]n))"
+                            r"[^\n\d]{0,30}$", re.IGNORECASE)
 MOTS_DATE_ECARTEE = re.compile(r"(?:[ée]dit\w*|[ée]mi[st]\w*|imprim\w*|r[èe]glement|settlement|livraison|"
-                               r"value\s*date|date\s*de\s*valeur|valeur\s*:?|arr[êe]t[ée]\s*au|"
+                               r"value\s*date|date\s*de\s*valeur|valeur\s*:?|arr[êe]t[ée]\s*au|valuta\w*|zahltag|"
+                               r"generiert\s*um|berichtszeitraum|generated\s*at|reporting\s*period|"
+                               r"boekingsdatum|gedownload\s*op|beschikbaar\s*sinds|transmission|^\s*au|"
                                r",\s*le|^\s*le)[^\n\d]{0,25}$", re.IGNORECASE)
 
 
@@ -94,6 +111,8 @@ def dates(texte):
         try:
             if g["j"]:
                 j, mo, a = int(g["j"]), int(g["m"]), int(g["a"])
+            elif g["j5"]:
+                j, mo, a = int(g["j5"]), int(g["m5"]), int(g["a5"])
             elif g["a2"]:
                 j, mo, a = int(g["j2"]), int(g["m2"]), int(g["a2"])
             elif g["j3"]:
@@ -135,10 +154,15 @@ def date_execution(texte, ligne_operation=None):
 # 3. Nombres (formats français et anglais, milliers séparés par des espaces)
 # ----------------------------------------------------------------------
 _ESPACES = "    "
-MOTIF_MORCEAU = re.compile(r"(?<![\w.,/:])([+\-]?)(\d+(?:[.,']\d+)*)(?![\w/:])(?!\s*%)")
+# un pourcentage (« TVA 20,00 % ») n'est ni une quantité, ni un cours, ni un montant — sauf le cours
+# d'une obligation (« 98,05 % » du nominal) : MOTIF_MORCEAU_POURCENT le garde. (?!\d|[.,']\d) empêche de
+# couper « 98,05 % » en « 98 ».
+MOTIF_MORCEAU = re.compile(r"(?<![\w.,/:])([+\-]?)(\d+(?:[.,']\d+)*)(?!\d|[.,']\d)(?![\w/:])(?!\s*%)")
+MOTIF_MORCEAU_POURCENT = re.compile(r"(?<![\w.,/:])([+\-]?)(\d+(?:[.,']\d+)*)(?!\d|[.,']\d)(?![\w/:])")
 LIGNES_SANS_MONTANT = re.compile(r"compte|account|client|n°|num[ée]ro|r[ée]f[ée]rence|reference|order\s*id|"
                                  r"ordre\s*n|iban|bic|siren|siret|t[ée]l[ée]phone|phone|\bt[ée]l\b|\bfax\b|code\s*postal|"
-                                 r"\brcs\b|capital\s*(?:social\s*)?de",
+                                 r"\brcs\b|capital\s*(?:social\s*)?de|§|\bnr\b\.?|\bhrb\b|trade\s*id|order-id|trade-id|"
+                                 r"ust-?id|vat-?id|\bdepot\b|\bseite\b|\bpage\b|\bauftrag\b",
                                  re.IGNORECASE)
 
 
@@ -161,6 +185,7 @@ def nombres(texte):
     Les dates, heures, codes ISIN et numéros de compte sont écartés. Un nombre écrit avec des
     espaces (« 1 440,00 ») donne plusieurs candidats : « 1 440,00 » et « 1 » + « 440,00 » —
     la cohérence quantité × cours = montant tranchera."""
+    obligation = bool(MOTS_OBLIGATION.search(texte))
     masque = list(texte)
     for d in dates(texte):
         masque[d[1]:d[2]] = " " * (d[2] - d[1])
@@ -168,12 +193,19 @@ def nombres(texte):
         masque[m.start():m.end()] = " " * 12
     for m in re.finditer(r"\d{1,2}:\d{2}(?::\d{2})?", texte):
         masque[m.start():m.end()] = " " * (m.end() - m.start())
+    # numéros (compte, référence, téléphone, RCS…) : seul le numéro qui suit le mot est écarté,
+    # pas toute la ligne (« 29/09/2023 42 AM.PEA … Référence : 493029272303 » garde la quantité 42)
+    for m in LIGNES_SANS_MONTANT.finditer(texte):
+        suite = re.match(r"[ \t:°#.\-]{0,6}(\d[\d \t\-/.,]*)", texte[m.end():m.end() + 60])
+        if suite:
+            debut, fin = m.end() + suite.start(1), m.end() + suite.end(1)
+            masque[debut:fin] = " " * (fin - debut)
     propre = "".join(masque)
     candidats = []
     debut_ligne = 0
     for ligne in propre.split("\n"):
-        if not LIGNES_SANS_MONTANT.search(ligne):
-            morceaux = [m for m in MOTIF_MORCEAU.finditer(ligne)]
+        if True:
+            morceaux = [m for m in (MOTIF_MORCEAU_POURCENT if obligation else MOTIF_MORCEAU).finditer(ligne)]
             for i, m in enumerate(morceaux):
                 # le morceau seul, puis regroupé avec les suivants séparés par une espace (milliers)
                 groupe, fin = m.group(2), m.end()
@@ -204,18 +236,30 @@ def nombres(texte):
 # 4. Le trio quantité × cours = montant
 # ----------------------------------------------------------------------
 MOTS_QUANTITE = re.compile(r"quantit|qt[ée]|nombre|titres?\b|parts?\b|actions?\b|shares?\b|units?\b|nominal|"
-                           r"buy|sell|bought|sold|achat|vente", re.IGNORECASE)
-MOTS_COURS = re.compile(r"cours|prix|price|\bat\b|@|unitaire|dividende\s*unitaire|par\s*action", re.IGNORECASE)
-MOTS_BRUT = re.compile(r"brut|gross|value|valeur|montant|amount|total|consideration", re.IGNORECASE)
+                           r"buy|sell|bought|sold|achat|vente|stk\b|st[üu]ck|anzahl|cantidad|quantit[àa]|"
+                           r"t[íi]tulos|aandelen|menge\b|nominale", re.IGNORECASE)
+MOTS_COURS = re.compile(r"cours|prix|price|\bat\b|@|unitaire|dividende\s*unitaire|par\s*action|kurs|preis|"
+                        r"valeur\s*liquidative|\bvl\b|\bnav\b|"
+                        r"precio|prezzo|koers", re.IGNORECASE)
+MOTS_BRUT = re.compile(r"brut|gross|value|valeur|montant|amount|total|consideration|kurswert|betrag|importe|"
+                       r"controvalore|bedrag|wert\b", re.IGNORECASE)
 MOTS_FRAIS = re.compile(r"courtage|commission|frais|fees?|costs?|brokerage|ttf|taxe\s*sur\s*les\s*transactions|"
-                        r"transactions\s*financi[eè]res|stamp\s*duty", re.IGNORECASE)
-MOTS_NET = re.compile(r"\bnet|total|d[ée]bit|cr[ée]dit|à\s*payer|to\s*pay|settlement\s*amount", re.IGNORECASE)
+                        r"transactions\s*financi[eè]res|stamp\s*duty|provision|geb[üu]hr|entgelt|"
+                        r"fremdkosten|kosten|comisi[óo]n|commissioni|spese|transactiekosten|beurstaks|makelaarsloon|"
+                        r"droits?\s*(?:d['’]\s*)?entr[ée]e", re.IGNORECASE)
+MOTS_NET = re.compile(r"\bnet|total|d[ée]bit|cr[ée]dit|à\s*payer|to\s*pay|settlement\s*amount|gesamt|"
+                      r"ausmachender\s*betrag|zu\s*lasten|zu\s*gunsten|endbetrag|importe\s*neto|netto", re.IGNORECASE)
 
 
 def _contexte(texte, candidat, avant=28):
     """Les derniers caractères avant le nombre, sur la même ligne."""
     debut = max(0, candidat["debut"] - avant, texte.rfind("\n", 0, candidat["debut"]) + 1)
     return texte[debut:candidat["debut"]]
+
+
+def _ligne_au_dessus(texte, candidat):
+    debut = texte.rfind("\n", 0, candidat["debut"])
+    return texte[texte.rfind("\n", 0, max(0, debut)) + 1:max(0, debut)] if debut > 0 else ""
 
 
 def _se_chevauchent(*candidats):
@@ -227,6 +271,41 @@ def trio(texte, candidats=None):
     """Meilleur trio (quantité, cours, montant brut, frais, montant net) ou None (voir trios)."""
     liste = trios(texte, candidats)
     return liste[0] if liste else None
+
+
+MOTS_OBLIGATION = re.compile(r"obligation|\bbond\b|anleihe|nominal|nominale|\bo\.?a\.?t\b|emprunt|treasury|"
+                             r"bund\b|bono\b|obbligazion|% du pair|clean price|dirty price", re.IGNORECASE)
+MOTS_COUPON_COURU = re.compile(r"coupons?\s*cour(?:u|us)|int[ée]r[êe]ts?\s*cour(?:u|us)|st[üu]ckzins\w*|"
+                               r"accrued\s*interest|bond\s*accrued|rateo|cup[óo]n\s*corrido|opgelopen\s*rente",
+                               re.IGNORECASE)
+
+
+def _cours_en_pourcentage(texte, q, p, obligation):
+    """Le cours est-il un pourcentage du nominal (obligation) ? Oui s'il est suivi de « % », ou si
+    le document parle d'obligation et que le nominal (quantité) est rond et le cours proche du pair."""
+    if re.match(r"\s*%", texte[p["fin"]:p["fin"] + 3]):
+        return True
+    return obligation and q["valeur"] >= 100 and float(q["valeur"]).is_integer() and 1 <= p["valeur"] <= 250
+
+
+def _tolerance(q, p, produit):
+    """Écart admis entre quantité × cours et le montant : un centime ; pour une quantité
+    fractionnée (« 5,0721 × 108,7 = 551,35 ») ou un cours à 3 décimales et plus, le cours affiché
+    est arrondi et l'écart peut atteindre quantité × un demi-dernier chiffre du cours (au plus
+    0,2 % du montant)."""
+    tolerance = 0.0101
+    decimales_q = len(re.split(r"[.,]", q["ecrit"])[-1]) if re.search(r"[.,]\d+$", q["ecrit"]) else 0
+    ecrit = p["ecrit"].replace(" ", "")
+    decimales = len(re.split(r"[.,]", ecrit)[-1]) if re.search(r"[.,]\d+$", ecrit) else 0
+    # quantité fractionnée, ou cours à 3 décimales ou plus (« 700 × 32,795 ») : le cours affiché
+    # peut lui-même être arrondi (cours moyen de plusieurs exécutions)
+    if (not float(q["valeur"]).is_integer() and decimales_q >= 3) or \
+            (float(q["valeur"]).is_integer() and decimales >= 3 and q["valeur"] >= 10):
+        arrondi = q["valeur"] * 0.5 * 10 ** (-decimales) + 0.0051
+        if decimales_q >= 3 and not float(q["valeur"]).is_integer():
+            arrondi += p["valeur"] * 0.5 * 10 ** (-decimales_q)   # parts de fonds arrondies (« 19,989 »)
+        tolerance = max(tolerance, min(arrondi, 0.002 * produit))
+    return tolerance
 
 
 def trios(texte, candidats=None, nombre=6):
@@ -245,32 +324,57 @@ def trios(texte, candidats=None, nombre=6):
     par_valeur = {}
     for c in candidats:
         par_valeur.setdefault(round(c["valeur"], 2), []).append(c)
+    cles = sorted(par_valeur)
     trouves = []
     petits = [c for c in candidats if c["valeur"] < 1e7]
+    obligation = bool(MOTS_OBLIGATION.search(texte))
     for q, p in itertools.permutations(petits, 2):
         if _se_chevauchent(q, p) or q["valeur"] > 1e6:
             continue
         produit = q["valeur"] * p["valeur"]
-        if produit < 0.5:
-            continue
-        cibles = [b for cle in (round(produit, 2), round(produit + 0.005, 2), round(produit - 0.005, 2))
-                  for b in par_valeur.get(cle, [])]
-        for b in cibles:
-            if b is q or b is p or _se_chevauchent(q, p, b) or abs(b["valeur"] - produit) > 0.0101:
+        # obligation : nominal × cours en % du pair / 100 = montant brut (hors coupon couru) ;
+        # la quantité retenue est le nominal / 100 (une « part » de 100 de nominal), pour que
+        # quantité × cours = montant reste vrai dans le portefeuille
+        variantes = [(1.0, produit)]
+        if _cours_en_pourcentage(texte, q, p, obligation):
+            variantes.append((0.01, produit / 100))
+        for facteur, attendu in variantes:
+            if attendu < 0.001:
                 continue
-            if q["valeur"] == 1 and p["valeur"] == b["valeur"] and not MOTS_QUANTITE.search(_contexte(texte, q)):
-                continue                          # 1 × x = x : coïncidence, sauf « Quantité : 1 »
-            score = _score_trio(texte, q, p, b)
-            frais, net = _frais_et_net(texte, candidats, b, (q, p))
-            score += 3 if net is not None else 0
-            trouves.append((score, {"quantite": q, "cours": p, "brut": b, "frais": frais, "net": net}))
+            if facteur == 1:
+                tolerance = _tolerance(q, p, attendu)
+            else:                                 # obligation : seul l'arrondi d'un cours à 3 décimales et plus
+                decimales_p = len(re.split(r"[.,]", p["ecrit"])[-1]) if re.search(r"[.,]\d+$", p["ecrit"]) else 0
+                tolerance = 0.0101 + (q["valeur"] * facteur * 0.5 * 10 ** -decimales_p if decimales_p >= 3 else 0)
+            debut = bisect.bisect_left(cles, attendu - tolerance - 0.005)
+            fin = bisect.bisect_right(cles, attendu + tolerance + 0.005)
+            cibles = [b for cle in cles[debut:fin] for b in par_valeur[cle]]
+            for b in cibles:
+                if b is q or b is p or _se_chevauchent(q, p, b) or abs(b["valeur"] - attendu) > tolerance:
+                    continue
+                if q["valeur"] == 1 and p["valeur"] == b["valeur"] and not MOTS_QUANTITE.search(_contexte(texte, q)) \
+                        and not UNITES_QUANTITE.match(texte[q["fin"]:q["fin"] + 12]) \
+                        and not re.search(r"quantit|anzahl|quantity|cantidad", _ligne_au_dessus(texte, q), re.IGNORECASE):
+                    continue                      # 1 × x = x : coïncidence, sauf « Quantité : 1 », « 1 Stk. »
+                if p["valeur"] == 1 and q["valeur"] == b["valeur"] and not MOTS_COURS.search(_etiquette(texte, p)):
+                    continue                      # x × 1 = x : idem
+                score = _score_trio(texte, q, p, b)
+                if facteur != 1:
+                    score += 3 if re.match(r"\s*%", texte[p["fin"]:p["fin"] + 3]) else 1
+                frais, net, coupon = _frais_et_net(texte, candidats, b, (q, p), avec_coupon=True)
+                score += 3 if net is not None else 0
+                trouves.append((score, {"quantite": q, "cours": p, "brut": b, "frais": frais, "net": net,
+                                        "facteur": facteur, "coupon": coupon}))
     if not trouves:
         # Pas de montant brut écrit : quantité × cours ± frais = montant net
         frais_etiquetes = [c for c in candidats if MOTS_FRAIS.search(_contexte(texte, c))]
         for q, p in itertools.permutations(petits, 2):
             if _se_chevauchent(q, p):
                 continue
-            if q["valeur"] == 1 and not MOTS_QUANTITE.search(_contexte(texte, q)):
+            if q["valeur"] == 1 and not MOTS_QUANTITE.search(_contexte(texte, q)) \
+                    and not UNITES_QUANTITE.match(texte[q["fin"]:q["fin"] + 12]):
+                continue
+            if p["valeur"] == 1 and not MOTS_COURS.search(_etiquette(texte, p)):
                 continue
             produit = q["valeur"] * p["valeur"]
             for f in frais_etiquetes:
@@ -281,11 +385,12 @@ def trios(texte, candidats=None, nombre=6):
                         if n in (q, p, f) or _se_chevauchent(q, p, n) or abs(n["valeur"] - total) > 0.0101:
                             continue
                         trouves.append((_score_trio(texte, q, p, n), {"quantite": q, "cours": p, "brut": None,
-                                                                      "frais": f["valeur"], "net": n["valeur"]}))
+                                                                      "frais": f["valeur"], "net": n["valeur"],
+                                                                      "facteur": 1.0, "coupon": None}))
     trouves.sort(key=lambda x: -x[0])
     resultat, vus = [], set()
     for score, t in trouves:
-        cle = (round(t["quantite"]["valeur"], 6), round(t["cours"]["valeur"], 6))
+        cle = (round(t["quantite"]["valeur"] * t.get("facteur", 1), 6), round(t["cours"]["valeur"], 6))
         if cle in vus:
             continue
         vus.add(cle)
@@ -295,17 +400,56 @@ def trios(texte, candidats=None, nombre=6):
     return resultat
 
 
+MOTS_CHANGE = re.compile(r"change|taux|rate|fx\b|devise|wechselkurs|devisenkurs|umrechnungs\w*|kurs\s*eur", re.IGNORECASE)
+
+
+UNITES_QUANTITE = re.compile(r"\s*(?:stk\b|st[üu]ck|titres?\b|titre\(s\)|parts?\b|actions?\b|shares?\b|units?\b|"
+                             r"pcs\b|pi[èe]ces?\b|pz\b|t[íi]t\b|uds?\b|droits?\b|bons?\b|x\s)", re.IGNORECASE)
+APRES_DEVISE = re.compile(r"\s*(?:EUR|USD|GBP|GBX|CHF|JPY|CAD|AUD|HKD|DKK|SEK|NOK|€|\$|£|%)", re.IGNORECASE)
+
+
+def _etiquette(texte, candidat, avant=28):
+    """Le texte entre le nombre précédent de la ligne et ce nombre : son intitulé propre."""
+    return re.split(r"\d", _contexte(texte, candidat, avant))[-1]
+
+
 def _score_trio(texte, q, p, b):
     score = 0.0
+    q_unite = bool(UNITES_QUANTITE.match(texte[q["fin"]:q["fin"] + 12]))
     if float(q["valeur"]).is_integer():
         score += 2
-    if MOTS_QUANTITE.search(_contexte(texte, q)) or MOTS_QUANTITE.search(texte[q["fin"]:q["fin"] + 10]):
+    # un taux de change n'est ni une quantité ni un cours ; un trio de tout petits nombres est du bruit
+    if MOTS_CHANGE.search(_contexte(texte, q, 40) + " " + _ligne_au_dessus(texte, q)) and not \
+            float(q["valeur"]).is_integer() and not q_unite:
+        score -= 6
+    if len(re.sub(r"\D", "", q["ecrit"].split(",")[-1].split(".")[-1])) >= 5 and not float(q["valeur"]).is_integer() \
+            and not q_unite:
+        score -= 2
+    if b["valeur"] < 20:
+        score -= 3
+    if re.search(r"[.,]\d{4,}$", b["ecrit"]):
+        score -= 4                                # « 25,007144 » : une quantité, pas un montant
+    if all(float(c["valeur"]).is_integer() and not re.search(r"[.,]\d", c["ecrit"]) for c in (q, p, b)) \
+            and (b["valeur"] < 100 or not any(APRES_DEVISE.match(texte[c["fin"]:c["fin"] + 5]) for c in (p, b))):
+        score -= 3                                # « § 4 Nr. 8 » … 32 : des entiers isolés, pas une opération
+    if p["valeur"] == 1 and not re.search(r"[.,]\d", p["ecrit"]):
+        score -= 10                               # « 10119 × 1 = 10119 » : un cours de 1 sans décimales
+    elif p["valeur"] == 1 and not MOTS_COURS.search(_etiquette(texte, p)):
+        score -= 3                                # un cours de 1 : c'est la quantité qui est 1
+    # « 0,4534 Stk. », « 3 titre(s) » : l'unité suit la quantité ; « 55,13 EUR » : la devise suit le cours
+    if q_unite:
+        score += 4
+    elif MOTS_QUANTITE.search(_etiquette(texte, q)):
         score += 2
-    if MOTS_COURS.search(_contexte(texte, p)):
+    if APRES_DEVISE.match(texte[q["fin"]:q["fin"] + 5]) and not q_unite:
+        score -= 2
+    if UNITES_QUANTITE.match(texte[p["fin"]:p["fin"] + 12]):
+        score -= 4
+    if MOTS_COURS.search(_etiquette(texte, p)):
         score += 2
-    if MOTS_BRUT.search(_contexte(texte, b)):
+    if MOTS_BRUT.search(_etiquette(texte, b)):
         score += 1
-    if MOTS_FRAIS.search(_contexte(texte, q) + _contexte(texte, p)):
+    if MOTS_FRAIS.search(_etiquette(texte, q) + " " + _etiquette(texte, p)):
         score -= 4
     if q["ligne"] == p["ligne"] == b["ligne"]:
         score += 1
@@ -315,12 +459,66 @@ def _score_trio(texte, q, p, b):
     return score
 
 
-def _frais_et_net(texte, candidats, brut, exclus=()):
+def _frais_etiquete(texte, c, brut):
+    """Nombre annoncé par un mot de frais (« courtage : 1,95 ») : le mot est entre le nombre
+    précédent de la ligne et celui-ci, et le montant reste petit devant le brut."""
+    contexte = _contexte(texte, c, 45)
+    if re.search(r"\b(?:tva|vat|mwst|iva)\b[ \t:]*\d+(?:[.,]\d+)?[ \t]*%[^\d]*$", contexte, re.IGNORECASE) \
+            and re.search(r"[.,]\d", c["ecrit"]) and 0 < abs(c["valeur"]) < 0.1 * abs(brut["valeur"]):
+        return True                               # « TVA 20,00% EUR 0,17 » : la TVA sur les frais
+    contexte = re.sub(r"\d+(?:[.,]\d+)?\s*%", " ", contexte)      # « Beurstaks - 0,12% - 4,28 »
+    contexte = re.split(r"\d", contexte)[-1]
+    return bool(MOTS_FRAIS.search(contexte)) and 0 < abs(c["valeur"]) < 0.1 * abs(brut["valeur"])
+
+
+def _coupon_couru(texte, candidats, brut, exclus=()):
+    """Coupon couru d'une obligation (« Stückzinsen -75,25 », « Bond Accrued Interest … -30,82 ») :
+    nombre annoncé par son intitulé, sur sa ligne ou sur la ligne au-dessus. None s'il n'y en a pas."""
+    for c in candidats:
+        if c is brut or c in exclus or _se_chevauchent(c, brut) or not re.search(r"[.,]\d", c["ecrit"]):
+            continue
+        if MOTS_COUPON_COURU.search(_etiquette(texte, c, 45)) or \
+                (MOTS_COUPON_COURU.search(_ligne_au_dessus(texte, c)) and not re.search(r"\d[.,]\d", _ligne_au_dessus(texte, c))):
+            if 0 < abs(c["valeur"]) < 0.2 * abs(brut["valeur"]):
+                return abs(c["valeur"])
+    return None
+
+
+def _frais_et_net(texte, candidats, brut, exclus=(), avec_coupon=False, ecart=True):
     """Frais : nombres précédés de « courtage, commission, frais, costs… » ; montant net : un
     nombre égal à brut ± frais. Si aucun frais n'est écrit, un écart brut/net plausible (< 5 %)
-    entre deux nombres sert de frais."""
-    etiquetes = [c for c in candidats if c is not brut and c not in exclus
-                 and MOTS_FRAIS.search(_contexte(texte, c, 45)) and not _se_chevauchent(c, brut)]
+    entre deux nombres sert de frais.
+    avec_coupon : obligation ; le coupon couru (payé au vendeur, rendu au prochain coupon) n'est
+    pas un frais, mais il entre dans le montant net : net = brut ± frais ± coupon couru. Renvoie
+    alors (frais, net, coupon couru)."""
+    if avec_coupon:
+        coupon = _coupon_couru(texte, candidats, brut, exclus)
+        if coupon:
+            exclus = tuple(exclus) + tuple(c for c in candidats if abs(abs(c["valeur"]) - coupon) < 0.001)
+        frais, net = _frais_et_net(texte, candidats, brut, exclus, ecart=not coupon)
+        if coupon and net is None:
+            for c in candidats:
+                if c is brut or c in exclus or _se_chevauchent(c, brut):
+                    continue
+                f = frais or 0.0
+                for total in (brut["valeur"] + f + coupon, brut["valeur"] - f + coupon, brut["valeur"] - f - coupon):
+                    if abs(abs(c["valeur"]) - total) < 0.011:
+                        return frais, abs(c["valeur"]), coupon
+        return frais, net, coupon
+    etiquetes = [c for c in candidats if c is not brut and c not in exclus and _frais_etiquete(texte, c, brut)
+                 and not _se_chevauchent(c, brut)]
+    if not etiquetes:
+        # « Commission Frais divers Montant total des frais » puis, dessous, « 6,95 EUR 0,00 EUR 6,95 EUR » :
+        # le total des frais est le dernier nombre de la ligne de valeurs
+        for c in candidats:
+            dessus = _ligne_au_dessus(texte, c)
+            fin_ligne = texte.find("\n", c["fin"])
+            reste = texte[c["fin"]:fin_ligne if fin_ligne >= 0 else len(texte)]
+            if re.search(r"total\s*(?:des\s*)?(?:frais|fees|costs|kosten)\s*$", dessus.strip(), re.IGNORECASE) \
+                    and not re.search(r"\d", reste) and c is not brut and c not in exclus \
+                    and 0 < c["valeur"] < 0.1 * abs(brut["valeur"]):
+                etiquetes = [c]
+                break
     vus, frais = set(), 0.0
     for c in etiquetes:
         if c["debut"] in vus:
@@ -333,11 +531,20 @@ def _frais_et_net(texte, candidats, brut, exclus=()):
         for total in (brut["valeur"] + frais, brut["valeur"] - frais) if frais else ():
             if abs(c["valeur"] - total) < 0.011:
                 return round(frais, 2), c["valeur"]
-    if not frais:
+    if not frais and ecart:
+        valeurs = {round(c["valeur"], 2) for c in candidats}
         for c in candidats:
             ecart = abs(c["valeur"] - brut["valeur"])
-            if c is not brut and c not in exclus and not _se_chevauchent(c, brut) and 0 < ecart < 0.05 * brut["valeur"] \
-                    and MOTS_NET.search(_contexte(texte, c, 30)):
+            if c is brut or c in exclus or _se_chevauchent(c, brut) or not 0 < ecart < 0.05 * brut["valeur"]:
+                continue
+            # montant net reconnu à son intitulé (sur sa ligne ou sur la ligne de titres au-dessus),
+            # ou parce que l'écart brut / net est lui-même écrit (les frais)
+            devise_b = MOTIF_DEVISE.match(texte[brut["fin"]:brut["fin"] + 5].strip() or "-")
+            devise_c = MOTIF_DEVISE.match(texte[c["fin"]:c["fin"] + 5].strip() or "-")
+            if devise_b and devise_c and devise_b.group(0) != devise_c.group(0):
+                continue                          # 200,40 USD et 195,13 EUR : l'écart n'est pas un frais
+            if MOTS_NET.search(_contexte(texte, c, 30)) or MOTS_NET.search(_ligne_au_dessus(texte, c)) \
+                    or round(ecart, 2) in valeurs:
                 return round(ecart, 2), c["valeur"]
     return (round(frais, 2) if frais else None), None
 
@@ -345,8 +552,11 @@ def _frais_et_net(texte, candidats, brut, exclus=()):
 # ----------------------------------------------------------------------
 # 5. Une opération par code ISIN
 # ----------------------------------------------------------------------
-MOTIF_SENS = re.compile(r"(?<![a-zà-ÿ])(rachat|achat|vente|souscription|buy|sell|bought|sold|kauf|verkauf|"
-                        r"dividende|dividend|coupon|distribution)", re.IGNORECASE)
+MOTIF_SENS = re.compile(r"(?:(?<=order)|(?<![a-zà-ÿ]))(rachat|achat|vente|souscription|buy|sell|bought|sold|kauf|verkauf|"
+                        r"zeichnung|compra|venta|acquisto|vendita|aankoop|verkoop|sparplan|savings\s*plan|round\s*up|saveback|"
+                        r"reprise\s+(?:sicav|f\.?\s?c\.?\s?p\b\.?|opc\w*)|"
+                        r"investissement\s*programm[ée]|piano\s*d['’i]\s*investimento|plan\s*de\s*inversi[óo]n|"
+                        r"dividende|dividend|dividendo|aussch[üu]ttung|coupon|distribution)", re.IGNORECASE)
 MOTIF_DEVISE = re.compile(r"(?<![A-Z])(EUR|USD|GBP|GBX|CHF|JPY|CAD|AUD|HKD|DKK|SEK|NOK)(?![A-Z])|(€|\$|£)")
 SYMBOLES = {"€": "EUR", "$": "USD", "£": "GBP"}
 
@@ -371,10 +581,26 @@ def _segments(texte):
     if len(distincts) <= 1:
         return [(distincts[0] if distincts else None, texte, texte)]
     debuts = []
+    fin_precedent = 0
     for code, position in trouves:
         if debuts and debuts[-1][0] == code:
+            fin_precedent = position
             continue
-        debuts.append((code, texte.rfind("\n", 0, position) + 1))
+        debut = texte.rfind("\n", 0, position) + 1
+        # l'opération commence souvent avant la ligne de l'ISIN : « 22.03.2024 ACHAT COMPTANT »
+        # puis « DE 3 ACTIONS ENGIE (FR0010208488) » ; on remonte à la dernière ligne qui commence
+        # par une date, si elle suit le titre précédent
+        for m in re.finditer(r"(?m)^[ \t]*\d{2}[./-]\d{2}[./-]\d{4}\b", texte[fin_precedent:debut]):
+            debut_date = fin_precedent + m.start()
+            if debuts and debut_date <= debuts[-1][1]:
+                continue
+            if trios(texte[debut_date:debut]):
+                continue                          # ce bloc daté est complet : il appartient au titre précédent
+            debut = min(debut, debut_date)
+        if debuts and debut <= debuts[-1][1]:
+            debut = texte.rfind("\n", 0, position) + 1
+        debuts.append((code, debut))
+        fin_precedent = position
     segments = []
     for i, (code, debut) in enumerate(debuts):
         fin = debuts[i + 1][1] if i + 1 < len(debuts) else len(texte)
@@ -387,7 +613,10 @@ def _sens(segment, isin):
     if not trouves:
         return None
     position = segment.find(isin) if isin else 0
-    return min(trouves, key=lambda m: abs(m.start() - position)).group(1)
+    # « Market-Order Kauf am 24.06.2026 » l'emporte sur « Dividend » écrit dans le nom du titre
+    forts = [m for m in trouves if re.search(r"order[\s\-]*$", segment[max(0, m.start() - 8):m.start()], re.IGNORECASE)
+             or re.match(r"\s+(?:am|le|on|el|il|du|of|vom)\s+\d", segment[m.end():m.end() + 9], re.IGNORECASE)]
+    return min(forts or trouves, key=lambda m: abs(m.start() - position)).group(1)
 
 
 def _devise(segment, cours):
@@ -398,13 +627,21 @@ def _devise(segment, cours):
         m = MOTIF_DEVISE.search(zone)
         if m:
             return m.group(1) or SYMBOLES[m.group(2)]
-    toutes = [m.group(1) or SYMBOLES[m.group(2)] for m in MOTIF_DEVISE.finditer(segment)]
+    # « COURS EN USD : 79,2 », « TX USD/EUR » : la devise de cotation d'origine, pas celle du cours lu
+    ecartees = re.sub(r"(?:cours|price|kurs|prix)\s*(?:en|in)\s*[A-Z]{3}|[A-Z]{3}\s*/\s*[A-Z]{3}", " ", segment,
+                      flags=re.IGNORECASE)
+    toutes = [m.group(1) or SYMBOLES[m.group(2)] for m in MOTIF_DEVISE.finditer(ecartees)]
     return max(set(toutes), key=toutes.count) if toutes else ""
 
 
 def _libelle(segment, isin):
+    return re.sub(r"^(?:actions?|droits?|parts?|titres?|bons?)\s+", "", _libelle_brut(segment, isin), flags=re.IGNORECASE)
+
+
+def _libelle_brut(segment, isin):
     nom = imp._nom_apres_isin(segment, isin) if isin else ""
-    if nom and re.search(r"[A-Za-z]{2}", nom) and not re.match(r"^(?:at|@|\))", nom):
+    if nom and re.search(r"[A-Za-z]{2}", nom) and not re.match(r"^(?:at|@|\))", nom) and not dates(nom) \
+            and not re.search(r":\s*[+\-]?\d", nom):
         return nom.strip(" ()")
     if isin:
         ligne = next((l for l in segment.splitlines() if isin in l), "")
@@ -412,6 +649,7 @@ def _libelle(segment, isin):
         avant = MOTIF_SENS.sub(" ", avant)
         avant = re.sub(r"\b(?:isin|code|valeur|titre|instrument)\b\s*:?|[():]|[+\-]?\d[\d\s.,]*", " ", avant,
                        flags=re.IGNORECASE)
+        avant = re.sub(r"(?<!\w)[%/.,]+(?!\w)", " ", avant)          # « OAT 1,5 % 25/05/2031 » → « OAT »
         avant = re.sub(r"\s{2,}", " ", avant).strip(" -·")
         avant = re.sub(r"^(?:(?:de|du|des|d'|of|au|le|la|les|l')\s*)+", "", avant, flags=re.IGNORECASE).strip()
         if re.search(r"[A-Za-z]{2}", avant):
@@ -420,38 +658,64 @@ def _libelle(segment, isin):
     return m.group(1).strip() if m else ""
 
 
+def _executions(segment):
+    """Un même titre exécuté en plusieurs fois (« Exécution fractionnée ») : chaque bloc qui
+    commence par une date en début de ligne et contient son propre quantité × cours = montant
+    devient une opération ; l'en-tête (nom, ISIN) est repris dans chaque bloc."""
+    lignes = segment.split("\n")
+    debuts = [i for i, l in enumerate(lignes) if re.match(r"\s*\d{2}[-/.]\d{2}[-/.]\d{4}\b", l)]
+    if len(debuts) < 2:
+        return [segment]
+    tete = lignes[:debuts[0]]
+    blocs = [lignes[a:b] for a, b in zip(debuts, debuts[1:] + [len(lignes)])]
+    if not all(trios("\n".join(b)) for b in blocs):
+        return [segment]
+    return ["\n".join(tete + b) for b in blocs]
+
+
 def lire_par_le_contenu(texte):
     """Opérations lues sans se fier aux intitulés : liste de dict(date, sens, isin, libelle,
     quantite, cours, devise, frais, montant, sur). « sur » est vrai si les quatre éléments
     essentiels sont trouvés (ISIN, date, trio cohérent, mot donnant le sens)."""
     operations = []
-    for isin, segment, tout in _segments(texte):
+    for isin, segment, tout in [(i, b, t) for i, seg, t in _segments(texte) for b in _executions(seg)]:
         if not isin:
             continue
         ligne = next((l for l in segment.splitlines() if isin in l), "")
         date = date_execution(segment, ligne) or date_execution(tout, ligne)
         tous = trios(segment)
         t = tous[0] if tous else None
+        deja = next((o for o in operations if o["isin"] == isin and o["sur"]), None)
+        if not t and deja:
+            # ligne à part pour le même titre (« TAXE TRANSACT FINANCIERES FR0000120271 TTF 1,45 ») :
+            # une taxe de plus pour l'opération déjà lue, pas une nouvelle opération
+            if re.search(r"tax|ttf|imp[oô]t|stamp|frais|fee", segment, re.IGNORECASE):
+                montants = [c["valeur"] for c in nombres(segment) if re.search(r"[.,]\d", c["ecrit"])]
+                if montants and deja["montant"] and montants[-1] < 0.05 * deja["montant"]:
+                    deja["frais"] = round((deja["frais"] or 0) + montants[-1], 2)
+            continue
         sens = _sens(segment, isin) or (_sens(tout, isin) if len(_segments(texte)) == 1 else None)
         if sens is None and t and t["quantite"]["signe"]:
             sens = "VENTE" if t["quantite"]["signe"] == "-" else "ACHAT"
         operations.append({
             "date": date, "sens": sens, "isin": isin, "libelle": _libelle(segment, isin)[:60],
-            "quantite": float(t["quantite"]["valeur"]) if t else None,
+            "quantite": float(t["quantite"]["valeur"]) * t.get("facteur", 1) if t else None,
             "cours": float(t["cours"]["valeur"]) if t else None,
             "devise": _devise(segment, t["cours"] if t else None),
             "frais": t["frais"] if t else None,
             "montant": (float(t["brut"]["valeur"]) if t and t["brut"] else (t["net"] if t else None)),
-            "sur": bool(date and t and sens),
+            "sur": bool(date and t and sens and date_plausible(date)),
             "net": t["net"] if t else None,
+            "coupon_couru": t.get("coupon") if t else None,     # obligation : coupon couru payé (hors frais)
+            "obligation": bool(t and t.get("facteur", 1) != 1),
             # autres lectures cohérentes, pour départager avec les cours du marché
-            "alternatives": [{"quantite": float(a["quantite"]["valeur"]), "cours": float(a["cours"]["valeur"]),
+            "alternatives": [{"quantite": float(a["quantite"]["valeur"]) * a.get("facteur", 1), "cours": float(a["cours"]["valeur"]),
                               "frais": a["frais"], "montant": float(a["brut"]["valeur"]) if a["brut"] else a["net"]}
                              for a in tous[1:]],
         })
         if date and tous:
             # toutes les lectures cohérentes (la meilleure comprise), quelle que soit la lecture retenue
-            ALTERNATIVES[(isin, date)] = [{"quantite": float(a["quantite"]["valeur"]), "cours": float(a["cours"]["valeur"]),
+            ALTERNATIVES[(isin, date)] = [{"quantite": float(a["quantite"]["valeur"]) * a.get("facteur", 1), "cours": float(a["cours"]["valeur"]),
                                            "frais": a["frais"]} for a in tous]
     return operations
 
@@ -1021,12 +1285,21 @@ def lire_lignes_operations(texte, minimum=2):
             continue
         sens = MOTIF_SENS.search(propre)
         les_dates = dates(propre)
-        if not sens or not les_dates:
+        if not les_dates:
             continue
-        titre = _titre_de_la_ligne(propre[:les_dates[0][1]]) or _titre_de_la_ligne(propre[:sens.start()])
+        if sens:
+            titre = _titre_de_la_ligne(propre[:les_dates[0][1]]) or _titre_de_la_ligne(propre[:sens.start()])
+            reste = propre[sens.end():]
+        else:
+            # pas de mot achat / vente (relevé DEGIRO…) : un ISIN, puis une quantité signée
+            # (négative = vente) suivie du cours et du montant
+            codes = [c for c, _ in isins(propre)]
+            if len(codes) != 1:
+                continue
+            titre = codes[0]
+            reste = propre[propre.find(titre) + len(titre):]
         if not titre:
             continue
-        reste = propre[sens.end():]
         # nombres après le sens, dans l'ordre, avec toutes leurs lectures possibles
         morceaux = [m for m in MOTIF_MORCEAU.finditer(reste)]
         jetons = [(m.group(1) + m.group(2), _lectures_ocr(m.group(1) + m.group(2))) for m in morceaux]
@@ -1042,14 +1315,18 @@ def lire_lignes_operations(texte, minimum=2):
                                     score = (2 if entier else 0) - i - (j - i - 1) - (k - j - 1)
                                     if not trouve or score > trouve[0]:
                                         trouve = (score, q, p, b, k, jetons[i][0])
+        if not trouve and not sens:
+            continue                              # sans mot de sens, seule une ligne complète compte
         if not trouve:
             # quantité illisible : cours et montant lisibles, et montant / cours entier
             for j in range(len(jetons)):
                 for k in range(j + 1, min(len(jetons), j + 2)):
                     for p in jetons[j][1]:
                         for b in jetons[k][1]:
-                            if p > 0 and b > 0 and abs(round(b / p) * p - b) <= 0.0101 and round(b / p) >= 1 \
-                                    and "." in jetons[j][0] + jetons[k][0] or "," in jetons[j][0] + jetons[k][0]:
+                            if not (0 < p < 1e9 and 0 < b < 1e12):
+                                continue
+                            if abs(round(b / p) * p - b) <= 0.0101 and round(b / p) >= 1 \
+                                    and re.search(r"[.,]", jetons[j][0] + jetons[k][0]):
                                 q = round(b / p)
                                 if abs(q * p - b) <= 0.0101 and (not trouve or j < trouve[4]):
                                     trouve = (0, float(q), p, b, k, "")
@@ -1062,16 +1339,24 @@ def lire_lignes_operations(texte, minimum=2):
         # commission (et taxe) : les petits nombres décimaux qui suivent le montant (moins de 5 % du
         # montant) ; les chiffres isolés sans virgule (« 1 », restes de bordures de tableau) sont ignorés
         frais = 0.0
-        suivants = [e for e, _ in jetons[k + 1:k + 4] if re.search(r"\d[.,]\d", e)][:2 if a_une_taxe else 1]
-        for ecrit in suivants:
+        # (un taux de change « 1,0619 », à quatre décimales, n'est pas un frais)
+        suivants = []
+        for ecrit, _ in jetons[k + 1:k + 5]:
             valeur = next(iter(_valeurs(ecrit)), None)
-            if valeur is not None and abs(valeur) < 0.05 * b:
-                frais += abs(valeur)
-        mot = sens.group(1).lower()
-        vente = mot in ("vente", "sell", "sold", "verkauf") or ecrit_q.startswith("-")
+            if re.search(r"\d[.,]\d{1,3}$", ecrit) and valeur is not None and 0 < abs(valeur) < 0.05 * b:
+                suivants.append(abs(valeur))
+        if not sens and suivants:
+            suivants = suivants[-1:]           # relevé sans sens : la colonne de frais est la dernière petite
+        for valeur in suivants[:2 if a_une_taxe else 1]:
+            frais += valeur
+        mot = sens.group(1).lower() if sens else ""
+        vente = mot.lower() in ("vente", "sell", "sold", "verkauf", "venta", "vendita", "verkoop") or ecrit_q.startswith("-")
+        m_devise = MOTIF_DEVISE.search(reste)
+        devise = (m_devise.group(1) or SYMBOLES[m_devise.group(2)]) if m_devise else ""
         operations.append({"date": les_dates[0][0], "sens": "VENTE" if vente else "ACHAT", "isin": titre,
-                           "libelle": titre, "quantite": float(q), "cours": float(p), "devise": "",
-                           "frais": round(frais, 2) if frais else None, "montant": float(b), "sur": True,
+                           "libelle": titre, "quantite": float(q), "cours": float(p), "devise": devise,
+                           "frais": round(frais, 2) if frais else None, "montant": float(b),
+                           "sur": date_plausible(les_dates[0][0]),
                            "net": None, "alternatives": []})
     # symboles mal lus par la reconnaissance de caractères : « ESEE » alors que « ESE » figure aussi
     symboles = {o["isin"] for o in operations}

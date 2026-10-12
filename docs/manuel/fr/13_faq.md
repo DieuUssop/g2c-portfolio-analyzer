@@ -247,7 +247,7 @@ Un portefeuille par client fonctionne de la même façon, mais le logiciel n'a n
 
 ### Comment y faire entrer vos opérations
 
-1. **Un export** de votre banque ou courtier, en CSV ou Excel : envoyez-le avec [[Envoyer un fichier (CSV, Excel ou PDF)]] ; l'import automatique reconnaît la plupart des formats, sinon l'assistant d'import vous guide.
+1. **Un export** de votre banque ou courtier, en CSV ou Excel : envoyez-le avec [[Envoyer un fichier (CSV, Excel, PDF ou image)]] ; l'import automatique reconnaît la plupart des formats, sinon l'assistant d'import vous guide.
 2. **Un relevé ou un avis d'opéré en PDF** (plusieurs à la fois si vous le souhaitez, même protégés par un mot de passe) : il est lu automatiquement, quel que soit le courtier (PDF texte, ou image si la reconnaissance de caractères est installée) ; s'il n'est pas reconnu, le formulaire [[Compléter l'opération]] propose les valeurs trouvées dans le document.
 3. **Une saisie à la main** : [[Ajouter des opérations]], onglet [[Saisie manuelle]].
 

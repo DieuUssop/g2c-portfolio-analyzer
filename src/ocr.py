@@ -187,30 +187,135 @@ def normaliser_polarite(image):
     return Image.fromarray(np.where(texte, 0, 255).astype(np.uint8))
 
 
-def texte_pdf(brut, echelle=3, pretraitement=False):
-    """Texte de chaque page d'un PDF image (liste de textes).
+# ----------------------------------------------------------------------
+# Lecture rapide et lecture ciblée
+# ----------------------------------------------------------------------
+# Un premier coup d'œil à basse résolution (≈ 90 points par pouce) trouve le sens de chaque page,
+# saute les pages sans intérêt et repère la bande utile ; seule cette bande est ensuite lue en haute
+# résolution. Les chiffres du coup d'œil ne sont JAMAIS retenus : une date mal lue (« 2028 » pour
+# « 2026 ») ne serait contrôlée par aucune équation.
+ECHELLE_RAPIDE = 1.25
+_APERCUS = {}                               # (empreinte du PDF, page) -> boîtes du coup d'œil
+_MOTIF_DATE_OCR = re.compile(r"\d{1,2}\s*[/.\-]\s*\d{1,2}\s*[/.\-]\s*\d{2,4}|\d{4}-\d{2}-\d{2}")
+_MOTIF_MONTANT_OCR = re.compile(r"\d[.,]\d{2}(?!\d)")
+_MOTIF_ISIN_OCR = re.compile(r"\b[A-Z]{2}[A-Z0-9]{9}\d\b")
+_MOTS_SENS_OCR = re.compile(r"achat|vente|buy|sell|bought|sold|kauf|souscription|rachat|dividend|coupon",
+                            re.IGNORECASE)
+_PROSE = re.compile(r"\b(?:le|la|les|des|du|et|en|au|aux|une|un|pour|par|sur|dans|qui|que|est|sont|"
+                    r"the|of|and|to|in|is|are|for|with)\b", re.IGNORECASE)
 
+
+def _ligne_utile(texte):
+    """Une ligne qui peut porter une donnée d'opération : une date, un montant, un ISIN, un mot
+    de sens, ou un intitulé court (« Quantité », « Cours »). Une ligne de phrases n'en est pas une."""
+    if _MOTIF_DATE_OCR.search(texte) or _MOTIF_MONTANT_OCR.search(texte) or _MOTIF_ISIN_OCR.search(texte):
+        return True
+    if len(_PROSE.findall(texte)) >= 3 or len(texte.split()) > 6:
+        return False                        # une phrase : pas un intitulé
+    return bool(re.search(r"\d", texte) or MOTS_UTILES.search(texte) or _MOTS_SENS_OCR.search(texte))
+
+
+def coup_d_oeil(image, boites=None):
+    """Lecture rapide d'une page (image à basse résolution). Renvoie (décision, zone, texte) :
+    - ("sauter", None, texte) : page de texte suivi (conditions générales, courrier…) sans date,
+      ni montant, ni code ISIN : rien à y lire ;
+    - ("zone", (haut, bas), texte) : la bande verticale (en fraction de la hauteur) qui contient
+      les lignes utiles — seule cette bande sera relue finement ;
+    - ("tout", None, texte) : on ne sait pas (page presque vide, tournée…) : page entière."""
+    if boites is None:
+        boites = _boites_rapidocr(image) if _rapidocr() is not None else _boites_tesseract(image)
+    texte = _lignes(boites)
+    if len(boites) < 6 or len(_PROSE.findall(texte)) < 4:
+        return "tout", None, texte          # trop peu de mots ou pas de phrases : sens de lecture douteux
+    if not (_MOTIF_DATE_OCR.search(texte) or _MOTIF_MONTANT_OCR.search(texte) or _MOTIF_ISIN_OCR.search(texte)):
+        return "sauter", None, texte
+    # lignes (boîtes de même hauteur) utiles
+    lignes = []
+    for b in sorted(boites, key=lambda b: (b[1] + b[3]) / 2):
+        centre = (b[1] + b[3]) / 2
+        if lignes and abs(lignes[-1]["centre"] - centre) <= max(4, (b[3] - b[1]) * 0.6):
+            lignes[-1]["boites"].append(b)
+        else:
+            lignes.append({"centre": centre, "boites": [b]})
+    utiles = [l for l in lignes if _ligne_utile(" ".join(b[4] for b in sorted(l["boites"], key=lambda b: b[0])))]
+    if not utiles:
+        return "tout", None, texte
+    hauteur = float(image.height)
+    marge = 0.03 * hauteur
+    haut = max(0.0, (min(b[1] for l in utiles for b in l["boites"]) - marge) / hauteur)
+    bas = min(1.0, (max(b[3] for l in utiles for b in l["boites"]) + marge) / hauteur)
+    if bas - haut > 0.85:
+        return "tout", None, texte          # presque toute la page : pas de gain à recadrer
+    return "zone", (haut, bas), texte
+
+
+def texte_pdf(brut, echelle=3, pretraitement=False, pages=None, cible=True):
+    """Texte de chaque page d'un PDF image (liste de textes, une par page du document).
+
+    pages : numéros des pages à lire (les autres renvoient "") ; par défaut toutes.
+    cible : lecture ciblée en haute résolution : une page sans date, montant ni ISIN
+    (conditions générales) n'est pas relue, et seule la bande utile des autres l'est.
     Page à fond sombre (texte clair) : polarité ramenée à « noir sur blanc » et bordures de
     tableau effacées, en résolution plus fine. Orientation : la page droite est lue d'abord ;
     les 3 autres sens ne sont essayés que si elle ne donne presque rien (impression en paysage).
     pretraitement : redresser et nettoyer l'image avant lecture (seconde tentative, plus lente)."""
+    import hashlib
     import pypdfium2
+    empreinte = hashlib.md5(brut).hexdigest()
     document = pypdfium2.PdfDocument(io.BytesIO(brut))
-    images = []
-    for i in range(len(document)):                       # rendu des pages (rapide, une par une)
-        image = document[i].render(scale=echelle).to_pil()
-        if fond_sombre(image):
-            image = ("sombre", document[i].render(scale=max(echelle, 4)).to_pil())
+    a_lire = list(range(len(document))) if pages is None else [i for i in pages if 0 <= i < len(document)]
+
+    # rendu des pages, une par une (pdfium n'aime pas le parallélisme)
+    elements = []
+    for i in a_lire:
+        page = document[i]
+        apercu = page.render(scale=ECHELLE_RAPIDE).to_pil()
+        if fond_sombre(apercu):
+            elements.append((i, "sombre", page.render(scale=max(echelle, 4)).to_pil(), None))
         else:
-            image = ("clair", image)
-        images.append(image)
+            elements.append((i, "clair", page.render(scale=echelle).to_pil(),
+                             apercu if cible and not pretraitement else None))
+
+    def regarder(i, apercu):
+        """Coup d'œil sur la page, dans le bon sens : (angle, décision, zone, texte). Les boîtes
+        sont gardées en mémoire pour la lecture fine qui suit."""
+        cle = (empreinte, i)
+        if cle not in _APERCUS:
+            if len(_APERCUS) > 200:
+                _APERCUS.clear()
+            meilleur = None
+            for angle in (0, 90, 270, 180):              # page imprimée en paysage : on la redresse
+                image = apercu.rotate(angle, expand=True) if angle else apercu
+                boites = _boites_rapidocr(image) if _rapidocr() is not None else _boites_tesseract(image)
+                texte = _lignes(boites)
+                score = _score(texte) + len(_PROSE.findall(texte)) / 4
+                if meilleur is None or score > meilleur[0]:
+                    meilleur = (score, angle, boites, image)
+                if score >= 6:
+                    break
+            _APERCUS[cle] = meilleur[1:]
+        angle, boites, image = _APERCUS[cle]
+        return (angle,) + coup_d_oeil(image, boites)
 
     def lire(element):
-        nature, image = element
+        i, nature, image, apercu = element
+        if apercu is not None:
+            angle, decision, zone, _ = regarder(i, apercu)
+            if decision == "sauter":
+                return ""
+            if angle:
+                image = image.rotate(angle, expand=True)
+            if decision == "zone":
+                haut, bas = zone
+                image = image.crop((0, int(haut * image.height), image.width, int(bas * image.height)))
+            if decision == "zone" or angle:
+                nature = "droite"
         if nature == "sombre":
             image = normaliser_polarite(image)
         elif pretraitement:
             image = ameliorer(image)
+        if nature == "droite":                         # sens de lecture déjà vérifié au coup d'œil
+            return reparer_nombres(reparer_isin(texte_image(image)))
         meilleur, score_max = "", -1
         for angle in (0, 90, 270, 180):
             texte = texte_image(image.rotate(angle, expand=True) if angle else image)
@@ -222,10 +327,11 @@ def texte_pdf(brut, echelle=3, pretraitement=False):
                 break
         return reparer_nombres(reparer_isin(meilleur))
 
-    # les pages sont lues en parallèle (le moteur travaille hors de Python : gain réel)
+    # la reconnaissance, hors de Python, est lancée en parallèle (gain réel)
     from concurrent.futures import ThreadPoolExecutor
-    with ThreadPoolExecutor(max_workers=max(1, min(4, len(images)))) as executeur:
-        return list(executeur.map(lire, images))
+    with ThreadPoolExecutor(max_workers=max(1, min(4, len(elements)))) as executeur:
+        lus = dict(zip([e[0] for e in elements], executeur.map(lire, elements)))
+    return [lus.get(i, "") for i in range(len(document))]
 
 
 _CONFUSIONS = str.maketrans({"O": "0", "o": "0", "I": "1", "l": "1", "|": "1", "S": "5", "B": "8"})

@@ -129,6 +129,10 @@ Ok "Bibliothèques installées"
 & $py -m pip install --no-warn-script-location --disable-pip-version-check -r (Join-Path $Racine "requirements-ocr.txt")
 if ($LASTEXITCODE -ne 0) { Write-Host "    Reconnaissance de caractères non installée : les PDF image seront refusés." -ForegroundColor Yellow }
 else { Ok "Reconnaissance de caractères (PDF image) installée" }
+# Photos (clic sur les 4 coins, photos HEIC) : facultatif également
+& $py -m pip install --no-warn-script-location --disable-pip-version-check -r (Join-Path $Racine "requirements-photos.txt")
+if ($LASTEXITCODE -ne 0) { Write-Host "    Options photos non installées : coins réglés par curseurs, photos HEIC refusées." -ForegroundColor Yellow }
+else { Ok "Options photos installées" }
 $global:LASTEXITCODE = 0
 
 # ---------------------------------------------------------------- 6. Vérification

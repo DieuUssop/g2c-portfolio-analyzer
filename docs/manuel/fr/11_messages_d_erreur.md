@@ -12,7 +12,7 @@ Aucun portefeuille n'est disponible : pas de fichier envoyé, aucun portefeuille
 
 ### Solution
 
-1. Dans la barre latérale, rubrique « Données », utilisez [[Envoyer un fichier (CSV, Excel ou PDF)]] pour charger vos opérations.
+1. Dans la barre latérale, rubrique « Données », utilisez [[Envoyer un fichier (CSV, Excel, PDF ou image)]] pour charger vos opérations.
 2. Ou connectez-vous avec [[Se connecter]] : vos portefeuilles enregistrés apparaissent alors dans la liste.
 3. Si vous n'avez pas encore de fichier, téléchargez le [[Modèle de fichier]], remplissez-le et envoyez-le.
 
@@ -343,7 +343,7 @@ Ces deux pages n'utilisent que la lecture **automatique**. Elles n'ouvrent pas l
 
 ### Solution
 
-1. Envoyez le fichier depuis la barre latérale, avec [[Envoyer un fichier (CSV, Excel ou PDF)]] : l'assistant d'import vous guidera.
+1. Envoyez le fichier depuis la barre latérale, avec [[Envoyer un fichier (CSV, Excel, PDF ou image)]] : l'assistant d'import vous guidera.
 2. Une fois le fichier lu, enregistrez-le avec le bouton « Enregistrer dans mon espace » qui apparaît sous l'envoi.
 3. Pour quelques opérations seulement, utilisez la [[Saisie manuelle]].
 

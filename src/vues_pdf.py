@@ -20,7 +20,7 @@ fichier depuis la barre latérale (app.py).
 import pandas as pd
 import streamlit as st
 
-from . import import_fichier, lecture_pdf
+from . import images, import_fichier, lecture_pdf
 from . import interface as ui
 from .langues import anglais, t, td
 
@@ -89,8 +89,107 @@ def _empreinte(brut):
 
 
 def version_lisible(brut):
-    """Le PDF tel qu'il faut le lire : sa copie déchiffrée si l'utilisateur a donné le mot de passe."""
+    """Le fichier tel qu'il faut le lire : la copie déchiffrée d'un PDF dont l'utilisateur a donné
+    le mot de passe ; pour une photo ou une capture d'écran, le PDF préparé (src/images.py), redressé
+    d'après les 4 coins cliqués par l'utilisateur s'il l'a fait."""
+    if images.est_image(brut):
+        coins = st.session_state.get("coins_images", {}).get(_empreinte(brut))
+        try:
+            pdf, _ = _image_en_pdf(brut, tuple(map(tuple, coins)) if coins else None)
+        except Exception:
+            return brut                       # image illisible : le message vient de la lecture
+        st.session_state.setdefault("images_source", {})[_empreinte(pdf)] = brut
+        return pdf
     return st.session_state.get("pdf_dechiffres", {}).get(_empreinte(brut), brut)
+
+
+@st.cache_data(show_spinner=False, max_entries=20)
+def _image_en_pdf(brut, coins):
+    return images.image_en_pdf(brut, [tuple(c) for c in coins] if coins else None)
+
+
+NOMS_COINS = ["haut gauche", "haut droit", "bas droit", "bas gauche"]
+
+
+def _dessiner_coins(image, points):
+    """Aperçu de la photo avec les coins déjà placés (points rouges) et le contour de la feuille."""
+    from PIL import ImageDraw
+    apercu = image.copy()
+    dessin = ImageDraw.Draw(apercu)
+    rayon = max(4, apercu.width // 120)
+    if len(points) >= 2:
+        dessin.line(list(points) + ([points[0]] if len(points) == 4 else []), fill=(220, 30, 30),
+                    width=max(2, rayon // 2))
+    for k, (x, y) in enumerate(points):
+        dessin.ellipse([x - rayon, y - rayon, x + rayon, y + rayon], fill=(220, 30, 30))
+        dessin.text((x + rayon + 2, y - rayon), str(k + 1), fill=(220, 30, 30))
+    return apercu
+
+
+def redresser_photo(brut, cle):
+    """« Plan B » pour une photo mal lue : l'utilisateur indique lui-même les 4 coins de la feuille
+    (en cliquant sur l'image si la bibliothèque streamlit-image-coordinates est installée, sinon
+    avec des curseurs). La photo est alors redressée et relue. Rien n'est affiché pour un vrai PDF."""
+    source = st.session_state.get("images_source", {}).get(_empreinte(brut))
+    if source is None:
+        return
+    try:
+        image = images.ouvrir(source)
+    except Exception:
+        return
+    cle_image = _empreinte(source)
+    deja = st.session_state.get("coins_images", {}).get(cle_image)
+    _, infos = _image_en_pdf(source, tuple(map(tuple, deja)) if deja else None)
+    if deja:
+        st.caption(t("Photo redressée d'après les 4 coins que vous avez indiqués."))
+    elif infos.get("auto"):
+        st.caption(t("Photo : feuille trouvée et redressée automatiquement."))
+    largeur = min(700, image.width)
+    echelle = largeur / image.width
+    apercu = image.resize((largeur, max(1, int(image.height * echelle))))
+    with st.expander(t("Photo mal lue ? Indiquez les 4 coins de la feuille"), expanded=False,
+                     icon=":material/crop_free:"):
+        st.caption(t("Dans l'ordre : haut gauche, haut droit, bas droit, bas gauche. La photo sera remise "
+                     "à plat puis relue."))
+        points = st.session_state.setdefault(f"coins_clics_{cle}", [])     # en pixels de l'aperçu
+        try:
+            from streamlit_image_coordinates import streamlit_image_coordinates
+        except ImportError:
+            streamlit_image_coordinates = None
+        if streamlit_image_coordinates is not None:
+            if len(points) < 4:
+                st.caption(t("Cliquez sur le coin {coin}.", coin=t(NOMS_COINS[len(points)])))
+            clic = streamlit_image_coordinates(_dessiner_coins(apercu, points), key=f"coins_img_{cle}_{len(points)}")
+            if clic and len(points) < 4:
+                facteur = largeur / clic.get("width", largeur) if clic.get("width") else 1.0
+                points.append((clic["x"] * facteur, clic["y"] * facteur))
+                st.rerun()
+        else:
+            # sans la bibliothèque de clic : un curseur horizontal et un vertical par coin (en %)
+            depart = [(x * echelle, y * echelle) for x, y in (deja or images.trouver_coins(image) or
+                      [(0, 0), (image.width, 0), (image.width, image.height), (0, image.height)])]
+            depart = [tuple(p) for p in images.ordonner_coins(depart)]
+            colonnes = st.columns(4)
+            nouveaux = []
+            for k, colonne in enumerate(colonnes):
+                colonne.markdown(f"**{t(NOMS_COINS[k]).capitalize()}**")
+                x = colonne.slider(t("Horizontal (%)"), 0, 100, int(round(100 * depart[k][0] / largeur)),
+                                   key=f"coin_x_{cle}_{k}")
+                y = colonne.slider(t("Vertical (%)"), 0, 100, int(round(100 * depart[k][1] / apercu.height)),
+                                   key=f"coin_y_{cle}_{k}")
+                nouveaux.append((x / 100 * largeur, y / 100 * apercu.height))
+            points[:] = nouveaux
+            st.image(_dessiner_coins(apercu, points), width=largeur)
+        gauche, droite = st.columns(2)
+        if gauche.button(t("Recommencer"), key=f"coins_raz_{cle}", icon=":material/restart_alt:"):
+            points.clear()
+            st.session_state.get("coins_images", {}).pop(cle_image, None)
+            st.rerun()
+        if droite.button(t("Redresser et relire"), key=f"coins_ok_{cle}", type="primary",
+                         disabled=len(points) != 4, icon=":material/crop_rotate:"):
+            st.session_state.setdefault("coins_images", {})[cle_image] = [(x / echelle, y / echelle) for x, y in points]
+            points.clear()
+            st.rerun()
 
 
 def demander_mot_de_passe(brut, nom_fichier, cle):
@@ -162,6 +261,7 @@ def formulaire(brut, nom_fichier, cle, raison=None):
                               t("{nom} : valeurs trouvées dans le document, à vérifier", nom=nom_fichier)))
         if raison:
             st.caption(t(raison))
+        redresser_photo(brut, cle)
         with st.spinner(t("Lecture du document...")):
             c = candidats_pdf(brut)
         proposition = c["proposition"] or {}

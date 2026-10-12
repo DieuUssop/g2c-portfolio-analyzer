@@ -2,7 +2,7 @@
 
 ## Ce que ça permet
 
-N'importe qui peut envoyer **son** fichier depuis la barre latérale du tableau de bord (« Envoyer un fichier (CSV, Excel ou PDF) »), sans respecter le format du projet :
+N'importe qui peut envoyer **son** fichier depuis la barre latérale du tableau de bord (« Envoyer un fichier (CSV, Excel, PDF ou image) »), sans respecter le format du projet :
 
 - un **export de banque ou de courtier** (relevé d'opérations en CSV, Excel ou **PDF**) ;
 - un **avis d'opéré en PDF** (la confirmation envoyée par la banque après chaque ordre) ;
@@ -87,7 +87,16 @@ Quand la détection automatique a un doute, l'assistant s'ouvre, en 4 étapes (i
 `tests/test_pdf.py` vérifie la lecture d'un relevé PDF (tableau), d'un avis d'opéré (date d'exécution et non d'édition, ISIN, quantité, cours, devise) et le cas d'un PDF scanné.
 `tests/test_pdf_universel.py` est le banc d'essai « tous courtiers » : 20 documents fictifs aux mises en page très différentes (`tests/avis_fictifs.py`, fabriqués à la volée : courtier en ligne 2023 en tableau et 2026, intitulés avec ou sans deux-points, deux colonnes, anglais sans intitulé de quantité, quantité fractionnaire, mois en lettres et dollars, date en toutes lettres, deux opérations sans tableau, dividende, montant net seul, frais multiples et bruit, contre-valeur en euros, quantité 1, texte « codé », deux scans, colonnes sans traits, scan abîmé, relevé de portefeuille), plus les tests du départage par le marché, des modèles appris, des contrôles, du PDF protégé, des divisions et de l'anonymisation. Chacun doit être lu exactement, par la chaîne complète ET par la seule lecture du contenu. `python -m tests.avis_fictifs dossier` écrit ces PDF pour les ouvrir.
 
+`tests/donnees/vrais_avis/credit_agricole_pea.txt` : vrai avis Crédit Agricole (PEA, 10 pages, 14 opérations ; numéros d'ordre masqués) — sens et date au-dessus de la ligne de l'ISIN, TVA sur les frais, cadres décoratifs à ne pas prendre pour un tableau (`_tableau_fidele`).
+
+**Vitesse de l'OCR** (`src/ocr.py`) : coup d'œil en basse résolution (sens de la page, pages de conditions générales sautées, bande utile repérée, et lecture retenue si `quantité × cours = montant`), puis lecture fine de la seule bande utile ; seules les pages sans texte lisible passent par la reconnaissance. Tests : `test_coup_d_oeil_*`, `test_lecture_ciblee_document_avec_conditions_generales`.
+
+`tests/test_portfolio_performance.py` est le banc des **vrais** avis : 160 textes d'avis de 10 courtiers européens (Bourse Direct, BoursoBank, Fortuneo, Keytrade, DEGIRO, Trade Republic, Crédit Mutuel, Saxo Bank, Swissquote, Trading 212), tirés des tests du logiciel libre Portfolio Performance (licence EPL-1.0, attribution et licence dans `tests/donnees/portfolio_performance/`). Résultat actuel : 103 lus exactement, 13 lus avec un cours dans une autre devise, 1 faux, les autres renvoyés au formulaire ; les seuils du test empêchent tout recul.
+
 ## Les PDF
+
+- **Obligations et fonds** (`src/lecture_pdf.py`) : variante de l'équation pour les obligations, `nominal × cours % / 100 = brut` (cours suivi de « % » ou document qui parle d'obligation ; quantité enregistrée = nominal / 100), coupon couru reconnu (hors frais, mais compté dans `brut + frais + coupon = net`) ; fonds : parts fractionnaires arrondies tolérées, valeur liquidative = cours, droits d'entrée = frais. Flottants avec tolérance au centime (pas de Decimal). Tests : modèles `obligation` et `fonds_parts_et_droits_d_entree` de `tests/avis_fictifs.py`.
+- **Photos et captures d'écran** (JPG, PNG, WEBP, HEIC) — `src/images.py` : sens EXIF, feuille trouvée et redressée (OpenCV : contours, perspective), éclairage égalisé (fond estimé puis retiré), taille ajustée, puis conversion en PDF d'une page lu comme un scan. Plan B dans le formulaire : l'utilisateur indique les 4 coins (clic avec `streamlit-image-coordinates`, sinon curseurs). Tests : `tests/test_images.py` (photos fictives de biais, avec ombre, tenue verticalement, capture d'écran, coin hors cadre).
 
 - **Relevé avec un tableau** : les tableaux du PDF sont extraits (bibliothèque *pdfplumber*), puis lus comme un fichier Excel, avec la même détection automatique.
 - **Avis d'opéré** : le texte est d'abord lu par ses intitulés (« Quantité : », « Cours : », « Courtage : »…) : date d'exécution, sens (achat / vente), code ISIN, quantité, cours et devise, courtage et taxes, montant net. Un PDF de plusieurs pages contenant un avis par page donne une opération par page.

@@ -37,7 +37,7 @@ Le fichier peut avoir ses propres noms de colonnes, en français ou en anglais, 
 
 ### Où envoyer le fichier
 
-Dans la barre latérale, rubrique « Données », utilisez la zone [[Envoyer un fichier (CSV, Excel ou PDF)]] : glissez-y le fichier ou cliquez pour le choisir. Vous pouvez y déposer plusieurs fichiers à la fois : leurs opérations sont réunies (voir la fiche « Envoyer plusieurs fichiers d'un coup »). Le fichier envoyé est **prioritaire** sur le portefeuille choisi dans la liste juste au-dessus : tant qu'il est présent dans la zone d'envoi, c'est lui qui est analysé.
+Dans la barre latérale, rubrique « Données », utilisez la zone [[Envoyer un fichier (CSV, Excel, PDF ou image)]] : glissez-y le fichier ou cliquez pour le choisir. Vous pouvez y déposer plusieurs fichiers à la fois : leurs opérations sont réunies (voir la fiche « Envoyer plusieurs fichiers d'un coup »). Le fichier envoyé est **prioritaire** sur le portefeuille choisi dans la liste juste au-dessus : tant qu'il est présent dans la zone d'envoi, c'est lui qui est analysé.
 
 ### Ce que fait le logiciel
 
@@ -146,7 +146,7 @@ Dans la barre latérale, rubrique « Données », cliquez sur [[Modèle de fichi
 1. Ouvrez le fichier dans Excel, LibreOffice ou un éditeur de texte.
 2. Remplacez les lignes d'exemple par vos propres opérations, en gardant la première ligne (les noms de colonnes).
 3. Enregistrez, au choix, en CSV (séparateur virgule ou point-virgule) ou en classeur Excel `.xlsx`.
-4. Envoyez le fichier avec la zone [[Envoyer un fichier (CSV, Excel ou PDF)]].
+4. Envoyez le fichier avec la zone [[Envoyer un fichier (CSV, Excel, PDF ou image)]].
 
 ### Conseils de saisie
 
@@ -736,6 +736,53 @@ Une page imprimée depuis un navigateur en mode sombre (texte clair sur fond noi
 - Une commission mal lue sur une ligne peut rester fausse : vérifiez la colonne Frais dans l'onglet [[Transactions]].
 - Le plus sûr reste de télécharger le relevé au format CSV ou PDF « texte » depuis l'espace client du courtier plutôt que de l'imprimer.
 
+## Avis de courtiers étrangers et cas particuliers (allemand, espagnol, italien, néerlandais…)
+<!-- fiche: import-pdf-courtiers-europeens | questions: mon avis trade republic est il lu ; avis en allemand ; avis degiro pdf ; relevé degiro transactions ; plan d'investissement programmé trade republic ; sparplan ; fractions d'action ; exécution fractionnée fortuneo ; plusieurs titres dans un relevé bourse direct ; avis saxo bank ; swissquote ; keytrade ; quels courtiers sont reconnus ; avis crédit agricole pea ; le logiciel est il testé sur de vrais avis | mots: Trade Republic, DEGIRO, Saxo Bank, Swissquote, Keytrade, Fortuneo, BoursoBank, Bourse Direct, Kauf, Verkauf, Sparplan, compra, acquisto, aankoop, Stk., exécution fractionnée, quantité fractionnée, banc d'essai, Portfolio Performance, Crédit Agricole, TVA sur frais -->
+
+La lecture par le contenu ne dépend pas de la langue du document : elle cherche toujours un ISIN, une date et trois nombres qui vérifient **quantité × cours = montant**. Elle connaît en plus les mots utiles de plusieurs langues.
+
+### Ce qui est reconnu
+
+- **Le sens** : achat / vente, buy / sell, Kauf / Verkauf, compra / venta, acquisto / vendita, aankoop / verkoop, ainsi que les plans d'investissement (« investissement programmé », Sparplan, piano d'investimento, plan de inversión, Round up, Saveback) et les rachats d'OPC (« REPRISE SICAV », « REPRISE F.C.P. ») lus comme des ventes.
+- **La date d'exécution** : « Kauf am », « Handelszeit », « Trade time », « Datum en tijdstip van uitvoering »… La date de valeur (Valuta, Value Date, Valutadatum), la date de comptabilisation et la date d'édition du document sont écartées.
+- **La quantité** : un nombre suivi de « Stk. », « titre(s) », « Pz. », « tít. », « shares »… est la quantité ; un nombre suivi d'une devise (« 55,13 EUR ») est un cours ou un montant.
+- **Les frais** : courtage, commission, Fremdkostenzuschlag, Provision, Makelaarsloon, Beurstaks, droits d'entrée… y compris quand ils sont écrits sous leur intitulé (« Montant total des frais » puis la valeur à la ligne suivante).
+- **Les fractions d'action** (« 0,4534 Stk. à 55,13 = 25,00 ») : le cours affiché étant arrondi, un petit écart est accepté entre quantité × cours et le montant.
+- **Plusieurs opérations dans un même document** : un relevé Bourse Direct avec plusieurs titres, un ordre Fortuneo « Exécution fractionnée » en plusieurs morceaux, un relevé de transactions DEGIRO (une ligne par opération, la vente se reconnaissant au signe « − » de la quantité). Une taxe écrite sur une ligne à part (« TAXE TRANSACT FINANCIERES … TTF 1,45 ») est ajoutée aux frais de l'opération du même titre.
+- **Avis Crédit Agricole** (plusieurs opérations par page, sous forme de lettre) : la date et le sens (« 22.03.2024 ACHAT COMPTANT ») sont écrits au-dessus de la ligne du titre (« DE 3 ACTIONS ENGIE (FR0010208488) ») ; chaque opération est rattachée à son propre bloc. Les frais comprennent la TVA sur les frais (« FRAIS DE NEGOCIATION SOUMIS A TVA 0,85 » + « TVA 20,00 % 0,17 » = 1,02). Les cadres décoratifs de la page ne sont pas pris pour un tableau (ils coupaient les mots en morceaux).
+- **Cours à 3 décimales ou plus** (« 3 × 15,392 = 46,18 ») : l'arrondi du montant au centime est accepté.
+- Les numéros de compte (IBAN), codes postaux, numéros de page et mentions légales (« § 4 Nr. 8 ») ne sont pas pris pour des montants.
+
+### Le banc d'essai
+
+L'application est vérifiée sur **160 vrais avis d'opéré** de 10 courtiers européens, publiés (anonymisés) par le logiciel libre Portfolio Performance sous licence EPL. Résultat actuel : 103 avis lus entièrement juste, 13 autres lus avec la bonne date, le bon sens et la bonne quantité mais un cours dans une autre devise, 1 seul lu faux, les autres passant la main au formulaire « Compléter l'opération ». Tous les avis Bourse Direct et BoursoBank du banc sont lus.
+
+### Les limites
+
+- Un avis sans code ISIN (cryptomonnaies, options, certains produits dérivés) n'est pas lu automatiquement : le formulaire [[Compléter l'opération]] prend le relais.
+- Pour une opération en devise étrangère, le cours retenu est celui écrit à côté de la quantité ; vérifiez la devise dans l'onglet [[Transactions]].
+- Les opérations sur titres (fusion, remboursement) ne sont pas encore lues automatiquement. Les obligations et les fonds ont leur propre fiche.
+
+## Avis d'opéré d'obligation ou de fonds (OPCVM)
+<!-- fiche: import-obligations-fonds | questions: mon avis d'achat d'obligation est il lu ; obligation cours en pourcentage ; c'est quoi le coupon couru ; pourquoi la quantité de mon obligation est divisée par 100 ; nominal de l'obligation ; souscription de parts de fonds ; parts fractionnaires de sicav ; valeur liquidative ; droits d'entrée ; rachat de fcp | mots: obligation, nominal, cours en %, pied de coupon, coupon couru, intérêts courus, Stückzinsen, accrued interest, fonds, OPCVM, SICAV, FCP, parts, valeur liquidative, VL, droits d'entrée -->
+
+La lecture par le contenu vérifie toujours une équation entre les nombres du document. Pour une action, c'est `quantité × cours = montant brut`. Les obligations et les fonds ont chacun leur variante.
+
+### Obligation : nominal × cours en % = montant brut
+
+Le cours d'une obligation est exprimé **en pourcentage du nominal** (du pair). Exemple : un nominal de 5 000 € acheté au cours de 101,25 % coûte `5 000 × 101,25 / 100 = 5 062,50 €`. Le logiciel reconnaît ce cas quand le cours est suivi de « % », ou quand le document parle d'obligation (obligation, OAT, bond, Anleihe, nominal…).
+
+- **Quantité enregistrée** : le nominal divisé par 100, soit 50 « parts » de 100 € au cours de 101,25. Ainsi `quantité × cours = montant` reste vrai dans le portefeuille, et le cours reste lisible en pourcentage du pair.
+- **Coupon couru** (« coupon couru », « intérêts courus », Stückzinsen, accrued interest) : c'est la part du prochain coupon qui revient au vendeur ; l'acheteur l'avance et la récupère au détachement du coupon. Ce n'est **pas un frais** : il n'est pas ajouté aux frais, mais il est utilisé pour vérifier le montant net (`brut + frais + coupon couru = net`). Le cours retenu est donc le cours « pied de coupon » (hors coupon couru).
+- Les obligations ont rarement un cours sur Yahoo Finance : le titre peut demander d'indiquer un ticker ou d'être saisi à la main, et sa valorisation suivra alors le dernier cours connu.
+
+### Fonds (OPCVM, SICAV, FCP) : parts × valeur liquidative = montant brut
+
+- Les **parts** sont souvent fractionnaires (« 12,3456 parts ») et arrondies sur l'avis : un petit écart dû à cet arrondi est accepté.
+- La **valeur liquidative** (VL) est lue comme le cours.
+- Les **droits d'entrée** (« Droits d'entrée (2,00 %) : 37,62 EUR ») sont des frais : `brut + droits d'entrée = net`.
+- Une souscription est un achat ; un rachat (« REPRISE SICAV », « REPRISE F.C.P. », « rachat ») est une vente.
+
 ## Vérification du cours lu avec le cours du marché
 <!-- fiche: import-pdf-verification-marche | questions: le logiciel vérifie t il le cours lu dans mon avis ; cours lu remplacé par pourquoi ; le logiciel a changé ma quantité et mon prix ; comment il choisit entre deux lectures du pdf ; cours de clôture affiché dans le formulaire ; le prix unitaire doit en être proche ça veut dire quoi ; vérification avec yahoo finance du prix de mon avis ; pourquoi les nombres de la liste sont dans cet ordre | mots: vérification par le marché, cours de clôture, Yahoo Finance, départage, arbitrage, lecture alternative, 15 %, 5 %, cours lu remplacé | aller: Analyse du portefeuille/Transactions -->
 
@@ -775,7 +822,7 @@ Quand un PDF ne donne aucune opération sûre, le logiciel ne se contente pas d'
 ### Quand le formulaire apparaît
 
 - Sur la page [[Ajouter des opérations]], onglet [[Depuis un fichier]] : pour tout PDF dont l'import automatique n'est pas sûr (aucune opération lue, titre introuvable…).
-- Après un envoi avec [[Envoyer un fichier (CSV, Excel ou PDF)]] dans la barre latérale : quand le PDF ne donne aucune opération, que le fichier soit envoyé seul ou avec d'autres.
+- Après un envoi avec [[Envoyer un fichier (CSV, Excel, PDF ou image)]] dans la barre latérale : quand le PDF ne donne aucune opération, que le fichier soit envoyé seul ou avec d'autres.
 
 La raison s'affiche sous le titre du formulaire, par exemple « Opération non reconnue automatiquement dans ce PDF… ».
 
@@ -846,25 +893,58 @@ Pour un PDF image, le logiciel « regarde » chaque page et y reconnaît les let
 1. **RapidOCR**, bibliothèque qui fonctionne hors connexion, installée avec le fichier `requirements-ocr.txt` et intégrée aux installateurs lorsque leur fabrication a réussi à l'installer ;
 2. à défaut, **Tesseract**, s'il est installé sur l'ordinateur (en français et en anglais si la langue française est disponible).
 
-### Deux tentatives
+### Trois tentatives, de la plus rapide à la plus soignée
 
-1. Une **première lecture**, rapide, de l'image de chaque page.
-2. Si elle ne donne aucune opération sûre, une **seconde lecture**, plus lente, sur une image nettoyée et en plus haute résolution (échelle 4 au lieu de 3) : passage en niveaux de gris, contraste étiré, page redressée (l'inclinaison est cherchée entre −3° et +3°, par pas d'un demi-degré), puis passage en noir et blanc pur (seuil d'Otsu, qui sépare automatiquement l'encre du fond). Un scan pâle, granuleux ou légèrement de travers devient ainsi lisible.
+1. Un **coup d'œil** en basse résolution sur chaque page. Il sert à trois choses : trouver le bon sens de la page (portrait ou paysage), repérer les pages sans intérêt (conditions générales, courrier : du texte suivi sans date, ni montant, ni code ISIN), qui ne seront pas lues, et repérer la **bande utile** de chaque page (les lignes avec dates, montants, ISIN, sens ou intitulés courts). Les chiffres de ce coup d'œil ne sont jamais retenus : en basse résolution, une date peut être mal lue (« 2028 » pour « 2026 ») sans qu'aucun calcul ne le révèle.
+2. Puis une **lecture fine** en haute résolution, mais seulement de la bande utile des pages utiles. Exemple : un scan de 5 pages (l'avis puis 4 pages de conditions générales) est lu en 14 secondes au lieu de 24 ; un avis suivi d'un long texte sur la même page, en 7 secondes au lieu de 12.
+3. Si elle ne donne aucune opération sûre, une **seconde lecture**, plus lente, sur une image nettoyée et en plus haute résolution (échelle 4 au lieu de 3) : passage en niveaux de gris, contraste étiré, page redressée (l'inclinaison est cherchée entre −3° et +3°, par pas d'un demi-degré), puis passage en noir et blanc pur (seuil d'Otsu, qui sépare automatiquement l'encre du fond). Un scan pâle, granuleux ou légèrement de travers devient ainsi lisible.
 
 ### Les précautions prises
 
 - **Page à fond sombre** (impression en « mode sombre », lignes de tableau foncées) : la page est remise en noir sur blanc zone par zone, en plus haute résolution, et les bordures de tableau sont effacées avant la lecture.
 - **Rotation** : la page est d'abord lue droite ; les trois autres sens (90°, 270°, 180°) ne sont essayés que si elle ne donne presque rien d'utile (ni code ISIN, ni long texte avec des mots attendus : quantité, cours, achat, vente, price, quantity, buy, sell…).
-- **Plusieurs pages** : elles sont lues en même temps, ce qui divise le temps d'attente.
+- **Plusieurs pages** : elles sont lues en même temps, ce qui divise le temps d'attente. Dans un PDF dont certaines pages ont un vrai texte, seules les pages sans texte lisible passent par la reconnaissance.
 - **Réparation des ISIN mal lus** : la lettre O lue à la place du chiffre 0 (`FRO013380607`), un I ou un l à la place de 1, S pour 5, B pour 8, Z pour 2, ou un caractère lu en double (`FRO0013380607`). Une correction n'est retenue que si l'ISIN corrigé a une clé de contrôle juste, un code pays existant et au moins 4 chiffres : le logiciel n'invente jamais un code. Un mot comme « EURONEXTPARIS » n'est jamais pris pour un ISIN.
 - **Réparation des nombres** : dans un nombre, une lettre lue à la place d'un chiffre est corrigée (O ou o en 0, I, l ou | en 1, S en 5, B en 8) : « 65O,2O » devient « 650,20 ». La correction n'a lieu que dans un groupe qui contient déjà au moins deux vrais chiffres et une virgule ou un point décimal, sans autre lettre : les mots ne sont jamais modifiés.
 - **Mots collés** : la lecture tolère les mots accolés (« VENTECOMPTANT »).
+- **Date dans le futur** : une date d'opération postérieure à aujourd'hui est forcément mal lue ; l'opération n'est pas retenue automatiquement et le formulaire [[Compléter l'opération]] prend le relais.
 
 Le texte reconnu est ensuite lu comme un relevé « une ligne par opération » (voir la fiche dédiée), puis comme un avis d'opéré : par ses intitulés, par son contenu (ISIN, date, `quantité × cours = montant`), puis avec un modèle appris. Un relevé de portefeuille scanné n'est en général pas exploitable. Si aucune opération n'est reconnue, le formulaire [[Compléter l'opération]] propose les valeurs lues.
 
 ### À vérifier systématiquement
 
 La lecture d'une image prend du temps : environ 10 à 30 secondes par page selon l'ordinateur (davantage si la seconde tentative est nécessaire) ; le message d'attente l'indique avec le nombre de pages. Pendant ce temps, l'ancien tableau de bord reste affiché en grisé : c'est normal. Elle reste moins sûre qu'un PDF texte. Le résumé l'indique : « PDF image lu par reconnaissance de caractères : vérifiez les opérations (onglet « Transactions »). ». Contrôlez la date, la quantité et le cours.
+
+## Une photo ou une capture d'écran d'avis d'opéré (JPG, PNG)
+<!-- fiche: import-photo | questions: je peux envoyer une photo de mon avis ; capture d'écran de mon appli bancaire ; le logiciel lit il les images ; jpg png accepté ; photo prise avec mon téléphone ; photo de travers ; photo avec une ombre ; cliquer sur les 4 coins ; photo mal lue ; photo iphone heic ; redresser la photo | mots: photo, capture d'écran, JPG, PNG, WEBP, HEIC, image, redressement, perspective, 4 coins, ombre, OpenCV, EXIF -->
+
+Le logiciel accepte, en plus des CSV, Excel et PDF, une **photo** ou une **capture d'écran** d'un avis d'opéré : formats JPG, PNG et WEBP, ainsi que HEIC (photos d'iPhone) si la bibliothèque `pillow-heif` est installée. Envoyez-la comme un autre fichier, depuis [[Envoyer un fichier (CSV, Excel, PDF ou image)]] dans la barre latérale ou depuis la page [[Ajouter des opérations]].
+
+### Ce que fait le logiciel
+
+L'image est d'abord **préparée**, puis lue exactement comme un PDF scanné (voir la fiche « Un PDF scanné ou imprimé : la reconnaissance de caractères ») :
+
+1. **Le bon sens** : un téléphone tenu à la verticale enregistre souvent la photo couchée, avec une indication de rotation à part (données EXIF) ; la photo est remise droite.
+2. **La feuille remise à plat** : les 4 coins de la feuille sont cherchés automatiquement (contours de la feuille sur la table, bibliothèque OpenCV), puis la perspective est corrigée : une feuille photographiée de biais redevient un rectangle.
+3. **L'éclairage égalisé** : sur une photo, l'ombre de la main ou le dégradé d'une lampe sont retirés (le fond est estimé autour de chaque point puis effacé). Une capture d'écran, à l'éclairage uniforme, n'est pas modifiée.
+4. **La bonne taille** : une petite capture d'écran est agrandie (×2 ou ×3) pour que les chiffres soient assez grands ; une photo de 12 mégapixels est réduite à l'équivalent d'une page A4 à 300 points par pouce (plus grand ne lit pas mieux, seulement plus lentement).
+
+L'opération n'est retenue automatiquement que si elle est cohérente (`quantité × cours = montant`, date plausible) ; sinon le formulaire [[Compléter l'opération]] s'ouvre avec les valeurs lues.
+
+### Si la photo est mal lue : indiquer les 4 coins
+
+Quand la feuille n'est pas trouvée (un coin hors du cadre, une table claire sous une feuille blanche…), le formulaire propose [[Photo mal lue ? Indiquez les 4 coins de la feuille]] :
+
+- cliquez sur les 4 coins de la feuille, dans l'ordre : haut gauche, haut droit, bas droit, bas gauche (si la bibliothèque `streamlit-image-coordinates` est installée ; sinon, réglez chaque coin avec deux curseurs, horizontal et vertical, en suivant le contour rouge sur l'aperçu) ;
+- cliquez sur [[Redresser et relire]] : la photo est remise à plat d'après vos coins puis relue ;
+- [[Recommencer]] efface les coins placés.
+
+### Conseils pour une bonne photo
+
+- Posez la feuille à plat sur une surface plus sombre qu'elle, et cadrez la feuille entière.
+- Évitez le flash (reflet) ; une lumière du jour indirecte est idéale.
+- Une capture d'écran de l'appli de votre banque se lit mieux qu'une photo de l'écran.
+- Le plus sûr reste le PDF téléchargé depuis l'espace client : il contient du vrai texte et se lit sans reconnaissance de caractères.
 
 ## Pourquoi mon PDF scanné est-il refusé ?
 <!-- fiche: import-pdf-scan-refuse | questions: pdf scanné refusé ; message impossible à lire automatiquement ; aucune opération n'a été reconnue dans mon pdf image ; pourquoi mon scan ne passe pas ; le logiciel refuse ma photo d'avis d'opéré ; que faire si mon pdf est une image ; installer la reconnaissance de caractères | mots: PDF scanné, refus, PDF image, OCR non installé, message d'erreur, Format PDF, saisie manuelle, requirements-ocr -->
@@ -966,7 +1046,7 @@ Certaines banques envoient leurs relevés et avis d'opéré dans des PDF protég
 
 ### Ce qui s'affiche
 
-À l'envoi d'un tel PDF (zone [[Envoyer un fichier (CSV, Excel ou PDF)]] de la barre latérale, ou page [[Ajouter des opérations]]), un encadré [[PDF protégé]] apparaît avec le nom du fichier et le message :
+À l'envoi d'un tel PDF (zone [[Envoyer un fichier (CSV, Excel, PDF ou image)]] de la barre latérale, ou page [[Ajouter des opérations]]), un encadré [[PDF protégé]] apparaît avec le nom du fichier et le message :
 
 « PDF protégé par un mot de passe : saisissez-le pour l'ouvrir (souvent indiqué dans le courriel de la banque : date de naissance, identifiant client…). Il n'est pas enregistré. »
 
@@ -989,7 +1069,7 @@ La rubrique [[Ajouter un portefeuille]] de [[Mon compte]] ne demande pas de mot 
 ## Envoyer plusieurs fichiers d'un coup
 <!-- fiche: import-plusieurs-fichiers | questions: envoyer plusieurs fichiers en même temps ; importer tous mes avis d'opéré d'un coup ; j'ai 10 pdf comment les mettre ensemble ; plusieurs fichiers dans la barre latérale ; analyser les opérations déjà lues ; fichiers envoyés en attente ; un avis est dans deux fichiers est il compté deux fois ; réunir plusieurs relevés dans un portefeuille ; déposer tous mes pdf en une seule fois | mots: plusieurs fichiers, lot, envoi multiple, en une fois, d'un coup, Fichiers envoyés, avis d'opéré, fusion, en attente, doublons, barre latérale -->
 
-La zone [[Envoyer un fichier (CSV, Excel ou PDF)]] de la barre latérale accepte plusieurs fichiers à la fois : par exemple tous les avis d'opéré d'une année, ou un export CSV et quelques avis PDF. Leurs opérations sont réunies dans un même portefeuille.
+La zone [[Envoyer un fichier (CSV, Excel, PDF ou image)]] de la barre latérale accepte plusieurs fichiers à la fois : par exemple tous les avis d'opéré d'une année, ou un export CSV et quelques avis PDF. Leurs opérations sont réunies dans un même portefeuille.
 
 ### Ce qui se passe
 
@@ -1012,7 +1092,7 @@ Comme pour un fichier seul, connecté, le bloc [[Enregistrer dans mon espace]] a
 
 ### Pour compléter un portefeuille existant
 
-Pour ajouter des avis à un portefeuille déjà enregistré, utilisez plutôt la page [[Ajouter des opérations]], dont la zone [[Fichiers (CSV, Excel ou PDF)]] accepte aussi plusieurs fichiers et repère les opérations déjà présentes dans le portefeuille.
+Pour ajouter des avis à un portefeuille déjà enregistré, utilisez plutôt la page [[Ajouter des opérations]], dont la zone [[Fichiers (CSV, Excel, PDF ou image)]] accepte aussi plusieurs fichiers et repère les opérations déjà présentes dans le portefeuille.
 
 ## Diagnostiquer un PDF mal lu avec diagnostic_pdf.py
 <!-- fiche: import-diagnostic-pdf | questions: comment savoir ce que le logiciel lit dans mon pdf ; diagnostic_pdf.py à quoi ça sert ; mon avis d'opéré est mal lu comment le signaler ; voir le texte extrait du pdf ; envoyer un rapport de lecture pdf ; diagnostic_pdf.txt ; debug pdf | mots: diagnostic, diagnostic_pdf.py, diagnostic_pdf.txt, diagnostic_pdf_anonyme.txt, débogage, texte extrait, PDF mal lu, signalement, terminal, anonyme -->
@@ -1130,7 +1210,7 @@ Un fichier envoyé n'est conservé que pendant la session. Pour le retrouver plu
 
 ### Depuis la barre latérale
 
-1. Envoyez le fichier avec [[Envoyer un fichier (CSV, Excel ou PDF)]] et laissez le logiciel l'analyser (assistant compris, si besoin).
+1. Envoyez le fichier avec [[Envoyer un fichier (CSV, Excel, PDF ou image)]] et laissez le logiciel l'analyser (assistant compris, si besoin).
 2. Sous la zone d'envoi apparaît le bloc [[Enregistrer dans mon espace]], avec un champ [[Nom du portefeuille]] pré-rempli avec le nom du fichier.
 3. Modifiez le nom si vous le souhaitez, puis cliquez sur [[Enregistrer]].
 4. Le message « « … » est enregistré dans votre espace (chiffré). » confirme l'opération.
@@ -1161,7 +1241,7 @@ La page indique le portefeuille concerné. [[Retour au tableau de bord]] la refe
 
 ### Trois façons d'ajouter
 
-- **Onglet [[Depuis un fichier]]** : zone [[Fichiers (CSV, Excel ou PDF)]], qui accepte plusieurs fichiers à la fois (plusieurs avis d'opéré, un export des dernières opérations…). Chaque fichier passe par la même lecture automatique qu'à l'envoi principal ; le message indique le nombre d'opérations lues, par exemple « avis.pdf : 1 opération(s) lue(s). ». Un fichier déjà lu sur la page n'est pas relu. Un PDF protégé demande d'abord son mot de passe (encadré [[PDF protégé]]). Un avis de division ou de regroupement d'actions ouvre l'encadré [[Opération sur titres]] (voir la fiche « Division ou regroupement d'actions »).
+- **Onglet [[Depuis un fichier]]** : zone [[Fichiers (CSV, Excel, PDF ou image)]], qui accepte plusieurs fichiers à la fois (plusieurs avis d'opéré, un export des dernières opérations…). Chaque fichier passe par la même lecture automatique qu'à l'envoi principal ; le message indique le nombre d'opérations lues, par exemple « avis.pdf : 1 opération(s) lue(s). ». Un fichier déjà lu sur la page n'est pas relu. Un PDF protégé demande d'abord son mot de passe (encadré [[PDF protégé]]). Un avis de division ou de regroupement d'actions ouvre l'encadré [[Opération sur titres]] (voir la fiche « Division ou regroupement d'actions »).
 - **Onglet [[Saisie manuelle]]** : un ordre saisi au clavier (voir la fiche dédiée).
 - Les deux peuvent se combiner : toutes les opérations s'accumulent dans la même liste.
 
@@ -1187,7 +1267,7 @@ Après une **division** (« split ») ou un **regroupement** d'actions, Yahoo Fi
 ### Comment faire
 
 1. Ouvrez la page [[Ajouter des opérations]] du portefeuille, onglet [[Depuis un fichier]].
-2. Déposez l'avis de division ou de regroupement (PDF texte) dans la zone [[Fichiers (CSV, Excel ou PDF)]].
+2. Déposez l'avis de division ou de regroupement (PDF texte) dans la zone [[Fichiers (CSV, Excel, PDF ou image)]].
 3. L'encadré [[Opération sur titres]] résume ce qui a été lu, par exemple « Division de Michelin (ML.PA) le 16/06/2023 : 1 ancienne → 4 nouvelles. », puis le nombre d'opérations qui seront converties.
 4. Cliquez sur [[Appliquer aux opérations antérieures]].
 
@@ -1486,7 +1566,7 @@ Date opération;Opération;Code ISIN;Libellé;Qté;Cours;Frais;Montant net
 
 ### 2. L'envoi et la lecture automatique
 
-Envoyez le fichier avec [[Envoyer un fichier (CSV, Excel ou PDF)]]. Le logiciel :
+Envoyez le fichier avec [[Envoyer un fichier (CSV, Excel, PDF ou image)]]. Le logiciel :
 
 - détecte le point-virgule comme séparateur et ignore les trois premières lignes : la ligne des titres est la quatrième ;
 - reconnaît les colonnes par leur nom : « Date opération » (date), « Opération » (type), « Code ISIN » (titre), « Libellé » (nom), « Qté » (quantité), « Cours » (prix), « Frais », « Montant net » (montant) ;

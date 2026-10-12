@@ -277,6 +277,27 @@ def _releve_positions():
                 taille=8)
 
 
+@modele("obligation", [A("15/05/2024", "ACHAT", "FR0013508470", 50, 101.25, 7.50)])
+def _obligation():
+    """Obligation : nominal 5 000 € au cours de 101,25 % du pair, coupon couru (pas un frais).
+    Quantité attendue : nominal / 100 = 50 « parts » de 100 €, pour que quantité × cours = montant."""
+    return _pdf([(60, 50, "AVIS D'OPERE"), (60, 80, "ACHAT OBLIGATION AU COMPTANT"),
+                 (60, 100, "OAT 1,5 % 25/05/2031 (FR0013508470)"), (60, 118, "Date d'exécution : 15/05/2024"),
+                 (60, 136, "Nominal : 5 000 EUR"), (60, 154, "Cours : 101,25 % du nominal"),
+                 (60, 172, "Montant brut : 5 062,50 EUR"), (60, 190, "Coupon couru : 43,15 EUR"),
+                 (60, 208, "Courtage : 7,50 EUR"), (60, 226, "Montant net : 5 113,15 EUR")])
+
+
+@modele("fonds_parts_et_droits_d_entree", [A("12/02/2024", "ACHAT", "FR0010315770", 12.3456, 152.37, 37.62)])
+def _fonds():
+    """Fonds (OPCVM) : parts fractionnaires × valeur liquidative, droits d'entrée en %."""
+    return _pdf([(60, 50, "AVIS D'OPERATION SUR OPC"), (60, 80, "SOUSCRIPTION"),
+                 (60, 100, "LYXOR MSCI WORLD (FR0010315770)"), (60, 118, "Date d'exécution : 12/02/2024"),
+                 (60, 136, "Nombre de parts : 12,3456"), (60, 154, "Valeur liquidative : 152,37 EUR"),
+                 (60, 172, "Montant brut : 1 881,10 EUR"), (60, 190, "Droits d'entrée (2,00 %) : 37,62 EUR"),
+                 (60, 208, "Montant net : 1 918,72 EUR")])
+
+
 def construire(nom):
     return MODELES[nom][0]()
 
@@ -293,3 +314,63 @@ if __name__ == "__main__":                       # python -m tests.avis_fictifs 
     for nom in MODELES:
         (dossier / f"{nom}.pdf").write_bytes(construire(nom))
         print(dossier / f"{nom}.pdf")
+
+
+# ----------------------------------------------------------------------
+# Photos et captures d'écran fictives (lecture des images JPG / PNG, src/images.py)
+# ----------------------------------------------------------------------
+def _page_en_image(brut, points_par_pouce=200):
+    import pypdfium2
+    return pypdfium2.PdfDocument(brut)[0].render(scale=points_par_pouce / 72).to_pil().convert("RGB")
+
+
+def photo(brut, coins=((0.16, 0.10), (0.86, 0.06), (0.92, 0.94), (0.10, 0.90)), ombre=True,
+          orientation_exif=None, qualite=85):
+    """La 1re page du PDF « photographiée » : posée de biais sur une table sombre (perspective
+    donnée par les 4 coins, en fraction de la photo), éclairage inégal (ombre en diagonale),
+    léger flou, compression JPEG. orientation_exif=6 : photo enregistrée couchée, avec l'indication
+    EXIF « tourner de 90° » (comme un téléphone tenu à la verticale)."""
+    import numpy as np
+    import cv2
+    from PIL import Image, ImageFilter
+    page = np.asarray(_page_en_image(brut))
+    h, l = page.shape[:2]
+    largeur, hauteur = 1800, 2400
+    depart = np.array([[0, 0], [l - 1, 0], [l - 1, h - 1], [0, h - 1]], dtype="float32")
+    arrivee = np.array([[x * largeur, y * hauteur] for x, y in coins], dtype="float32")
+    matrice = cv2.getPerspectiveTransform(depart, arrivee)
+    table = np.full((hauteur, largeur, 3), (70, 60, 50), dtype=np.uint8)
+    feuille = cv2.warpPerspective(page, matrice, (largeur, hauteur), borderValue=(0, 0, 0))
+    masque = cv2.warpPerspective(np.full((h, l), 255, np.uint8), matrice, (largeur, hauteur)) > 0
+    image = np.where(masque[..., None], feuille, table).astype(np.float32)
+    if ombre:
+        yy, xx = np.mgrid[0:hauteur, 0:largeur]
+        image *= (0.55 + 0.45 * (xx / largeur + yy / hauteur) / 2)[..., None]
+    image = Image.fromarray(np.clip(image, 0, 255).astype(np.uint8)).filter(ImageFilter.GaussianBlur(0.8))
+    exif = None
+    if orientation_exif == 6:
+        image = image.rotate(90, expand=True)              # le capteur enregistre la photo couchée
+        exif = Image.Exif()
+        exif[0x0112] = 6
+    sortie = io.BytesIO()
+    image.save(sortie, format="JPEG", quality=qualite, **({"exif": exif} if exif else {}))
+    return sortie.getvalue()
+
+
+def capture_ecran(brut, largeur=900):
+    """La 1re page du PDF « capturée à l'écran » : PNG en petite résolution, sans biais."""
+    from PIL import Image
+    image = _page_en_image(brut, 150)
+    image = image.resize((largeur, int(image.height * largeur / image.width)), Image.LANCZOS)
+    sortie = io.BytesIO()
+    image.save(sortie, format="PNG")
+    return sortie.getvalue()
+
+
+def avis_simple():
+    """Avis d'opéré de référence pour les photos : LVMH, 5 × 650,20, courtage 9,75."""
+    return _pdf([(60, 50, "AVIS D'OPERE"), (60, 90, "ACHAT AU COMPTANT"),
+                 (60, 110, "Valeur : LVMH (FR0000121014)"), (60, 128, "Date d'exécution : 04/03/2024"),
+                 (60, 146, "Quantité : 5"), (60, 164, "Cours : 650,20 EUR"),
+                 (60, 182, "Montant brut : 3 251,00 EUR"), (60, 200, "Courtage : 9,75 EUR"),
+                 (60, 218, "Montant net : 3 260,75 EUR")], taille=12)

@@ -30,7 +30,7 @@ from pathlib import Path
 import pandas as pd
 import streamlit as st
 
-from src import config, langues, lecture, theme
+from src import config, images, langues, lecture, theme
 from src import graphiques_interactifs as gi
 from src import interface as ui
 from src import (expositions, fond_de_carte, import_fichier, indices, vues_compte, vues_conseil, vues_transactions,
@@ -252,10 +252,12 @@ with st.sidebar:
             help=t("Vos portefeuilles enregistrés, puis les portefeuilles d'exemple du projet"),
         )
     fichiers_envoyes = st.file_uploader(
-        t("Envoyer un fichier (CSV, Excel ou PDF)"), type=["csv", "xlsx", "pdf"], accept_multiple_files=True,
+        t("Envoyer un fichier (CSV, Excel, PDF ou image)"), type=["csv", "xlsx", "pdf"] + images.EXTENSIONS,
+        accept_multiple_files=True,
         help=t("Colonnes : date, type (ACHAT, VENTE, DIVIDENDE), ticker (code Yahoo Finance), nom, "
                "quantite, prix, frais. CSV à virgules ou à points-virgules, fichier Excel, ou PDF "
-               "(relevé d'opérations, avis d'opéré, relevé de portefeuille). Plusieurs fichiers à la fois : "
+               "(relevé d'opérations, avis d'opéré, relevé de portefeuille), ou photo / capture d'écran d'un avis "
+               "(JPG, PNG). Plusieurs fichiers à la fois : "
                "leurs opérations sont réunies. Prioritaire sur le portefeuille choisi ci-dessus."),
     ) or []
     fichier_envoye = fichiers_envoyes[0] if len(fichiers_envoyes) == 1 else None

@@ -23,13 +23,13 @@ un tableau de bord web interactif et dans un rapport PDF généré automatiqueme
 | **Restitution** | Tableau de bord Streamlit en 4 espaces (analyse, conseil patrimonial, gestion d'actifs, manuel et aide), mode clair / nuit, version en ligne de commande, rapport PDF de synthèse |
 | **Manuel et assistant** | Manuel complet (13 chapitres, plus de 300 fiches, français et anglais, aussi en Word et PDF) ; assistant « Poser une question » hors connexion, sans IA générative, aussi accessible depuis toutes les pages par la bulle « Aide » en bas à droite : recherche tolérante aux fautes et aux synonymes, réponses avec les chiffres du portefeuille, aveu honnête quand rien ne correspond, journal local des questions sans réponse |
 | **Langues** | Tableau de bord disponible en français et en anglais (sélecteur FR / EN dans la barre latérale) ; le rapport PDF et la version en ligne de commande restent en français |
-| **Import libre** | Fichier CSV, Excel ou PDF (relevé, avis d'opéré) quelconque (export de banque ou de courtier, tableau personnel, même sans ligne de titres) : colonnes reconnues par leur nom, leur contenu et la cohérence des chiffres, codes ISIN, tickers Bloomberg / Google / Reuters et tickers sans place de cotation convertis en tickers Yahoo, prix vérifiés avec les cours du jour et reconvertis dans la devise du titre ; avis d'opéré PDF de n'importe quel courtier lus par leur contenu (ISIN, date, quantité × cours = montant), texte « codé » et scans lus par reconnaissance de caractères, formulaire pré-rempli si rien n'est sûr, qui apprend la mise en page pour la fois suivante ; départage par les cours du marché, contrôles après lecture, relevé de portefeuille, PDF protégé, plusieurs fichiers d'un coup, divisions d'actions ; assistant d'import en cas de doute — voir docs/GUIDE_IMPORT.md |
+| **Import libre** | Fichier CSV, Excel ou PDF (relevé, avis d'opéré) quelconque (export de banque ou de courtier, tableau personnel, même sans ligne de titres) : colonnes reconnues par leur nom, leur contenu et la cohérence des chiffres, codes ISIN, tickers Bloomberg / Google / Reuters et tickers sans place de cotation convertis en tickers Yahoo, prix vérifiés avec les cours du jour et reconvertis dans la devise du titre ; avis d'opéré PDF de n'importe quel courtier lus par leur contenu (ISIN, date, quantité × cours = montant), texte « codé », scans, photos et captures d'écran (JPG, PNG : feuille redressée, ombres retirées, plan B « 4 coins ») lus par reconnaissance de caractères, formulaire pré-rempli si rien n'est sûr, qui apprend la mise en page pour la fois suivante ; départage par les cours du marché, contrôles après lecture, relevé de portefeuille, PDF protégé, plusieurs fichiers d'un coup, divisions d'actions ; assistant d'import en cas de doute — voir docs/GUIDE_IMPORT.md |
 | **Hors connexion** | Base locale de plusieurs milliers de titres (grands indices mondiaux, ETF, indices, taux de change) avec leurs cours depuis 2015 ; mémoire des titres reconnus (ISIN, noms) ; l'application et l'import de fichiers fonctionnent sans Internet — voir docs/GUIDE_HORS_CONNEXION.md |
 | **Espace personnel** | Comptes utilisateurs ; portefeuilles enregistrés chiffrés avec le mot de passe (PBKDF2 + AES), lisibles par leur seul propriétaire ; changement de mot de passe, suppression du compte (RGPD) |
 | **Expositions** | Analyse en transparence (ETF répartis selon leur indice) : carte du monde, pays, secteurs, devise réelle, concentration (règle 5/10/40), sensibilité aux taux, diversification réelle (blocs de titres corrélés, ratio de diversification) ; diagnostic vert / orange / rouge avec risques et pistes, selon le profil — voir docs/GUIDE_EXPOSITIONS.md |
 | **Indices de référence** | 14 indices : actions (monde, États-Unis, Europe, France, émergents), obligations, monétaire (€STR) et mixtes 20/80, 60/40, 80/20 calculés par l'outil |
 | **Mise à jour** | Ajout de nouvelles opérations sans renvoyer tout l'historique (avis d'opéré PDF, Excel, CSV, saisie manuelle), doublons détectés, contrôles ; suppression ou correction de n'importe quelle opération (onglet Transactions) ; annulation de la dernière modification |
-| **Fiabilité** | 213 tests automatiques, contrôle croisé du gain total, base cumulative hors ligne |
+| **Fiabilité** | 235 tests automatiques, contrôle croisé du gain total, base cumulative hors ligne |
 
 ## Démarrage rapide
 
@@ -48,6 +48,7 @@ fonctionne hors connexion) — voir docs/GUIDE_INSTALLATEUR.md. Pour le fabrique
 ```bash
 python -m pip install -r requirements.txt           # une seule fois
 python -m pip install -r requirements-ocr.txt       # facultatif : lire les PDF « image » (OCR)
+python -m pip install -r requirements-photos.txt    # facultatif : clic sur les 4 coins d'une photo, photos HEIC
 python -m streamlit run app.py                      # tableau de bord web
 python main.py                                      # analyse de data/transactions.csv
 python main.py data/transactions_mondial.csv        # analyse d'un autre portefeuille
@@ -55,7 +56,7 @@ python generer_portefeuille_mondial.py              # crée le fonds actions mon
 python generer_portefeuille_diversifie.py           # crée le portefeuille diversifié (50 lignes, depuis 2017)
 python construire_base_titres.py                    # base locale hors connexion (≈ 1 h, une fois)
 python construire_base_titres.py --mise-a-jour      # ajoute les derniers cours (quelques minutes)
-python -m pytest                                    # lance les 213 tests
+python -m pytest                                    # lance les 235 tests
 ```
 
 Python 3.11 ou plus récent est nécessaire, ainsi qu'une connexion Internet pour l'installation.
@@ -160,11 +161,12 @@ portfolio_tracker/
 │   ├── manuel.py                    # lecture du manuel et moteur de recherche de l'assistant
 │   ├── lecture_pdf.py               # lecture des avis d'opéré PDF par leur contenu (tous courtiers)
 │   ├── vues_pdf.py                  # formulaire « Compléter l'opération » (PDF non reconnu)
+│   ├── images.py                    # photos et captures d'écran : redressement, éclairage, taille
 │   ├── lecture.py                   # phrases de lecture automatique des graphiques
 │   ├── theme.py                     # mode clair / nuit
 │   └── rapport.py                   # rapport PDF (reportlab)
 ├── assets/style.css · assets/icone.ico · .streamlit/config.toml   # apparence du tableau de bord
-├── tests/                           # 213 tests automatiques (pytest)
+├── tests/                           # 235 tests automatiques (pytest)
 └── docs/                            # guides pas à pas ; docs/manuel/ : le manuel (fr, en, Word, PDF)
 ```
 

@@ -37,7 +37,7 @@ The file may have its own column names, in French or English, header lines above
 
 ### Where to upload the file
 
-In the sidebar, under "Data", use the [[Upload a file (CSV, Excel or PDF)]] area: drag the file onto it or click to choose it. You can drop several files at once: their transactions are combined (see the fiche "Uploading several files at once"). The uploaded file takes **priority** over the portfolio selected in the list just above: as long as it is present in the upload area, it is the one being analysed.
+In the sidebar, under "Data", use the [[Upload a file (CSV, Excel, PDF or image)]] area: drag the file onto it or click to choose it. You can drop several files at once: their transactions are combined (see the fiche "Uploading several files at once"). The uploaded file takes **priority** over the portfolio selected in the list just above: as long as it is present in the upload area, it is the one being analysed.
 
 ### What the software does
 
@@ -146,7 +146,7 @@ In the sidebar, under "Data", click [[File template]]. The file `modele_transact
 1. Open the file in Excel, LibreOffice or a text editor.
 2. Replace the example rows with your own transactions, keeping the first row (the column names).
 3. Save, as you prefer, as CSV (comma or semicolon separator) or as an Excel `.xlsx` workbook.
-4. Upload the file with the [[Upload a file (CSV, Excel or PDF)]] area.
+4. Upload the file with the [[Upload a file (CSV, Excel, PDF or image)]] area.
 
 ### Data entry tips
 
@@ -736,6 +736,53 @@ A page printed from a browser in dark mode (light text on a black background, da
 - A commission misread on a line may remain wrong: check the Fees column in the [[Transactions]] tab.
 - The safest option is still to download the statement as CSV or as a "text" PDF from the broker's client area rather than printing it.
 
+## Foreign brokers' notes and special cases (German, Spanish, Italian, Dutch…)
+<!-- fiche: import-pdf-courtiers-europeens | questions: is my trade republic note read ; note in german ; degiro pdf note ; degiro transactions statement ; trade republic savings plan ; sparplan ; fractional shares ; split execution fortuneo ; several securities in one bourse direct statement ; saxo bank note ; swissquote ; keytrade ; which brokers are recognised ; credit agricole pea note ; is the software tested on real notes | mots: Trade Republic, DEGIRO, Saxo Bank, Swissquote, Keytrade, Fortuneo, BoursoBank, Bourse Direct, Kauf, Verkauf, Sparplan, compra, acquisto, aankoop, Stk., split execution, fractional quantity, test bench, Portfolio Performance, Crédit Agricole, VAT on fees -->
+
+Content reading does not depend on the document's language: it always looks for an ISIN, a date and three numbers such that **quantity × price = amount**. It also knows the useful words of several languages.
+
+### What is recognised
+
+- **The direction**: achat / vente, buy / sell, Kauf / Verkauf, compra / venta, acquisto / vendita, aankoop / verkoop, as well as savings plans (« investissement programmé », Sparplan, piano d'investimento, plan de inversión, Round up, Saveback) and fund redemptions (« REPRISE SICAV », « REPRISE F.C.P. ») read as sales.
+- **The execution date**: « Kauf am », « Handelszeit », « Trade time », « Datum en tijdstip van uitvoering »… The value date (Valuta, Value Date, Valutadatum), the booking date and the document's print date are set aside.
+- **The quantity**: a number followed by « Stk. », « titre(s) », « Pz. », « tít. », « shares »… is the quantity; a number followed by a currency (« 55.13 EUR ») is a price or an amount.
+- **Fees**: brokerage, commission, Fremdkostenzuschlag, Provision, Makelaarsloon, Beurstaks, entry charges… including when written under their label (« Montant total des frais » with the value on the next line).
+- **Fractional shares** (« 0.4534 Stk. at 55.13 = 25.00 »): since the displayed price is rounded, a small gap between quantity × price and the amount is accepted.
+- **Several transactions in one document**: a Bourse Direct statement with several securities, a Fortuneo order filled in several parts (« Exécution fractionnée »), a DEGIRO transactions statement (one line per transaction, a sale being recognised by the « − » sign of the quantity). A tax written on a separate line (« TAXE TRANSACT FINANCIERES … TTF 1,45 ») is added to the fees of the transaction on the same security.
+- **Crédit Agricole notes** (several transactions per page, letter layout): the date and direction (« 22.03.2024 ACHAT COMPTANT ») are written above the security line (« DE 3 ACTIONS ENGIE (FR0010208488) »); each transaction is attached to its own block. Fees include the VAT on fees (« FRAIS DE NEGOCIATION SOUMIS A TVA 0,85 » + « TVA 20,00 % 0,17 » = 1.02). The page's decorative frames are not taken for a table (they used to cut words into pieces).
+- **Prices with 3 decimals or more** (« 3 × 15.392 = 46.18 »): rounding of the amount to the cent is accepted.
+- Account numbers (IBAN), postcodes, page numbers and legal mentions (« § 4 Nr. 8 ») are not taken for amounts.
+
+### The test bench
+
+The application is checked against **160 real trade notes** from 10 European brokers, published (anonymised) by the free software Portfolio Performance under the EPL licence. Current result: 103 notes read entirely right, 13 more read with the right date, direction and quantity but a price in another currency, only 1 read wrong, the others handing over to the « Complete the transaction » form. All Bourse Direct and BoursoBank notes of the bench are read.
+
+### Limits
+
+- A note without an ISIN code (crypto-currencies, options, some derivatives) is not read automatically: the [[Complete the transaction]] form takes over.
+- For a transaction in a foreign currency, the price kept is the one written next to the quantity; check the currency in the [[Transactions]] tab.
+- Corporate actions (merger, redemption) are not read automatically yet. Bonds and funds have their own fiche.
+
+## Bond or fund (UCITS) trade confirmations
+<!-- fiche: import-obligations-fonds | questions: is my bond purchase confirmation read ; bond price in percent ; what is accrued interest ; why is my bond quantity divided by 100 ; bond nominal ; fund units subscription ; fractional sicav units ; net asset value ; entry charges ; fund redemption | mots: bond, nominal, price in %, clean price, accrued interest, coupon couru, Stückzinsen, fund, UCITS, SICAV, FCP, units, net asset value, NAV, entry charges -->
+
+Content reading always checks an equation between the numbers of the document. For a share it is `quantity × price = gross amount`. Bonds and funds each have their own variant.
+
+### Bond: nominal × price in % = gross amount
+
+A bond's price is expressed **as a percentage of the nominal** (of par). Example: a nominal of €5,000 bought at 101.25% costs `5,000 × 101.25 / 100 = €5,062.50`. The software recognises this case when the price is followed by « % », or when the document talks about a bond (obligation, OAT, bond, Anleihe, nominal…).
+
+- **Quantity recorded**: the nominal divided by 100, i.e. 50 « units » of €100 at a price of 101.25. So `quantity × price = amount` remains true in the portfolio, and the price stays readable as a percentage of par.
+- **Accrued interest** (« coupon couru », « intérêts courus », Stückzinsen, accrued interest): the share of the next coupon that belongs to the seller; the buyer advances it and gets it back when the coupon is paid. It is **not a fee**: it is not added to the fees, but it is used to check the net amount (`gross + fees + accrued interest = net`). The price kept is therefore the clean price (excluding accrued interest).
+- Bonds rarely have a price on Yahoo Finance: the security may require you to give a ticker or to be entered by hand, and its valuation will then follow the last known price.
+
+### Fund (UCITS, SICAV, FCP): units × net asset value = gross amount
+
+- **Units** are often fractional (« 12.3456 units ») and rounded on the confirmation: a small gap due to this rounding is accepted.
+- The **net asset value** (NAV, « valeur liquidative ») is read as the price.
+- **Entry charges** (« Droits d'entrée (2,00 %) : 37,62 EUR ») are fees: `gross + entry charges = net`.
+- A subscription is a purchase; a redemption (« REPRISE SICAV », « REPRISE F.C.P. », « rachat ») is a sale.
+
 ## Checking the price read against the market price
 <!-- fiche: import-pdf-verification-marche | questions: does the software check the price read in my confirmation ; price read replaced by why ; the software changed my quantity and price ; how does it choose between two readings of the pdf ; closing price shown in the form ; the unit price should be close to it what does it mean ; check of my confirmation price with yahoo finance ; why are the numbers in the list in this order | mots: market check, closing price, Yahoo Finance, tie-break, arbitration, alternative reading, 15%, 5%, price read replaced | aller: Analyse du portefeuille/Transactions -->
 
@@ -775,7 +822,7 @@ When a PDF gives no certain transaction, the software does not just show an erro
 ### When the form appears
 
 - On the [[Add transactions]] page, [[From a file]] tab: for any PDF whose automatic import is not certain (no transaction read, security not found…).
-- After an upload with [[Upload a file (CSV, Excel or PDF)]] in the sidebar: when the PDF gives no transaction, whether the file is sent alone or with others.
+- After an upload with [[Upload a file (CSV, Excel, PDF or image)]] in the sidebar: when the PDF gives no transaction, whether the file is sent alone or with others.
 
 The reason is shown under the form's title, for example "Transaction not recognised automatically in this PDF…".
 
@@ -846,25 +893,58 @@ For an image PDF, the software "looks at" each page and recognises the letters a
 1. **RapidOCR**, a library that works offline, installed with the `requirements-ocr.txt` file and built into the installers when their build succeeded in installing it;
 2. failing that, **Tesseract**, if it is installed on the computer (in French and English if the French language is available).
 
-### Two attempts
+### Three attempts, from the fastest to the most careful
 
-1. A quick **first reading** of the image of each page.
-2. If it gives no certain transaction, a slower **second reading** on a cleaned image at a higher resolution (scale 4 instead of 3): conversion to greyscale, stretched contrast, page straightened (the tilt is searched between −3° and +3°, in half-degree steps), then conversion to pure black and white (Otsu threshold, which automatically separates the ink from the background). A pale, grainy or slightly crooked scan thus becomes readable.
+1. A low-resolution **glance** at each page. It serves three purposes: finding the right way up (portrait or landscape), spotting pages of no interest (terms and conditions, letters: running text with no date, amount or ISIN code), which are then not read, and spotting the **useful band** of each page (the lines with dates, amounts, ISINs, direction words or short labels). The glance's figures are never kept: at low resolution a date can be misread (« 2028 » for « 2026 ») without any calculation revealing it.
+2. Then a **fine reading** at high resolution, but only of the useful band of the useful pages. Example: a 5-page scan (the note then 4 pages of terms and conditions) is read in 14 seconds instead of 24; a note followed by long text on the same page, in 7 seconds instead of 12.
+3. If it gives no certain transaction, a slower **second reading** on a cleaned image at a higher resolution (scale 4 instead of 3): conversion to greyscale, stretched contrast, page straightened (the tilt is searched between −3° and +3°, in half-degree steps), then conversion to pure black and white (Otsu threshold, which automatically separates the ink from the background). A pale, grainy or slightly crooked scan thus becomes readable.
 
 ### The precautions taken
 
 - **Page with a dark background** (printed in "dark mode", dark table rows): the page is turned back into black on white area by area, at a higher resolution, and table borders are erased before reading.
 - **Rotation**: the page is first read upright; the three other orientations (90°, 270°, 180°) are tried only if it gives almost nothing useful (no ISIN code, nor a long text with expected words: quantity, price, buy, sell, quantité, cours…).
-- **Several pages**: they are read at the same time, which divides the waiting time.
+- **Several pages**: they are read at the same time, which divides the waiting time. In a PDF where some pages have real text, only the pages without readable text go through recognition.
 - **Repair of misread ISINs**: the letter O read in place of the digit 0 (`FRO013380607`), an I or an l in place of 1, S for 5, B for 8, Z for 2, or a character read twice (`FRO0013380607`). A correction is kept only if the corrected ISIN has a correct check digit, an existing country code and at least 4 digits: the software never invents a code. A word like "EURONEXTPARIS" is never mistaken for an ISIN.
 - **Repair of numbers**: in a number, a letter read in place of a digit is corrected (O or o to 0, I, l or | to 1, S to 5, B to 8): "65O,2O" becomes "650,20". The correction only happens in a group that already contains at least two real digits and a decimal comma or point, with no other letter: words are never changed.
 - **Run-together words**: reading tolerates words stuck together ("VENTECOMPTANT").
+- **Date in the future**: a transaction date later than today is necessarily misread; the transaction is not kept automatically and the [[Complete the transaction]] form takes over.
 
 The recognised text is then read as a "one transaction per line" statement (see the dedicated entry), then as a trade confirmation: by its headings, by its content (ISIN, date, `quantity × price = amount`), then with a learned model. A scanned portfolio statement is generally not usable. If no transaction is recognised, the [[Complete the transaction]] form suggests the values read.
 
 ### Always check
 
 Reading an image takes time: about 10 to 30 seconds per page depending on the computer (more if the second attempt is needed); the waiting message says so, with the number of pages. Meanwhile, the previous dashboard stays greyed out: this is normal. It remains less reliable than a text PDF. The summary says so: "Image PDF read by character recognition: please check the transactions ("Transactions" tab).". Check the date, quantity and price.
+
+## A photo or screenshot of a trade confirmation (JPG, PNG)
+<!-- fiche: import-photo | questions: can I upload a photo of my trade confirmation ; screenshot of my banking app ; does the software read images ; jpg png accepted ; photo taken with my phone ; crooked photo ; photo with a shadow ; click the 4 corners ; photo misread ; iphone heic photo ; straighten the photo | mots: photo, screenshot, JPG, PNG, WEBP, HEIC, image, straightening, perspective, 4 corners, shadow, OpenCV, EXIF -->
+
+In addition to CSV, Excel and PDF files, the software accepts a **photo** or a **screenshot** of a trade confirmation: JPG, PNG and WEBP formats, as well as HEIC (iPhone photos) if the `pillow-heif` library is installed. Upload it like any other file, from [[Upload a file (CSV, Excel, PDF or image)]] in the sidebar or from the [[Add transactions]] page.
+
+### What the software does
+
+The image is first **prepared**, then read exactly like a scanned PDF (see the fiche « A scanned or printed PDF: character recognition »):
+
+1. **The right way up**: a phone held upright often records the photo lying on its side, with a separate rotation flag (EXIF data); the photo is turned upright.
+2. **The sheet flattened**: the 4 corners of the sheet are searched automatically (outline of the sheet on the table, OpenCV library), then the perspective is corrected: a sheet photographed at an angle becomes a rectangle again.
+3. **Even lighting**: on a photo, the shadow of a hand or the gradient of a lamp is removed (the background is estimated around each point then erased). A screenshot, evenly lit, is left unchanged.
+4. **The right size**: a small screenshot is enlarged (×2 or ×3) so that digits are big enough; a 12-megapixel photo is reduced to the equivalent of an A4 page at 300 dots per inch (bigger does not read better, only more slowly).
+
+The transaction is kept automatically only if it is consistent (`quantity × price = amount`, plausible date); otherwise the [[Complete the transaction]] form opens with the values read.
+
+### If the photo is misread: indicate the 4 corners
+
+When the sheet is not found (a corner outside the frame, a light table under a white sheet…), the form offers [[Photo misread? Indicate the 4 corners of the sheet]]:
+
+- click the 4 corners of the sheet, in this order: top left, top right, bottom right, bottom left (if the `streamlit-image-coordinates` library is installed; otherwise, set each corner with two sliders, horizontal and vertical, following the red outline on the preview);
+- click [[Straighten and read again]]: the photo is flattened using your corners then read again;
+- [[Start again]] clears the corners placed.
+
+### Tips for a good photo
+
+- Lay the sheet flat on a surface darker than it, and frame the whole sheet.
+- Avoid the flash (glare); indirect daylight is ideal.
+- A screenshot of your bank's app reads better than a photo of the screen.
+- The safest remains the PDF downloaded from your online account: it contains real text and is read without character recognition.
 
 ## Why is my scanned PDF rejected?
 <!-- fiche: import-pdf-scan-refuse | questions: scanned pdf rejected ; message cannot be read automatically ; no transaction was recognised in my image pdf ; why wont my scan work ; the software rejects my photo of a trade confirmation ; what should I do if my pdf is an image ; install character recognition | mots: scanned PDF, rejection, image PDF, OCR not installed, error message, PDF format, manual entry, requirements-ocr -->
@@ -966,7 +1046,7 @@ Some banks send their statements and trade confirmations as password-protected P
 
 ### What is displayed
 
-When you upload such a PDF ([[Upload a file (CSV, Excel or PDF)]] area of the sidebar, or [[Add transactions]] page), a [[Protected PDF]] box appears with the file name and the message:
+When you upload such a PDF ([[Upload a file (CSV, Excel, PDF or image)]] area of the sidebar, or [[Add transactions]] page), a [[Protected PDF]] box appears with the file name and the message:
 
 "Password-protected PDF: enter the password to open it (often given in the bank's e-mail: date of birth, customer ID…). It is not stored."
 
@@ -989,7 +1069,7 @@ The [[Add a portfolio]] section of [[My account]] does not ask for a password: u
 ## Uploading several files at once
 <!-- fiche: import-plusieurs-fichiers | questions: upload several files at the same time ; import all my trade confirmations at once ; I have 10 pdfs how do I put them together ; several files in the sidebar ; analyse the transactions already read ; files sent waiting ; a confirmation is in two files is it counted twice ; combine several statements in one portfolio ; drop all my pdfs in one go | mots: several files, batch, multiple upload, Files sent, trade confirmations, merge, waiting, duplicates, sidebar, in one go, at once -->
 
-The [[Upload a file (CSV, Excel or PDF)]] area of the sidebar accepts several files at once: for example all the trade confirmations of a year, or a CSV export and a few PDF confirmations. Their transactions are combined into one portfolio.
+The [[Upload a file (CSV, Excel, PDF or image)]] area of the sidebar accepts several files at once: for example all the trade confirmations of a year, or a CSV export and a few PDF confirmations. Their transactions are combined into one portfolio.
 
 ### What happens
 
@@ -1012,7 +1092,7 @@ As for a single file, when signed in, the [[Save to my space]] block appears und
 
 ### To complete an existing portfolio
 
-To add confirmations to a portfolio already saved, use the [[Add transactions]] page instead: its [[Files (CSV, Excel or PDF)]] area also accepts several files and spots the transactions already in the portfolio.
+To add confirmations to a portfolio already saved, use the [[Add transactions]] page instead: its [[Files (CSV, Excel, PDF or image)]] area also accepts several files and spots the transactions already in the portfolio.
 
 ## Diagnosing a misread PDF with diagnostic_pdf.py
 <!-- fiche: import-diagnostic-pdf | questions: how can I see what the software reads in my pdf ; what is diagnostic_pdf.py for ; my trade confirmation is misread how do I report it ; see the text extracted from the pdf ; send a pdf reading report ; diagnostic_pdf.txt ; debug pdf | mots: diagnostic, diagnostic_pdf.py, diagnostic_pdf.txt, diagnostic_pdf_anonyme.txt, debugging, extracted text, misread PDF, report, terminal, anonymous -->
@@ -1130,7 +1210,7 @@ An uploaded file is kept only for the session. To find it again later, save it t
 
 ### From the sidebar
 
-1. Upload the file with [[Upload a file (CSV, Excel or PDF)]] and let the software analyse it (assistant included, if needed).
+1. Upload the file with [[Upload a file (CSV, Excel, PDF or image)]] and let the software analyse it (assistant included, if needed).
 2. Under the upload area the [[Save to my space]] block appears, with a [[Portfolio name]] field pre-filled with the file name.
 3. Change the name if you wish, then click [[Save]].
 4. The message ""…" has been saved to your space (encrypted)." confirms the operation.
@@ -1161,7 +1241,7 @@ The page shows which portfolio it concerns. [[Back to the dashboard]] closes it 
 
 ### Three ways to add
 
-- **[[From a file]] tab**: the [[Files (CSV, Excel or PDF)]] area, which accepts several files at once (several trade confirmations, an export of the latest transactions…). Each file goes through the same automatic reading as the main upload; the message gives the number of transactions read, for example "avis.pdf: 1 transaction(s) read.". A file already read on the page is not read again. A protected PDF first asks for its password ([[Protected PDF]] box). A split or reverse split notice opens the [[Corporate action]] box (see the fiche "Stock split or reverse split").
+- **[[From a file]] tab**: the [[Files (CSV, Excel, PDF or image)]] area, which accepts several files at once (several trade confirmations, an export of the latest transactions…). Each file goes through the same automatic reading as the main upload; the message gives the number of transactions read, for example "avis.pdf: 1 transaction(s) read.". A file already read on the page is not read again. A protected PDF first asks for its password ([[Protected PDF]] box). A split or reverse split notice opens the [[Corporate action]] box (see the fiche "Stock split or reverse split").
 - **[[Manual entry]] tab**: an order typed in by hand (see the dedicated fiche).
 - The two can be combined: all the transactions accumulate in the same list.
 
@@ -1187,7 +1267,7 @@ After a **stock split** or a **reverse split** (share consolidation), Yahoo Fina
 ### How to do it
 
 1. Open the portfolio's [[Add transactions]] page, [[From a file]] tab.
-2. Drop the split or reverse split notice (text PDF) into the [[Files (CSV, Excel or PDF)]] area.
+2. Drop the split or reverse split notice (text PDF) into the [[Files (CSV, Excel, PDF or image)]] area.
 3. The [[Corporate action]] box summarises what was read, for example "Split of Michelin (ML.PA) on 16/06/2023: 1 old → 4 new.", then the number of transactions that will be converted.
 4. Click [[Apply to earlier transactions]].
 
@@ -1486,7 +1566,7 @@ Date opération;Opération;Code ISIN;Libellé;Qté;Cours;Frais;Montant net
 
 ### 2. Upload and automatic reading
 
-Upload the file with [[Upload a file (CSV, Excel or PDF)]]. The software:
+Upload the file with [[Upload a file (CSV, Excel, PDF or image)]]. The software:
 
 - detects the semicolon as the separator and ignores the first three lines: the header row is the fourth;
 - recognises the columns by their name: "Date opération" (date), "Opération" (type), "Code ISIN" (security), "Libellé" (name), "Qté" (quantity), "Cours" (price), "Frais" (fees), "Montant net" (amount);
