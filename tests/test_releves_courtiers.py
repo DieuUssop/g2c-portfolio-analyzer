@@ -65,3 +65,17 @@ def test_csv_utf16_d_excel():
 def test_dates_excel_en_nombre():
     dates = imp.convertir_dates(pd.Series(["45291", "45292.0", "2024-01-02"]))
     assert [d.strftime("%Y-%m-%d") for d in dates] == ["2023-12-31", "2024-01-01", "2024-01-02"]
+
+
+def test_ticker_et_colonne_place():
+    """Ticker « nu » + colonne Place (MC + Euronext Paris -> MC.PA), place inconnue laissée telle quelle.
+    (Plantait avec pandas 3 + pyarrow : texte « Arrow » + colonne mixte.)"""
+    csv = ("Date;Sens;Ticker;Nom;Place;Quantité;Cours;Frais\n"
+           "02/01/2024;Achat;MC;LVMH;Euronext Paris;2;700;1\n"
+           "03/01/2024;Achat;SAP;SAP;XETRA;3;150;1\n"
+           "04/01/2024;Achat;ABC;Inconnue;Place lointaine;1;10;0\n").encode()
+    tableau, _ = imp.lire_tableau_brut(csv)
+    correspondance = imp.proposer_correspondance(tableau)
+    assert correspondance.get("place")
+    transactions, _ = imp.appliquer_correspondance(tableau, correspondance)
+    assert list(transactions.sort_values("date")["ticker"]) == ["MC.PA", "SAP.DE", "ABC"]

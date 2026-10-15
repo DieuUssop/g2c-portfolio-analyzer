@@ -1198,7 +1198,9 @@ def appliquer_correspondance(tableau, correspondance, types=None, identifiants=N
         suffixes = col("place").map(suffixe_de_place)
         nus = df["ticker"].str.match(MOTIF_COURT.pattern) & suffixes.notna() & \
             ~identifiant.isin(list((identifiants or {}).keys()))
-        df.loc[nus, "ticker"] = df.loc[nus, "ticker"] + suffixes[nus]
+        # assemblage case par case : avec pandas 3 + pyarrow (application installée), une colonne de
+        # texte « Arrow » refuse d'être additionnée à une colonne mixte (suffixes, avec des cases vides)
+        df.loc[nus, "ticker"] = [str(t) + str(x) for t, x in zip(df.loc[nus, "ticker"], suffixes[nus])]
     df["nom"] = col("nom").astype(str).str.strip() if correspondance.get("nom") else identifiant
     quantite = convertir_nombres(col("quantite"))
     prix = convertir_nombres(col("prix")) if correspondance.get("prix") else None
