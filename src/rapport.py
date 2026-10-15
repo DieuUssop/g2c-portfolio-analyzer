@@ -167,9 +167,17 @@ def _lecture_fr(fonction, *arguments):
 
 
 def _image_graphique(fonction, *arguments, largeur=LARGEUR_UTILE, **options):
-    """Dessine un graphique matplotlib en mémoire et le renvoie comme image PDF."""
+    """Dessine un graphique matplotlib en mémoire et le renvoie comme image PDF. Un graphique impossible
+    à dessiner (portefeuille de quelques jours seulement…) est remplacé par une courte note."""
     tampon = io.BytesIO()
-    fonction(*arguments, tampon, **options)   # les fonctions de graphiques.py acceptent un fichier en mémoire
+    try:
+        fonction(*arguments, tampon, **options)   # les fonctions de graphiques.py acceptent un fichier en mémoire
+    except Exception:
+        import matplotlib.pyplot as plt
+        plt.close("all")
+        return Paragraph("Graphique indisponible : historique encore trop court.",
+                         ParagraphStyle("indisponible", fontName="Helvetica-Oblique", fontSize=8, leading=10,
+                                        textColor=colors.HexColor("#666666")))
     tampon.seek(0)
     largeur_px, hauteur_px = ImageReader(tampon).getSize()
     tampon.seek(0)

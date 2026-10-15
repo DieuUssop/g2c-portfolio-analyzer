@@ -87,6 +87,18 @@ def analyse_complete(source_csv,
     # Étape 3 : historique des cours (titres + indice + taux de change, en un seul
     # téléchargement : le cache hors ligne contient ainsi tout le nécessaire)
     prix_hist_brut, source_hist = obtenir_historique(tous + tickers_change, brut.date_debut())
+    # Portefeuille très récent (achats d'hier ou du jour) : aucun cours de clôture depuis le premier
+    # achat (Yahoo ne l'a pas encore publié, ou seul un cache plus ancien est disponible). On ajoute le
+    # cours du moment comme dernier point de l'historique, au lieu d'arrêter l'analyse.
+    cours_du_moment = None
+    debut = brut.date_debut()
+    recents = prix_hist_brut[prix_hist_brut.index >= debut]
+    if recents.reindex(columns=[t for t in titres if t in recents.columns]).dropna(how="all").empty:
+        cours_du_moment = obtenir_cours(tous + tickers_change)
+        jour = max(pd.Timestamp.today().normalize(), pd.Timestamp(debut).normalize())
+        ligne = pd.DataFrame({c: [v] for c, v in cours_du_moment[0].items()}, index=[jour])
+        prix_hist_brut = pd.concat([prix_hist_brut, ligne])
+        prix_hist_brut = prix_hist_brut[~prix_hist_brut.index.duplicated(keep="last")].sort_index().ffill()
     manquants = [t for t in tickers_change if t not in prix_hist_brut.columns]
     if manquants:
         raise ValueError(f"Taux de change introuvables : {manquants}")
@@ -117,7 +129,9 @@ def analyse_complete(source_csv,
     prix_hist[indice] = serie_indice
 
     # Étape 2 : cours actuels (et taux de change actuels), puis valorisation
-    prix, source_cours = obtenir_cours(portefeuille.tickers() + tickers_change)
+    prix, source_cours = obtenir_cours(portefeuille.tickers() + tickers_change) if cours_du_moment is None \
+        else ({t: v for t, v in cours_du_moment[0].items() if t in portefeuille.tickers() + tickers_change},
+              cours_du_moment[1])
     taux_actuels = {d: prix.pop(t) for d, t in zip(etrangeres, tickers_change) if t in prix}
     if len(taux_actuels) < len(etrangeres):
         raise ValueError("Taux de change actuels introuvables.")
@@ -173,6 +187,7 @@ def analyse_complete(source_csv,
         "alertes": portefeuille.alertes,
         "classement": classement,
         "cours_corriges": cours_corriges,
+        "jours_de_cotation": int(len(histo)),
         "operations_appliquees": operations_appliquees,
         "valeurs_incoherentes": valeurs_incoherentes(positions),
         "source_historique": source_hist,

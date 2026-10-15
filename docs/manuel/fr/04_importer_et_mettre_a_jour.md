@@ -726,6 +726,8 @@ Certains courtiers produisent un relevé où **chaque ligne porte une opération
 - Une vente est reconnue au mot SELL / vente, ou au signe « − » de la quantité.
 - Un symbole suivi d'une minuscule ajoutée par le courtier (« LYSXd ») est ramené au symbole (« LYSX »). « ESEEd », le symbole d'Interactive Brokers pour le BNP Paribas Easy S&P 500 coté à Paris, souvent lu « ESEED » par la reconnaissance de caractères, est ramené à « ESE » (ESE.PA). Le titre est ensuite identifié par ses cours (la place de cotation dont les prix collent aux prix du relevé), ou par le moteur de recherche.
 - Le relevé n'est retenu que si **toutes** ses lignes d'opération sont cohérentes ; sinon le formulaire « Compléter l'opération » prend le relais.
+- **Rapport de confirmation de transactions d'Interactive Brokers** : chaque ordre est écrit sur une ligne (colonne Bourse « - »), puis ses exécutions détaillées par bourse (EUDARK, TRWBEN…) avec les mêmes quantités. Seule la ligne de l'ordre est gardée (les quantités ne sont pas comptées deux fois), et les lignes « Total » sont ignorées. Le tableau « Informations instrument financier » donne la place de cotation (SBF = Paris : PAEJ → PAEJ.PA) et la description du titre (« AM P AP M AC AP EX JAP ETF-C »), reprise comme nom pour classer l'ETF.
+- **Achats tout récents** (la veille ou le jour même) : si aucun cours de clôture n'est encore publié depuis le premier achat, le cours du moment sert de dernier point ; une note indique que la performance annualisée, la volatilité et la VaR ne seront significatives qu'après quelques semaines.
 
 ### Relevé d'activité CSV d'Interactive Brokers (« Activity Statement »)
 

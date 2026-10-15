@@ -161,6 +161,8 @@ def produire_rapport(contenu_csv, indice, taux_sans_risque, niveau_var, nom_indi
         opti = None                              # ex. trop peu de titres pour le poids maximal
     rendements = res["indicateurs"]["rendements"]
     mu, sigma = parametres_historiques(rendements)
+    if len(rendements.dropna()) < 20 or mu != mu or sigma != sigma:
+        mu, sigma = 0.06, 0.15                   # portefeuille récent : hypothèses par défaut (comme l'onglet)
     sim = simuler(res["resume"]["valeur_actuelle"], mu, sigma, annees=config.HORIZON_PROJECTION,
                   versement_mensuel=config.VERSEMENT_MENSUEL, nb_simulations=config.NB_SIMULATIONS,
                   methode=config.METHODE_SIMULATION, rendements_historiques=rendements,
@@ -592,6 +594,10 @@ with onglets[0]:
         vues_transactions.proposer_divisions(a_ajuster, contenu, cible_portefeuille, session_compte)
     vues_transactions.alertes_titres(res.get("alertes"))
     vues_transactions.cours_corriges(res.get("cours_corriges"))
+    if res.get("jours_de_cotation", 99) < 20:
+        html(ui.note(t("Portefeuille récent ({n} jour(s) de cotation depuis le premier achat) : la valeur et les "
+                       "plus-values sont à jour, mais la performance annualisée, la volatilité, la VaR et les ratios "
+                       "ne seront significatifs qu'après quelques semaines.", n=res["jours_de_cotation"])))
     vues_transactions.operations_appliquees(res.get("operations_appliquees"))
     vues_transactions.valeurs_incoherentes(res.get("valeurs_incoherentes"))
     gauche, droite = st.columns([2, 1], gap="medium")
@@ -829,6 +835,9 @@ with onglets[5]:
     n_titres = len(positions)
     if n_titres < 2:
         st.info(t("L'optimisation compare plusieurs répartitions entre titres : il faut au moins 2 titres dans le portefeuille."))
+    elif len(res["historique"]) < 20:
+        st.info(t("L'optimisation s'appuie sur les rendements passés des titres : elle sera disponible après au moins "
+                  "20 jours de cotation depuis le premier achat."))
     else:
         # Seuls les poids maximaux qui permettent d'investir 100 % sont proposés.
         choix_possibles = [p for p in [0.10, 0.15, 0.20, 0.25, 0.30, 0.40, 0.50, 1.0] if p * n_titres >= 1]
@@ -915,6 +924,12 @@ with onglets[5]:
 with onglets[6]:
     rendements = ind["rendements"]
     mu_hist, sigma_hist = parametres_historiques(rendements)
+    historique_trop_court = len(rendements.dropna()) < 20
+    if historique_trop_court or mu_hist != mu_hist or sigma_hist != sigma_hist:
+        # portefeuille récent : pas assez de rendements passés, hypothèses par défaut (modifiables)
+        mu_hist, sigma_hist = 0.06, 0.15
+        st.info(t("Portefeuille récent : moins de 20 jours de cotation. La projection part d'hypothèses par défaut "
+                  "(rendement 6 %, volatilité 15 % par an), à ajuster ci-dessous."))
 
     with st.container(border=True):
         html(ui.titre_section(t("Hypothèses de la simulation"),
@@ -927,7 +942,8 @@ with onglets[6]:
         objectif = c.number_input(t("Objectif (€, facultatif)"), min_value=0, max_value=100_000_000,
                                   value=0, step=5000, help=t("0 = pas d'objectif"))
         a, b, c = st.columns(3)
-        methode = a.radio(t("Méthode"), ["normale", "historique"], horizontal=True,
+        methode = a.radio(t("Méthode"), ["normale"] if historique_trop_court else ["normale", "historique"],
+                          horizontal=True,
                           format_func=lambda m: t("Loi normale") if m == "normale" else t("Historique (bootstrap)"),
                           help=t("Historique : tire au hasard de vrais jours de bourse du portefeuille, "
                                  "ce qui conserve les krachs réels."))

@@ -726,6 +726,8 @@ Some brokers produce a statement where **each line holds a complete transaction*
 - A sale is recognised by the word SELL / vente, or by the "−" sign of the quantity.
 - A symbol followed by a lowercase letter added by the broker ("LYSXd") is reduced to the symbol ("LYSX"). « ESEEd », Interactive Brokers' symbol for the BNP Paribas Easy S&P 500 listed in Paris, often read « ESEED » by character recognition, is brought back to « ESE » (ESE.PA). The security is then identified by its prices (the exchange whose prices match those of the statement), or by the search engine.
 - The statement is used only if **all** its transaction lines are consistent; otherwise the "Complete the transaction" form takes over.
+- **Interactive Brokers trade confirmation report**: each order is written on one line (Exchange column « - »), then its detailed executions per venue (EUDARK, TRWBEN…) with the same quantities. Only the order line is kept (quantities are not counted twice), and « Total » lines are ignored. The « Financial Instrument Information » table gives the listing exchange (SBF = Paris: PAEJ → PAEJ.PA) and the security description (« AM P AP M AC AP EX JAP ETF-C »), used as its name to classify the ETF.
+- **Very recent purchases** (the day before or the same day): if no closing price has been published since the first purchase yet, the current price is used as the last point; a note says that annualised performance, volatility and VaR will only be meaningful after a few weeks.
 
 ### Interactive Brokers CSV activity statement
 

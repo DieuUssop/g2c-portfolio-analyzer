@@ -79,3 +79,63 @@ def test_ticker_et_colonne_place():
     assert correspondance.get("place")
     transactions, _ = imp.appliquer_correspondance(tableau, correspondance)
     assert list(transactions.sort_values("date")["ticker"]) == ["MC.PA", "SAP.DE", "ABC"]
+
+
+# Relevé PDF Interactive Brokers « Rapport de confirmation de transactions » (fictif, même format) :
+# chaque ordre (Bourse « - ») est suivi de ses exécutions par bourse, avec les mêmes quantités
+RAPPORT_IBKR = """Rapport de confirmation de transactions
+Transactions
+ID Compte Symbole Date/Heure de transaction Date de règlement Bourse Type Quantité Prix Produit Comm Frais Type d'ordre Code
+U0000000 PAEJ 2026-10-14, 09:04:13 2026-10-16 - BUY 18 27.1350 -488.43 -2.44 0.00 MKT O
+ U0000000 PAEJ 2026-10-14, 09:04:13 2026-10-16 EUDARK BUY 18 27.1350 -488.43 -2.44 0.00 MKT O
+ Total PAEJ (Acheté) 18 27.1350 -488.43 -2.44 0.00
+U0000000 PSP5 2026-10-14, 09:29:31 2026-10-16 - BUY 22 61.4604 -1,352.13 -3.00 0.00 MKT O;P
+ U0000000 PSP5 2026-10-14, 09:29:31 2026-10-16 TRWBEN BUY 21 61.4604 -1,290.67 -3.00 0.00 MKT O;P
+ U0000000 PSP5 2026-10-14, 09:29:31 2026-10-16 TRWBEN BUY 1 61.4604 -61.46 0.00 0.00 MKT O;P
+U0000000 PSP5 2026-10-14, 09:42:11 2026-10-16 - BUY 6 61.479733333 -368.88 -1.84 0.00 MKT IM;O;P
+ U0000000 PSP5 2026-10-14, 09:42:11 2026-10-16 EUDARK BUY 4 61.4800 -245.92 -1.23 0.00 MKT IA;O;P
+ U0000000 PSP5 2026-10-14, 09:42:11 2026-10-16 TRWBEN BUY 2 61.4792 -122.96 -0.61 0.00 MKT O;P
+ Total PSP5 (Acheté) 28 61.46 -1,721.01 -4.84 0.00
+Informations instrument financier
+Symbole Description Conid ID Titre Underlying Liste des Bourses Multiplicateur Type Code
+Actions
+AM P AP M AC AP EX JAP ETF-
+PAEJ 155510562 FR0011869312 PAEJ SBF 1 ETF
+C
+AMN PEA S&P 500 UCTS ETF-
+PSP5 154009730 FR0011871128 PSP5 SBF 1 ETF
+CAP
+"""
+
+
+def test_rapport_ibkr_executions_pas_comptees_deux_fois():
+    from src import lecture_pdf
+    operations = lecture_pdf.lire_lignes_operations(RAPPORT_IBKR)
+    assert [(o["isin"], o["quantite"]) for o in operations] == [("PAEJ", 18), ("PSP5", 22), ("PSP5", 6)]
+    # deux vrais ordres identiques à des heures différentes : tous deux gardés
+    deux = RAPPORT_IBKR.replace(" U0000000 PAEJ 2026-10-14, 09:04:13", " U0000000 PAEJ 2026-10-14, 09:05:13")
+    assert sum(o["quantite"] for o in lecture_pdf.lire_lignes_operations(deux) if o["isin"] == "PAEJ") == 36
+
+
+def test_tableau_ibkr_executions_retirees():
+    entete = ["ID Compte", "Symbole", "Date/Heure de transaction", "Date de règlement", "Bourse", "Type",
+              "Quantité", "Prix", "Produit", "Comm"]
+    grille = [["Transactions"] + [""] * 9, entete,
+              ["U0", "PSP5", "2026-10-14, 09:29:31", "2026-10-16", "-", "BUY", "22", "61.4604", "-1,352.13", "-3.00"],
+              ["U0", "PSP5", "2026-10-14, 09:29:31", "2026-10-16", "TRWBEN", "BUY", "21", "61.4604", "-1,290.67", "-3.00"],
+              ["U0", "PSP5", "2026-10-14, 09:29:31", "2026-10-16", "TRWBEN", "BUY", "1", "61.4604", "-61.46", "0.00"],
+              ["Total PSP5 (Acheté)", "", "", "", "", "", "22", "61.4604", "-1,352.13", "-3.00"]]
+    propre = imp._sans_executions_detaillees(grille)
+    assert [l[6] for l in propre[2:]] == ["22"]
+
+
+def test_rapport_ibkr_tickers_et_libelles():
+    """Le tableau « Informations instrument financier » donne la place (SBF = Paris) et la description :
+    PAEJ -> PAEJ.PA, libellé « AM P AP M AC AP EX JAP ETF-C » (reconnu Asie-Pacifique, éligible PEA)."""
+    from src import classement
+    grille, nature = imp.grille_depuis_textes([RAPPORT_IBKR])
+    lignes = [dict(zip(grille[0], l)) for l in grille[1:]]
+    assert [(l["ISIN"], l["Quantité"]) for l in lignes] == [("PAEJ.PA", "18"), ("PSP5.PA", "22"), ("PSP5.PA", "6")]
+    assert lignes[0]["Libellé"] == "AM P AP M AC AP EX JAP ETF-C"
+    k = classement.classer("PAEJ.PA", lignes[0]["Libellé"])
+    assert (k["region"], k["pea_synthetique"]) == ("Asie-Pacifique", True)

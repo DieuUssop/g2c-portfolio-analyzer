@@ -1405,17 +1405,49 @@ def lire_lignes_operations(texte, minimum=2):
         vente = mot.lower() in ("vente", "sell", "sold", "verkauf", "venta", "vendita", "verkoop") or ecrit_q.startswith("-")
         m_devise = MOTIF_DEVISE.search(reste)
         devise = (m_devise.group(1) or SYMBOLES[m_devise.group(2)]) if m_devise else ""
+        heure = re.search(r"\b\d{1,2}:\d{2}(?::\d{2})?\b", propre)
         operations.append({"date": les_dates[0][0], "sens": "VENTE" if vente else "ACHAT", "isin": titre,
                            "libelle": titre, "quantite": float(q), "cours": float(p), "devise": devise,
                            "frais": round(frais, 2) if frais else None, "montant": float(b),
-                           "sur": date_plausible(les_dates[0][0]),
+                           "sur": date_plausible(les_dates[0][0]), "heure": heure.group(0) if heure else "",
                            "net": None, "alternatives": []})
     # symboles du courtier ou mal lus par la reconnaissance de caractères : « ESEEd » (Interactive
     # Brokers, cotation à Paris), lu « ESEED » en majuscules, « ESEE »… pour le même ETF que « ESE »
     symboles = {o["isin"] for o in operations}
     for o in operations:
         o["isin"] = o["libelle"] = _symbole_ramene(o["isin"], symboles)
+    operations = retirer_executions_detaillees(operations)
     return operations if len(operations) >= minimum else []
+
+
+def retirer_executions_detaillees(operations):
+    """Relevé Interactive Brokers (« Rapport de confirmation de transactions ») : chaque ordre est écrit
+    sur une ligne, PUIS ses exécutions détaillées (une par bourse : EUDARK, TRWBEN…) avec les mêmes
+    quantités. Les exécutions qui suivent un ordre (même titre, même date, même heure à la seconde, même
+    sens) et dont les quantités s'additionnent exactement à celle de l'ordre sont retirées : sans cela,
+    les quantités seraient comptées deux fois. Sans heure, rien n'est retiré (deux ordres identiques le
+    même jour sont possibles)."""
+    gardees, i = [], 0
+    while i < len(operations):
+        ordre = operations[i]
+        gardees.append(ordre)
+        fin = None
+        if ordre.get("heure") and ordre.get("quantite"):
+            total, k = 0.0, i + 1
+            while k < len(operations):
+                o = operations[k]
+                if (o["isin"], o["date"], o.get("heure"), o["sens"]) != \
+                        (ordre["isin"], ordre["date"], ordre["heure"], ordre["sens"]) or not o.get("quantite"):
+                    break
+                total += o["quantite"]
+                if abs(total - ordre["quantite"]) < 1e-9:
+                    fin = k
+                    break
+                if total > ordre["quantite"]:
+                    break
+                k += 1
+        i = fin + 1 if fin is not None else i + 1
+    return gardees
 
 
 # Symboles propres à un courtier -> symbole de la bourse (Interactive Brokers, Euronext Paris)
@@ -1507,3 +1539,48 @@ def lire_cas_particuliers(texte):
                            "frais": None, "montant": montant, "sur": date_plausible(date), "net": None,
                            "alternatives": []})
     return operations if operations and all(o["sur"] for o in operations) else []
+
+
+# ----------------------------------------------------------------------
+# 16. Relevés Interactive Brokers : tableau « Informations instrument financier »
+# ----------------------------------------------------------------------
+def instruments_ibkr(texte):
+    """Tableau « Informations instrument financier » / « Financial Instrument Information » d'un relevé
+    Interactive Brokers : {symbole: {"isin", "place", "libelle"}}. Ex. la ligne
+    « PAEJ 155510562 FR0011869312 PAEJ SBF 1 ETF », entourée de sa description sur deux lignes
+    (« AM P AP M AC AP EX JAP ETF- » / « C »)."""
+    texte = texte or ""
+    debut = re.search(r"informations?\s+instrument\s+financier|financial\s+instrument\s+information", texte,
+                      re.IGNORECASE)
+    if not debut:
+        return {}
+    lignes = texte[debut.end():].split("\n")
+    resultat = {}
+    for i, ligne in enumerate(lignes):
+        m = re.match(r"^\s*([A-Z0-9.]{1,12}[a-z]?)\s+(?:.*?\s)?(?:\d{4,12}\s+)?([A-Z]{2}[A-Z0-9]{9}\d)\s+\S+\s+"
+                     r"([A-Z0-9.]{2,10})\b", ligne)
+        if not m or not imp.isin_valide(m.group(2)):
+            continue
+        symbole, isin, place = m.group(1), m.group(2), m.group(3)
+        # description : entre le symbole et le Conid sur la même ligne, sinon la ligne d'avant (+ la suite
+        # très courte de la ligne d'après : « C », « ACC », « CAP »)
+        milieu = re.sub(r"\b\d{4,12}\b", " ", ligne[m.end(1):ligne.find(isin)]).strip()
+        avant = lignes[i - 1].strip() if i and not re.search(r"[A-Z]{2}[A-Z0-9]{9}\d", lignes[i - 1]) else ""
+        apres = lignes[i + 1].strip() if i + 1 < len(lignes) and len(lignes[i + 1].strip()) <= 6 else ""
+        libelle = milieu or " ".join(x for x in (avant, apres) if x and not re.match(r"^(actions|stocks|etfs?)$", x,
+                                                                                      re.IGNORECASE))
+        resultat[symbole] = {"isin": isin, "place": place, "libelle": libelle.replace("- ", "-").strip()}
+    return resultat
+
+
+def ticker_ibkr(symbole, instruments):
+    """Symbole d'un relevé IBKR -> ticker Yahoo (symbole + suffixe de la place : PAEJ + SBF -> PAEJ.PA),
+    sinon l'ISIN, sinon le symbole tel quel."""
+    info = instruments.get(symbole) or instruments.get(re.sub(r"[a-z]$", "", symbole or ""))
+    if not info:
+        return symbole
+    suffixe = imp.PLACES.get(info["place"].upper())
+    racine = re.sub(r"[a-z]$", "", symbole)
+    if suffixe is not None and "." not in racine:
+        return racine + suffixe
+    return info["isin"] or symbole

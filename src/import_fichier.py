@@ -793,6 +793,8 @@ def _lire_pages_texte(pages, texte_total):
                 if grille and cellules == grille[0]:            # en-tête répété sur chaque page
                     continue
                 grille.append(cellules)
+        grille = _sans_executions_detaillees(grille)
+        grille = _avec_instruments_ibkr(grille, texte_total)
         if len(grille) >= 2:
             return grille, "pdf_tableau"
     # 2. Avis d'opéré lu par ses intitulés : une opération par page (ou par fichier), à condition
@@ -825,12 +827,90 @@ def _lire_pages_texte(pages, texte_total):
     raise PdfNonReconnu(MESSAGE_NON_RECONNU)
 
 
+def _sans_executions_detaillees(grille):
+    """Tableau d'un relevé Interactive Brokers : une ligne par ordre (colonne Bourse / Exchange « - »),
+    suivie de ses exécutions détaillées par bourse (mêmes symbole, date et heure ; quantités dont la somme
+    est celle de l'ordre) : les exécutions sont retirées, ainsi que les lignes « Total » (sinon les
+    quantités seraient comptées deux fois)."""
+    def colonne(entete, *mots):
+        return next((j for j, c in enumerate(entete) if any(m in normaliser(c) for m in mots)), None)
+    for h, entete in enumerate(grille[:10]):
+        c_sym = colonne(entete, "symbole", "symbol")
+        c_date = colonne(entete, "date/heure", "date/time", "transaction")
+        c_q = colonne(entete, "quantite", "quantity")
+        c_place = colonne(entete, "bourse", "exchange")
+        if None not in (c_sym, c_date, c_q, c_place):
+            break
+    else:
+        return grille
+    def quantite(ligne):
+        try:
+            return abs(float(str(ligne[c_q]).replace(",", "").replace(" ", "")))
+        except (ValueError, IndexError):
+            return None
+    resultat, i = grille[:h + 1], h + 1
+    while i < len(grille):
+        ligne = grille[i]
+        if str(ligne[0]).strip().lower().startswith("total"):
+            i += 1
+            continue
+        resultat.append(ligne)
+        q = quantite(ligne)
+        suivant = i + 1
+        if q and str(ligne[c_place]).strip() in ("-", "—", "–"):
+            total, k = 0.0, i + 1
+            while k < len(grille):
+                autre = grille[k]
+                if (autre[c_sym], autre[c_date]) != (ligne[c_sym], ligne[c_date]) or quantite(autre) is None:
+                    break
+                total += quantite(autre)
+                if abs(total - q) < 1e-9:
+                    suivant = k + 1
+                    break
+                if total > q:
+                    break
+                k += 1
+        i = suivant
+    return resultat
+
+
+def _avec_instruments_ibkr(grille, texte):
+    """Relevé IBKR : le symbole (« PAEJ ») devient le ticker Yahoo (« PAEJ.PA », d'après la place SBF du
+    tableau « Informations instrument financier »), et une colonne « Libellé » reçoit la description
+    (« AM P AP M AC AP EX JAP ETF-C »), utile pour classer l'ETF."""
+    from . import lecture_pdf
+    instruments = lecture_pdf.instruments_ibkr(texte)
+    if not instruments:
+        return grille
+    for h, entete in enumerate(grille[:10]):
+        c_sym = next((j for j, c in enumerate(entete) if normaliser(c) in ("symbole", "symbol")), None)
+        if c_sym is not None:
+            break
+    else:
+        return grille
+    resultat = [list(l) for l in grille[:h]] + [list(grille[h]) + ["Libellé"]]
+    for ligne in grille[h + 1:]:
+        ligne = list(ligne)
+        symbole = str(ligne[c_sym]).strip()
+        info = instruments.get(symbole)
+        if info:
+            ligne[c_sym] = lecture_pdf.ticker_ibkr(symbole, instruments)
+        resultat.append(ligne + [info["libelle"] if info else ""])
+    return resultat
+
+
 def _par_lignes(textes):
     """Relevé où chaque ligne porte une opération : retenu seulement si TOUTES les lignes
     d'opération (au moins deux) sont cohérentes."""
     from . import lecture_pdf
-    operations = lecture_pdf.lire_lignes_operations("\n".join(textes))
+    texte = "\n".join(textes)
+    operations = lecture_pdf.lire_lignes_operations(texte)
     if operations and all(o["sur"] for o in operations):
+        instruments = lecture_pdf.instruments_ibkr(texte)        # relevé IBKR : ticker et libellé
+        for o in operations:
+            if o["isin"] in instruments:
+                o["libelle"] = instruments[o["isin"]]["libelle"] or o["libelle"]
+                o["isin"] = lecture_pdf.ticker_ibkr(o["isin"], instruments)
         return [lecture_pdf.en_ligne_avis(o) for o in operations]
     return []
 
