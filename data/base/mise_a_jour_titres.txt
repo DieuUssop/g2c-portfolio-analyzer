@@ -1,9 +1,9 @@
-Mise à jour du 15/10/2026 15:42
-Euronext track : réponse sans titres
+Mise à jour du 15/10/2026 16:00
+Euronext track : réponse sans titres (début gardé dans euronext_track_brut.txt)
 Euronext etfs : HTTPError HTTP Error 500: Internal Server Error
 Euronext etf : HTTPError HTTP Error 500: Internal Server Error
 Euronext trackers : HTTPError HTTP Error 500: Internal Server Error
-Euronext stocks : réponse sans titres
+Euronext stocks : réponse sans titres (début gardé dans euronext_stocks_brut.txt)
 Xetra (page https://www.xetra.com/xetra-en/instruments/instruments/allTradableInstruments) : HTTPError
 Xetra : 3754 ETF/ETC, 1415 actions
-5169 fiches lues (3754 ETF, dont 819 rattachés à une zone précise) ; base locale : 131 -> 5282 titres.
+5169 fiches lues (3754 ETF/ETC, dont 1785 rattachés à un indice connu ; les autres : thématiques, matières premières, cryptos… classés « Monde (ETF) ») ; base locale : 5282 -> 5282 titres.
