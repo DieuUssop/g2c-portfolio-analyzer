@@ -92,8 +92,12 @@ def analyse_complete(source_csv,
         raise ValueError(f"Taux de change introuvables : {manquants}")
 
     # regroupements d'actions non ajustés par Yahoo (bond ×1 000 du cours) : historique corrigé
-    from .mouvements import corriger_sauts_de_cours
+    from .mouvements import appliquer_operations_connues, corriger_sauts_de_cours, valeurs_incoherentes
     prix_hist_brut, cours_corriges = corriger_sauts_de_cours(prix_hist_brut, titres)
+    # regroupements connus (ORPEA 1 000 pour 1…) : opérations ramenées dans les nouvelles unités
+    transactions_ost, operations_appliquees = appliquer_operations_connues(brut.transactions, prix_hist_brut)
+    if operations_appliquees:
+        brut = Portfolio(transactions_ost)
     taux_hist = prix_hist_brut[tickers_change].copy()
     taux_hist.columns = etrangeres
     # On ne garde que les jours où au moins un titre a coté (les marchés des
@@ -128,7 +132,7 @@ def analyse_complete(source_csv,
     noms = dict(zip(portefeuille.transactions["ticker"], portefeuille.transactions["nom"].astype(str)))
     classement = classer_tous(list(portefeuille.positions.index), noms, referentiel,
                               en_ligne="direct" in str(source_cours).lower())
-    for colonne in ["region", "secteur", "pays", "classe", "pea_synthetique"]:
+    for colonne in ["region", "secteur", "pays", "classe", "pea_synthetique", "indice"]:
         positions[colonne] = positions.index.map(classement[colonne].to_dict())
     # Duration (sensibilité aux taux) des fonds obligataires, en années
     positions["duration"] = pd.to_numeric(positions.index.map(referentiel["duration"].to_dict()), errors="coerce") \
@@ -169,5 +173,7 @@ def analyse_complete(source_csv,
         "alertes": portefeuille.alertes,
         "classement": classement,
         "cours_corriges": cours_corriges,
+        "operations_appliquees": operations_appliquees,
+        "valeurs_incoherentes": valeurs_incoherentes(positions),
         "source_historique": source_hist,
     }

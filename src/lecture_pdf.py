@@ -1073,12 +1073,46 @@ def controles(tableau_avis, transactions):
 # ----------------------------------------------------------------------
 # 10. Rapport anonymisé : pour envoyer un PDF mal lu sans données personnelles
 # ----------------------------------------------------------------------
-MOTS_PERSONNELS = re.compile(r"\b(?:m\.|mme|mlle|monsieur|madame|mademoiselle|mr|mrs|ms|titulaire|client|"
-                             r"cliente|adresse|address|n[ée]e?\s+le|nom|name|holder)\b", re.IGNORECASE)
+MOTS_PERSONNELS = re.compile(r"(?:\b(?:m|mr|mrs|ms|mme|mlle|dr)\.(?=\s)|\b(?:mme|mlle|monsieur|madame|mademoiselle|mr|"
+                             r"mrs|ms|titulaire|client|cliente|adresse|address|n[ée]e?\s+le|nom|name|holder|herrn?|"
+                             r"frau)\b)", re.IGNORECASE)
 
 
 MOTIF_RUE = re.compile(r"\b\d{1,4}\s*(?:bis|ter)?,?\s+(?:rue|avenue|av\.|boulevard|bd|place|chemin|all[ée]e|impasse|"
                        r"route|quai|square|street|road|lieu-dit|r[ée]sidence)\b", re.IGNORECASE)
+
+
+def _masquer_iban(m):
+    """Un IBAN est masqué ; un code ISIN suivi d'un mot (« FR0000121014 QUANTITE », qui a la forme
+    d'un IBAN) est gardé."""
+    code = m.group(0)
+    if imp.isin_plausible(code.replace(" ", "")) or imp.isin_valide(code[:12]):
+        return code
+    return "[IBAN]"
+
+
+MOTS_NOM_FICHIER = {"avis", "opere", "opéré", "operation", "opération", "releve", "relevé", "compte", "titres",
+                    "credit", "crédit", "agricole", "mutuel", "boursorama", "boursobank", "bourse", "direct",
+                    "fortuneo", "degiro", "ibkr", "interactive", "brokers", "trade", "republic", "saxo", "bnp",
+                    "societe", "société", "generale", "générale", "lcl", "caisse", "epargne", "pea", "cto", "pme",
+                    "assurance", "vie", "statement", "activity", "transactions", "account", "export", "portefeuille",
+                    "dividende", "achat", "vente", "ordre", "action", "actions", "ost", "coupon", "bulletin", "confirmation", "execution", "pdf", "csv", "xlsx", "flex", "trading212",
+                    "scalable", "revolut", "etoro", "swissquote", "keytrade", "linxea", "yomoni", "de", "d", "du", "le",
+                    "la", "des", "et"}
+
+
+def nom_fichier_anonyme(nom):
+    """Nom de fichier sans nom propre : seuls les mots courants (avis, opéré, courtier, PEA, dates…)
+    sont gardés, les autres deviennent « x » (« avis DUPONT.pdf » → « avis x.pdf »)."""
+    nom = str(nom or "")
+    base, point, extension = nom.rpartition(".")
+    if not point:
+        base, extension = nom, ""
+    mots = re.split(r"([\s_\-]+)", base)
+    garde = [m if (not m.strip(" _-") or m.lower() in MOTS_NOM_FICHIER or re.fullmatch(r"[\d\s._\-/]+", m))
+             else "x" for m in mots]
+    propre = re.sub(r"[^A-Za-z0-9._ \-]", "_", "".join(garde))[:80]
+    return propre + ("." + re.sub(r"[^A-Za-z0-9]", "", extension)[:5] if extension else "")
 
 
 def anonymiser(texte):
@@ -1091,11 +1125,11 @@ def anonymiser(texte):
                 or MOTIF_RUE.search(ligne):
             lignes.append("[ligne masquée : nom ou adresse]")
             continue
+        sans_montant = LIGNES_SANS_MONTANT.search(ligne)      # testé sur la ligne d'origine
         ligne = re.sub(r"[\w.+\-]+@[\w\-]+\.[\w.]+", "[e-mail]", ligne)
-        ligne = re.sub(r"\b[A-Z]{2}\d{2}(?:\s?[A-Z0-9]{4}){3,7}(?:\s?[A-Z0-9]{1,4})?\b",
-                       lambda m: m.group(0) if imp.isin_plausible(m.group(0).replace(" ", "")) else "[IBAN]", ligne)
+        ligne = re.sub(r"\b[A-Z]{2}\d{2}(?:\s?[A-Z0-9]{4}){3,7}(?:\s?[A-Z0-9]{1,4})?\b", _masquer_iban, ligne)
         ligne = re.sub(r"(?:\+33\s?|\b0)[1-9](?:[\s.\-]?\d{2}){4}\b", "[téléphone]", ligne)
-        if LIGNES_SANS_MONTANT.search(ligne):
+        if sans_montant:
             ligne = re.sub(r"\d[\d\s\-/.]{3,}\d|\d{4,}", "[numéro]", ligne)
         else:
             # longues suites de chiffres sans virgule (numéros), en gardant les ISIN, dates et montants
@@ -1109,7 +1143,7 @@ def rapport_anonymise(textes, resultat=None, nom_fichier=""):
     texte = anonymiser("\n".join(textes))
     c = candidats([texte])
     lignes = ["Portfolio Tracker — rapport de lecture d'un PDF (anonymisé)",
-              f"Fichier : {re.sub(r'[^A-Za-z0-9._ -]', '_', nom_fichier)}",
+              f"Fichier : {nom_fichier_anonyme(nom_fichier)}",
               f"Texte « codé » : {'oui' if texte_illisible(chr(10).join(textes)) else 'non'}",
               f"Codes ISIN : {[i for i, _ in c['isins']]}",
               f"Dates : {c['dates']} · date proposée : {c['date_proposee']}",
@@ -1272,6 +1306,8 @@ def _titre_de_la_ligne(avant):
     if not candidats:
         return None
     symbole = candidats[-1]
+    if re.fullmatch(r"[A-Z]{3}\.[A-Z]{3}", symbole):          # opération de change IBKR (« EUR.USD ») : pas un titre
+        return None
     if re.fullmatch(r"[A-Z0-9]{2,8}[a-z]", symbole):           # suffixe de place du courtier (« LYSXd »)
         symbole = symbole[:-1]
     return symbole
@@ -1311,6 +1347,14 @@ def lire_lignes_operations(texte, minimum=2):
         # nombres après le sens, dans l'ordre, avec toutes leurs lectures possibles
         morceaux = [m for m in MOTIF_MORCEAU.finditer(reste)]
         jetons = [(m.group(1) + m.group(2), _lectures_ocr(m.group(1) + m.group(2))) for m in morceaux]
+        # milliers séparés par une espace (« -1 338,00 », relevés DEGIRO) : « 338,00 » peut aussi valoir 1 338,00
+        for a, b in zip(range(len(morceaux) - 1), range(1, len(morceaux))):
+            ma, mb = morceaux[a], morceaux[b]
+            if re.fullmatch(r"\d{1,3}", ma.group(2)) and re.fullmatch(r"\d{3}[.,]\d{2}", mb.group(2)) \
+                    and reste[ma.end():mb.start()] in (" ", "\u00a0", "\u202f") and not mb.group(1):
+                signe = -1 if ma.group(1) == "-" else 1
+                valeur = signe * (int(ma.group(2)) * 1000 + float(mb.group(2).replace(",", ".")))
+                jetons[b] = (ma.group(1) + ma.group(2) + mb.group(2), jetons[b][1] | {abs(valeur), valeur})
         trouve = None
         for i in range(len(jetons)):
             for j in range(i + 1, len(jetons)):
@@ -1396,3 +1440,70 @@ def _symbole_ramene(symbole, symboles):
         if c in SYMBOLES_COURTIER:
             return SYMBOLES_COURTIER[c]
     return symbole
+
+
+# ----------------------------------------------------------------------
+# 15. Cas particuliers : souscription lors d'une opération sur titres, assurance-vie
+# ----------------------------------------------------------------------
+def _nombre_fr(texte):
+    try:
+        return float(re.sub(r"[\s  ]", "", texte).replace(",", "."))
+    except ValueError:
+        return None
+
+
+MOTIF_SOUSCRIPTION_OST = re.compile(
+    r"souscription\s+de\s+(\d[\d\s  ]*)\s+titre\(?s?\)?\s+(.+?)\s*\(([A-Z]{2}[A-Z0-9]{9}\d)\)", re.IGNORECASE | re.DOTALL)
+MOTIF_MONTANT_NET = re.compile(r"montant\s+net\s+(?:de\s*)?:?\s*-?\s*(\d[\d\s  ]*,\d{2})\s*(EUR|€|USD|\$)?",
+                               re.IGNORECASE)
+MOTIF_LIGNE_UC = re.compile(
+    r"^(?P<lib>.*?)\s*(?P<isin>[A-Z]{2}[A-Z0-9]{9}\d)\s+(?P<date>\d{2}/\d{2}/\d{4})\s+"
+    r"(?P<a>\d[\d\s  ]*,\d+)\s+(?P<b>\d[\d\s  ]*,\d+)\s+(?P<m>\d[\d\s  ]*,\d{2})\s*$", re.MULTILINE)
+MOTS_ASSURANCE_VIE = re.compile(r"unit[ée]s?\s+de\s+compte|valeurs?\s+liquidatives?", re.IGNORECASE)
+MOTS_SORTIE_AV = re.compile(r"\brachat\b|d[ée]sinvestissement|\bretrait\b", re.IGNORECASE)
+
+
+def lire_cas_particuliers(texte):
+    """Opérations des documents qui ne disent pas « achat / quantité / cours » :
+        - souscription lors d'une opération sur titres (augmentation de capital, « titres
+          réductibles » : « souscription de 16 titre(s) VEOLIA (FR…) … montant net de : - 363,20 EUR »),
+          cours = montant / quantité ;
+        - assurance-vie (versement, arbitrage, rachat) : « LYXOR STOXX50 … FR0007054358 05/06/2020
+          33,26 90,1984 3 000,00 » = valeur liquidative × nombre d'unités de compte = montant.
+    Renvoie une liste d'opérations (même format que lire_lignes_operations), toutes sûres, ou []."""
+    texte = texte or ""
+    operations = []
+    m = MOTIF_SOUSCRIPTION_OST.search(texte)
+    n = MOTIF_MONTANT_NET.search(texte)
+    if m and n:
+        quantite, montant = _nombre_fr(m.group(1)), _nombre_fr(n.group(1))
+        date = date_execution(texte)
+        if quantite and montant and date:
+            operations.append({"date": date, "sens": "ACHAT", "isin": m.group(3),
+                               "libelle": " ".join(m.group(2).split())[:60], "quantite": quantite,
+                               "cours": round(montant / quantite, 6), "devise": SYMBOLES.get(n.group(2) or "",
+                                                                                           n.group(2) or "EUR"),
+                               "frais": None, "montant": montant, "sur": date_plausible(date), "net": None,
+                               "alternatives": []})
+        return operations if operations and all(o["sur"] for o in operations) else []
+    if not MOTS_ASSURANCE_VIE.search(texte):
+        return []
+    # date de l'opération (« Date du versement : 04/06/2020 »), sinon la date de valeur de la ligne
+    date_operation = next((d for d, _, _, avant in dates(texte)
+                           if re.search(r"date\s+(?:du|de\s+l['’])\s*(?:versement|arbitrage|rachat|op[ée]ration)",
+                                        avant, re.IGNORECASE)), None)
+    vente = bool(MOTS_SORTIE_AV.search(texte)) and not re.search(r"versement", texte, re.IGNORECASE)
+    for ligne in MOTIF_LIGNE_UC.finditer(texte):
+        a, b, montant = (_nombre_fr(ligne.group(x)) for x in ("a", "b", "m"))
+        if not (a and b and montant) or abs(a * b - montant) > max(0.02, 0.005 * montant):
+            continue
+        # le nombre d'unités a souvent 4 décimales, la valeur liquidative 2 : à défaut, l'ordre des colonnes
+        decimales = [len(ligne.group(x).split(",")[1]) for x in ("a", "b")]
+        unites, valeur = (a, b) if decimales[0] > decimales[1] else (b, a)
+        libelle = " ".join(ligne.group("lib").split()) or ligne.group("isin")
+        date = date_operation or ligne.group("date")
+        operations.append({"date": date, "sens": "VENTE" if vente else "ACHAT", "isin": ligne.group("isin"),
+                           "libelle": libelle[:60], "quantite": unites, "cours": valeur, "devise": "EUR",
+                           "frais": None, "montant": montant, "sur": date_plausible(date), "net": None,
+                           "alternatives": []})
+    return operations if operations and all(o["sur"] for o in operations) else []

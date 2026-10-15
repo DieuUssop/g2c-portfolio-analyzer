@@ -66,7 +66,9 @@ def entete(titre, surtitre, sous_titre, source, date_donnees, date_cours=None):
     (date_cours : derniers cours connus, gardés en mémoire)."""
     en_direct = "direct" in source.lower()
     point = "point-vert" if en_direct else "point-orange"
-    if en_direct:
+    if en_direct and "secours" in source.lower():
+        libelle = t("Cours en direct · sources de secours (Yahoo Finance injoignable)")
+    elif en_direct:
         libelle = t("Cours en direct · Yahoo Finance")
     elif date_cours is not None:
         from .langues import date as date_lisible
@@ -201,8 +203,12 @@ def style_menu(legendes, actif):
 
 def style_depot(bouton, consigne):
     """Textes de la zone d'envoi de fichier (ceux de Streamlit sont en anglais et ne se traduisent pas)."""
+    # « Parcourir » seulement sur le bouton d'ouverture : les boutons de suppression des fichiers déjà
+    # envoyés (dans la même zone) gardent leur croix (assets/style.css)
     return ("<style>"
-            f'section[data-testid="stSidebar"] [data-testid="stFileUploaderDropzone"] button::after '
+            f'section[data-testid="stSidebar"] [data-testid="stFileUploaderDropzone"] button'
+            f':not([data-testid="stFileUploaderDeleteBtn"] button):not([data-testid="stBaseButton-minimal"])'
+            f':not([data-testid*="Delete"]):not([data-testid*="Delete"] button)::after '
             f'{{ content: "{_texte_css(bouton)}"; }}'
             f'section[data-testid="stSidebar"] [data-testid="stFileUploaderDropzone"]::after '
             f'{{ content: "{_texte_css(consigne)}"; }}'

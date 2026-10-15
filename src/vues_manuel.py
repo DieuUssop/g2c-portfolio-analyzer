@@ -100,7 +100,7 @@ def afficher():
         if question and question.strip():
             resultat = manuel.repondre(question, langue)
             if resultat["reponse"] is not None:
-                _fiche(resultat["reponse"], principale=True)
+                _fiche(resultat["reponse"], principale=True, lieu="reponse")
                 if resultat["proches"]:
                     _voir_aussi(resultat["proches"])
                 if st.button(t("Ce n'est pas la réponse que je cherchais"), type="tertiary", key="pas_la_reponse",
@@ -122,7 +122,7 @@ def afficher():
     ouverte = st.session_state.get("fiche_ouverte")
     if ouverte in fiches and not (question and question.strip()):
         with st.container(border=True):
-            _fiche(fiches[ouverte], principale=True)
+            _fiche(fiches[ouverte], principale=True, lieu="ouverte")
 
     # ------------------------------------------------------------------ sommaire
     with st.container(border=True):
@@ -158,13 +158,15 @@ def html(morceau):
     st.markdown(morceau, unsafe_allow_html=True)
 
 
-def _fiche(fiche, principale=True):
+def _fiche(fiche, principale=True, lieu=None):
+    """Une fiche du manuel. lieu : où elle est affichée (réponse, fiche ouverte, sommaire) ; une même
+    fiche peut figurer à deux endroits de la page, ses boutons doivent alors avoir des clés distinctes."""
     if principale:
         st.caption(fiche.chapitre)
         st.markdown(f"#### {fiche.titre}")
     st.markdown(manuel.texte_affiche(fiche))
     _chiffres(fiche)
-    _bouton_aller(fiche)
+    _bouton_aller(fiche, lieu or ("haut" if principale else "sommaire"))
 
 
 def _chiffres(fiche):
@@ -177,14 +179,14 @@ def _chiffres(fiche):
         html(ui.note(t("Pour votre portefeuille : {valeurs}", valeurs=texte)))
 
 
-def _bouton_aller(fiche):
+def _bouton_aller(fiche, lieu="haut"):
     cible = manuel.destination(fiche)
     if not cible or cible[0] not in ESPACES_ONGLETS or cible[0] == "Manuel et aide":
         return
     espace, onglet = cible
     libelle = t("Aller à « {espace} »", espace=t(espace)) + (t(", onglet « {onglet} »", onglet=t(onglet))
                                                              if onglet else "")
-    if st.button(libelle, key=f"aller_{fiche.ident}_{id(fiche)}", type="secondary"):
+    if st.button(libelle, key=f"aller_{lieu}_{fiche.ident}", type="secondary"):
         st.session_state["espace_actif"] = espace
         st.session_state.pop("fiche_ouverte", None)
         if onglet:

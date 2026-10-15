@@ -29,7 +29,7 @@ from reportlab.platypus import (Image, KeepTogether, PageBreak, Paragraph, Simpl
 
 from . import expositions as ex
 from . import graphiques as g
-from . import langues, lecture
+from . import fiscalite, langues, lecture
 
 # Couleurs (les mêmes que le tableau de bord)
 MARINE = colors.HexColor("#0f2a4a")
@@ -87,11 +87,16 @@ def _styles():
 # ----------------------------------------------------------------------
 # Briques de mise en page
 # ----------------------------------------------------------------------
+AUTEURS = ("Outil réalisé par un groupe de 4 étudiants du Master G2C (Gestion d'actifs, Contrôle des risques et "
+           "Conformité), IAE Caen, Université de Caen Normandie")
+
+
 def _bandeau(st, titre, sous_titre):
     """Bandeau bleu marine en haut de la première page."""
     contenu = [[Paragraph("MASTER G2C · GESTION DE PORTEFEUILLE", st["surtitre"])],
                [Paragraph(titre, st["titre"])],
-               [Paragraph(escape(sous_titre), st["sous_titre_bandeau"])]]
+               [Paragraph(escape(sous_titre), st["sous_titre_bandeau"])],
+               [Paragraph(escape(AUTEURS), st["sous_titre_bandeau"])]]
     tableau = Table(contenu, colWidths=[LARGEUR_UTILE])
     tableau.setStyle(TableStyle([
         ("BACKGROUND", (0, 0), (-1, -1), MARINE),
@@ -472,15 +477,18 @@ def generer_rapport(res, destination, nom_indice, taux_sans_risque, niveau_var,
         story.append(PageBreak())
         story.append(Paragraph("Conseil patrimonial", st["h1"]))
         story.append(KeepTogether([
-            Paragraph(f"Fiscalité d'une vente totale aujourd'hui (ancienneté {nombre(ext['anciennete'], 1)} ans, taux 2026)",
-                      st["h2"]),
+            Paragraph(f"Fiscalité d'une vente totale aujourd'hui (ancienneté {nombre(ext['anciennete'], 1)} ans, "
+                      + ("taux personnalisés" if ext.get("taux_personnalises") else "taux 2026") + ")", st["h2"]),
             _tableau(["Enveloppe", "Impôt sur le revenu", "Prélèvements sociaux", "Gain net", "Performance nette"],
                      [[l["enveloppe"], euros(l["impot_revenu"]), euros(l["prelevements_sociaux"]),
                        euros(l["gain_net"], signe=True), pct(l["performance_nette"])] for l in ext["fiscalite"]]),
             Spacer(1, 3),
             Paragraph(escape(f"Part du portefeuille éligible au PEA : {pct(ext['part_pea'], signe=False, decimales=0)}. "
-                             "Flat tax 31,4 % (12,8 % + 18,6 %) ; PEA après 5 ans : 18,6 % ; assurance-vie après "
-                             "8 ans : 7,5 % après abattement + 17,2 %."), st["note"]),
+                             + fiscalite.resume_taux(ext.get("taux_fiscaux")) + ". "
+                             + ("Taux personnalisés par l'utilisateur (simulation), différents des taux légaux. "
+                                if ext.get("taux_personnalises") else "")
+                             + f"Taux en vigueur au {pd.Timestamp(fiscalite.DATE_TAUX):%d/%m/%Y} "
+                             f"(source : {fiscalite.SOURCE_TAUX})."), st["note"]),
         ]))
 
         lignes_stress = []
@@ -552,7 +560,7 @@ def generer_rapport(res, destination, nom_indice, taux_sans_risque, niveau_var,
         "<b>VaR / CVaR</b> : méthode historique (percentile), paramétrique (loi normale) et Cornish-Fisher (loi normale corrigée de l'asymétrie et de la kurtosis), horizon 1 jour. Normalité testée par Jarque-Bera.",
         "<b>Markowitz</b> : optimisation sous contraintes (SLSQP), sans vente à découvert, poids plafonnés.",
         "<b>Monte-Carlo</b> : trajectoires mensuelles simulées ; percentiles de la valeur finale.",
-        "<b>Fiscalité</b> : taux 2026 (flat tax 31,4 %, PEA après 5 ans, assurance-vie après 8 ans).",
+        "<b>Fiscalité</b> : taux en vigueur au 1er janvier 2026 (flat tax 31,4 %, PEA après 5 ans, assurance-vie après 8 ans), sauf taux personnalisés par l'utilisateur.",
         "<b>Stress tests</b> : crises passées rejouées (indice régional si le titre n'était pas coté) et chocs hypothétiques.",
         "<b>Attribution</b> : Brinson-Fachler mensuel par région, lissage de Cariño, référence MSCI ACWI IMI.",
         "<b>Budget de risque</b> : contributions d'Euler au risque ; parité des risques (méthode de Spinu).",
@@ -569,6 +577,6 @@ def generer_rapport(res, destination, nom_indice, taux_sans_risque, niveau_var,
     doc = SimpleDocTemplate(
         destination, pagesize=A4,
         leftMargin=1.8 * cm, rightMargin=1.8 * cm, topMargin=1.6 * cm, bottomMargin=2.0 * cm,
-        title="Rapport de suivi de portefeuille", author="Master G2C",
+        title="Rapport de suivi de portefeuille", author="4 étudiants du Master G2C, IAE Caen",
     )
     doc.build(story, onFirstPage=_pied_de_page, onLaterPages=_pied_de_page)

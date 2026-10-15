@@ -240,8 +240,9 @@ class Index:
         for f in self.fiches:
             champs = {"questions": mots(" ".join(f.questions)), "titre": mots(f.titre),
                       "mots": mots(" ".join(f.mots_cles)), "texte": mots(f.texte)}
+            champs["formulations"] = [set(mots(q)) for q in f.questions]
             self.champs.append(champs)
-            documents.append(set().union(*champs.values()))
+            documents.append(set().union(*(v for k, v in champs.items() if k != "formulations")))
         n = max(len(documents), 1)
         frequence = {}
         for doc in documents:
@@ -299,11 +300,18 @@ class Index:
                         norme = 1.0
                     score += poids * self.idf[terme] * (tf * 2.2) / (tf + 1.2 * norme)
             # bonus : tous les termes de la question sont présents dans la fiche
-            couverture = sum(1 for terme in termes if any(terme in champs[n] for n in champs)) / len(termes)
+            couverture = sum(1 for terme in termes if any(terme in champs[n] for n in self.POIDS)) / len(termes)
             score *= 0.6 + 0.4 * couverture
             # Une question qui reprend les mots du titre vise sans doute cette fiche
             if champs["titre"]:
                 score *= 1 + 0.25 * sum(1 for terme in termes if terme in champs["titre"]) / len(termes)
+            # La question reprend (presque) mot pour mot une formulation prévue par la fiche
+            # (« c'est quoi ce logiciel ») : c'est elle qui est visée
+            ensemble = set(termes)
+            proximite = max((len(ensemble & f) / len(ensemble | f) for f in champs["formulations"] if f),
+                            default=0.0)
+            if proximite >= 0.6:
+                score *= 1 + 1.5 * proximite
             # Le glossaire (une fiche par lettre, beaucoup de termes) ne doit pas l'emporter sur
             # la fiche qui traite vraiment du sujet : il reste trouvé quand rien d'autre ne répond.
             if fiche.ident.startswith("glossaire-"):

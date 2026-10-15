@@ -292,13 +292,15 @@ def ajouter_titres(lignes):
             nouveaux[c] = ""
     nouveaux = nouveaux[COLONNES_TITRES].drop_duplicates("ticker", keep="last").set_index("ticker")
     fusion = existants.copy()
-    for ticker, ligne in nouveaux.iterrows():
-        if ticker in fusion.index:
-            for c in fusion.columns:
-                if str(ligne[c]).strip():
-                    fusion.at[ticker, c] = ligne[c]
-        else:
-            fusion.loc[ticker] = ligne
+    communs = nouveaux.index.intersection(fusion.index)
+    for ticker in communs:                           # fiches existantes : complétées
+        ligne = nouveaux.loc[ticker]
+        for c in fusion.columns:
+            if str(ligne[c]).strip():
+                fusion.at[ticker, c] = ligne[c]
+    inedits = nouveaux.loc[nouveaux.index.difference(fusion.index)]
+    if len(inedits):                                 # nouvelles fiches : ajoutées d'un coup (rapide)
+        fusion = pd.concat([fusion, inedits])
     _ecrire_atomique(_dossier() / "titres.csv",
                      lambda chemin: fusion.reset_index().to_csv(chemin, index=False, encoding="utf-8"))
 

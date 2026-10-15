@@ -348,3 +348,25 @@ def cours_corriges(notes):
                        "(regroupement d'actions). Les cours d'avant cette date ont été ramenés dans les nouvelles "
                        "unités pour les calculs.", ticker=n["ticker"], f=f"{n['facteur']:g}",
                        date=n["date"].strftime("%d/%m/%Y"))))
+
+
+def operations_appliquees(notes):
+    """Regroupements d'actions connus appliqués d'office aux calculs (ORPEA 1 000 pour 1…)."""
+    for n in notes or []:
+        html(ui.note(t(n["libelle"]) + ". " + t(
+            "{nom} : {k} opération(s) d'avant cette date ramenée(s) dans les nouvelles unités pour les calculs "
+            "(quantité × {f}, prix ÷ {f}). Votre fichier n'est pas modifié.",
+            nom=n["nom"], k=n["operations"], f=f"{n['facteur']:g}")))
+
+
+def valeurs_incoherentes(lignes):
+    """Ligne qui vaut plus de 50 fois son prix de revient : sans doute une division ou un
+    regroupement d'actions non appliqué."""
+    for v in lignes or []:
+        html(ui.note(t("{nom} ({ticker}) vaut {multiple:.0f} fois son prix de revient ({valeur} € pour {investi} € "
+                       "investis). C'est presque toujours un regroupement ou une division d'actions non appliqué, "
+                       "pas une vraie hausse : vérifiez la quantité détenue (avis d'opération sur titres de votre "
+                       "courtier) et corrigez-la avec « Modifier les opérations » dans l'onglet « Transactions ».",
+                       nom=v["nom"], ticker=v["ticker"], multiple=v["multiple"],
+                       valeur=f"{v['valeur']:,.0f}".replace(",", " "),
+                       investi=f"{v['investi']:,.0f}".replace(",", " ")), attention=True))

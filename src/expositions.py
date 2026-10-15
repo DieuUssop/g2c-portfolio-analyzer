@@ -84,7 +84,8 @@ def transparence(positions):
             lignes.append({**base, "pays": SANS_PAYS, "region": SANS_PAYS, "secteur": None,
                            "devise": "Or", "poids": w, "indice": None})
             continue
-        indice = ce.indice_suivi(ticker, nom) if (_est_un_fonds(ticker, p) or classe == "Obligations") else None
+        indice = (p.get("indice") if p.get("indice") in ce.PAYS_PAR_INDICE else None) or \
+            (ce.indice_suivi(ticker, nom) if (_est_un_fonds(ticker, p) or classe == "Obligations") else None)
         couvert = ce.est_couvert(nom)
         if indice is None:
             pays = p.get("pays", NON_CLASSE)

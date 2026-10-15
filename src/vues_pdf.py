@@ -20,6 +20,7 @@ fichier depuis la barre latérale (app.py).
 import pandas as pd
 import streamlit as st
 
+from . import vues_signalement
 from . import images, import_fichier, lecture_pdf
 from . import interface as ui
 from .langues import anglais, t, td
@@ -377,6 +378,7 @@ def formulaire(brut, nom_fichier, cle, raison=None):
                 ticker, nom = resoudre_titre(code)
         except Exception as erreur:
             st.error(str(erreur))
+            vues_signalement.noter_erreur('lecture PDF', str(erreur))
             return None
         if not dividende and c["texte"].strip():
             # retenir le modèle de ce document : le prochain avis du même type sera lu tout seul
@@ -428,6 +430,7 @@ def lot_de_fichiers(fichiers, importer):
                 en_attente.append(nom)
             else:
                 st.error(t("{nom} : {raison}", nom=nom, raison=t(resultat["raison"])))
+                vues_signalement.noter_erreur('lecture PDF', t("{nom} : {raison}", nom=nom, raison=t(resultat["raison"])))
                 st.caption(t("Envoyez ce fichier seul pour ouvrir l'assistant d'import."))
                 bouton_annuler(brut, f"lot_{empreinte}")
                 en_attente.append(nom)

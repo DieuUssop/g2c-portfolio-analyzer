@@ -23,6 +23,8 @@ from pathlib import Path
 
 import pandas as pd
 
+from . import sources_secours
+
 # Emplacement du fichier cache : dossier "data" à la racine du projet.
 # Path(__file__) = ce fichier ; .parent = dossier src ; .parent = racine.
 CHEMIN_CACHE = Path(__file__).resolve().parent.parent / "data" / "cache_prix.csv"
@@ -65,6 +67,19 @@ def telecharger_derniers_cours(tickers):
     return {t: float(derniers[t]) for t in derniers.index if pd.notna(derniers[t])}
 
 
+def _avec_nouvel_essai(fonction, *args, essais=2, pause=2.0):
+    """Appelle la fonction ; en cas d'échec (Yahoo qui limite les requêtes un instant), réessaie
+    une fois après une courte pause."""
+    import time
+    for essai in range(essais):
+        try:
+            return fonction(*args)
+        except Exception:
+            if essai == essais - 1:
+                raise
+            time.sleep(pause)
+
+
 def _sauver_cache(prix):
     """Enregistre les cours dans data/cache_prix.csv (avec la date du jour)."""
     tableau = pd.DataFrame({"ticker": list(prix), "cours": list(prix.values())})
@@ -91,13 +106,29 @@ def obtenir_cours(tickers):
     """
     tickers = list(tickers)
     try:
-        prix = telecharger_derniers_cours(tickers)
+        prix = _avec_nouvel_essai(telecharger_derniers_cours, tickers)
+        # titres que Yahoo n'a pas donnés (refus momentané) : sources de secours
+        manquants = [t for t in tickers if t not in prix]
+        if manquants:
+            prix.update(sources_secours.derniers_cours(manquants)[0])
         _sauver_cache(prix)
         source = "Yahoo Finance (en direct)"
     except Exception as erreur:
         # "except" attrape n'importe quel problème (pas d'Internet, Yahoo en
         # panne...) pour que le programme ne plante pas.
+        # 1. Sources de secours gratuites (BCE pour les devises, Stooq pour les actions)
+        secours, sources = sources_secours.derniers_cours(tickers)
+        if secours:
+            prix = dict(secours)
+            cache, _ = _lire_cache()
+            prix.update({t: v for t, v in cache.items() if t in tickers and t not in prix})
+            manquants = [t for t in tickers if t not in prix]
+            if not manquants:
+                _sauver_cache(prix)
+                return prix, f"Sources de secours en direct ({', '.join(sources)}) — Yahoo Finance injoignable"
+        # 2. Cours gardés en mémoire
         prix, date_maj = _lire_cache()
+        prix.update({t: v for t, v in (secours or {}).items()})
         # Titres absents du cache : derniers cours connus de la base locale de titres
         try:
             from . import base_titres
@@ -162,6 +193,18 @@ def _enrichir_base(histo):
         pass                                        # base absente ou en lecture seule : sans gravité
 
 
+def _completer_par_secours(histo, tickers, debut):
+    """Titres que Yahoo n'a pas renvoyés : cherchés auprès des sources de secours."""
+    manquants = [t for t in tickers if histo.empty or t not in histo.columns or histo[t].dropna().empty]
+    if not manquants:
+        return histo
+    secours, _ = sources_secours.historiques(manquants, debut)
+    if secours.empty:
+        return histo
+    histo = histo.drop(columns=[c for c in secours.columns if c in histo.columns])
+    return histo.join(secours, how="outer")
+
+
 def _completer_par_la_base(histo, tickers, debut):
     """Ajoute, depuis la base locale, les tickers absents du tableau (hors connexion,
     ou titre momentanément refusé par Yahoo)."""
@@ -193,14 +236,23 @@ def obtenir_historique(tickers, debut, chemin_cache=None):
     tickers = list(tickers)
     cache = chemin_cache or CHEMIN_CACHE_HISTO
     try:
-        histo = telecharger_historique(tickers, debut)
+        histo = _avec_nouvel_essai(telecharger_historique, tickers, debut)
+        histo = _completer_par_secours(histo, tickers, debut)
         _enrichir_base(histo)                       # la base garde en mémoire tout ce qui est téléchargé
         histo = _completer_par_la_base(histo, tickers, debut)
         histo.to_csv(cache)
         source = "Yahoo Finance (en direct)"
     except Exception as erreur:
-        # Hors connexion : le dernier cache, complété par la base locale de titres
+        # Yahoo injoignable : sources de secours (BCE, Stooq), puis le dernier cache, complété par
+        # la base locale de titres
+        secours, sources = sources_secours.historiques(tickers, debut)
         histo = pd.read_csv(cache, index_col=0, parse_dates=True) if cache.exists() else pd.DataFrame()
+        if not secours.empty:
+            histo = secours if histo.empty else histo.drop(
+                columns=[c for c in secours.columns if c in histo.columns]).join(secours, how="outer")
+            if all(t in histo.columns and not histo[t].dropna().empty for t in tickers):
+                _enrichir_base(secours)
+                return histo, f"Sources de secours en direct ({', '.join(sources)}) — Yahoo Finance injoignable"
         histo = _completer_par_la_base(histo, tickers, debut)
         if histo.empty:
             raise RuntimeError(

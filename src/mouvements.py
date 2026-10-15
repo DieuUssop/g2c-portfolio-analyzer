@@ -16,6 +16,9 @@ Ajouter deux fois le même fichier ne change donc rien (les opérations sont
 reconnues comme déjà présentes).
 """
 
+import math
+import re
+
 import pandas as pd
 
 COLONNES = ["date", "type", "ticker", "nom", "quantite", "prix", "frais"]
@@ -274,6 +277,11 @@ def _facteur_rond(rapport, tolerance):
     if not rapport or rapport != rapport or 0.2 < rapport < 5:
         return None
     meilleur = min(FACTEURS_RONDS, key=lambda f: abs(rapport / f - 1))
+    # gros regroupement (100 pour 1 et au-delà) : Yahoo ajuste souvent aussi ses cours pour les
+    # augmentations de capital de la même période (ORPEA 2024), le rapport n'est alors plus tout à
+    # fait rond ; un écart de 100 fois ou plus ne peut de toute façon pas venir d'un prix mal saisi
+    if meilleur >= 100 or meilleur <= 0.01:
+        tolerance = max(tolerance, 0.4)
     return meilleur if abs(rapport / meilleur - 1) < tolerance else None
 
 
@@ -309,6 +317,98 @@ def division_deduite(transactions, ticker, prix_hist, tolerance=0.15):
     return {"ticker": ticker, "nom": str(operations["nom"].iloc[0]),
             "date": pd.Timestamp(derniere) + pd.Timedelta(days=1), "facteur": premier, "operations": k,
             "deduite": True}
+
+
+# ======================================================================
+# Opérations sur titres connues (appliquées d'office, sans attendre Yahoo Finance)
+# ======================================================================
+# Regroupements d'actions certains, que Yahoo Finance donne mal ou pas du tout. Un titre est reconnu
+# à son ticker, à son ISIN (ancien ou nouveau) ou à son nom.
+# Source ORPEA : communiqué du 21/03/2024 (regroupement de 1 000 actions anciennes en 1 nouvelle,
+# actions regroupées cotées à partir du 22/03/2024, ISIN FR0000184798 → FR001400NLM4).
+OPERATIONS_CONNUES = [
+    {"isin": ("FR0000184798", "FR001400NLM4"), "tickers": ("ORP.PA", "EMEIS.PA", "ORP", "EMEIS"),
+     "nom": r"\b(ORPEA|EMEIS)\b", "date": "2024-03-22", "facteur": 0.001,
+     "libelle": "ORPEA (devenu emeis) : regroupement de 1 000 actions anciennes en 1 nouvelle, le 22/03/2024"},
+    # Casino : avis du 14/06/2024 (100 anciennes → 1 nouvelle, premier jour de cotation le 14/06/2024)
+    {"isin": ("FR0000125585", "FR001400OKR3"), "tickers": ("CO.PA", "CO"),
+     "nom": r"\bCASINO\b", "date": "2024-06-14", "facteur": 0.01,
+     "libelle": "Casino Guichard-Perrachon : regroupement de 100 actions anciennes en 1 nouvelle, le 14/06/2024"},
+    # Atos : communiqué de finalisation (10 000 anciennes → 1 nouvelle, premier jour de cotation le 24/04/2025)
+    {"isin": ("FR0000051732", "FR001400X2S4"), "tickers": ("ATO.PA", "ATO"),
+     "nom": r"\bATOS\b", "date": "2025-04-24", "facteur": 0.0001,
+     "libelle": "Atos : regroupement de 10 000 actions anciennes en 1 nouvelle, le 24/04/2025"},
+]
+# droits préférentiels, bons de souscription… : d'autres titres, qui portent le même nom
+MOTIF_DROITS = re.compile(r"\b(DROITS?|DPS|DS\d*|BSA\w*|WARRANTS?|RIGHTS?)\b")
+
+
+def _concerne(operation_connue, ticker, nom):
+    ticker, nom = str(ticker).upper(), str(nom).upper()
+    if ticker in operation_connue["tickers"] or ticker in operation_connue["isin"]:
+        return True
+    return re.search(operation_connue["nom"], nom) is not None and not MOTIF_DROITS.search(nom)
+
+
+def appliquer_operations_connues(transactions, prix_hist=None):
+    """Applique les regroupements de OPERATIONS_CONNUES aux opérations restées dans les anciennes
+    unités (achats et ventes antérieurs à la date, au prix d'avant : 2 000 ORPEA à 0,0145 € →
+    2 actions à 14,50 €). Une opération déjà ramenée dans les nouvelles unités (prix proche du cours
+    ajusté, ou correction déjà enregistrée par l'utilisateur) n'est pas touchée.
+
+    Le test : le rapport prix payé / cours ajusté du jour est plus proche du facteur (1/1 000) que
+    de 1, en échelle logarithmique. Sans cours, on compare au prix des opérations postérieures du
+    même titre ; sans rien pour comparer, l'opération est ajustée (le regroupement est certain).
+    Renvoie (transactions, [{"ticker", "nom", "date", "facteur", "operations", "libelle"}])."""
+    tableau = transactions.copy()
+    notes = []
+    for oc in OPERATIONS_CONNUES:
+        date = pd.Timestamp(oc["date"])
+        log_f = math.log(oc["facteur"])
+        for ticker in tableau["ticker"].unique():
+            lignes = tableau[tableau["ticker"] == ticker]
+            if not _concerne(oc, ticker, lignes["nom"].iloc[0] if "nom" in lignes else ""):
+                continue
+            avant = lignes[(lignes["date"] < date) & lignes["type"].isin(["ACHAT", "VENTE"]) & (lignes["prix"] > 0)]
+            if avant.empty:
+                continue
+            cours = None
+            if prix_hist is not None and ticker in getattr(prix_hist, "columns", []):
+                cours = prix_hist[ticker].dropna().sort_index()
+                cours = cours[cours > 0]
+            apres = lignes[(lignes["date"] >= date) & lignes["type"].isin(["ACHAT", "VENTE"]) & (lignes["prix"] > 0)]
+            a_ajuster = []
+            for i, op in avant.iterrows():
+                if cours is not None and len(cours):
+                    reference = cours.iloc[min(cours.index.searchsorted(op["date"]), len(cours) - 1)]
+                elif len(apres):
+                    reference = float(apres["prix"].median())
+                else:
+                    reference = None
+                if reference:
+                    log_r = math.log(op["prix"] / reference)
+                    if abs(log_r - log_f) >= abs(log_r):
+                        continue                      # déjà dans les nouvelles unités
+                a_ajuster.append(i)
+            if a_ajuster:
+                tableau.loc[a_ajuster, "quantite"] = tableau.loc[a_ajuster, "quantite"] * oc["facteur"]
+                tableau.loc[a_ajuster, "prix"] = tableau.loc[a_ajuster, "prix"] / oc["facteur"]
+                notes.append({"ticker": ticker, "nom": str(lignes["nom"].iloc[0]), "date": date,
+                              "facteur": oc["facteur"], "operations": len(a_ajuster), "libelle": oc["libelle"]})
+    return tableau, notes
+
+
+def valeurs_incoherentes(positions, seuil=50.0, minimum=500.0):
+    """Lignes qui valent plus de 50 fois leur prix de revient (et au moins 500 €) : presque
+    toujours une division ou un regroupement d'actions non appliqué, pas une vraie hausse.
+    Renvoie [{"ticker", "nom", "valeur", "investi", "multiple"}]."""
+    sortie = []
+    for ticker, p in positions.iterrows():
+        investi, valeur = float(p.get("montant_investi", 0) or 0), float(p.get("valeur", 0) or 0)
+        if investi > 0 and valeur >= minimum and valeur > seuil * investi:
+            sortie.append({"ticker": ticker, "nom": str(p.get("nom", ticker)), "valeur": valeur,
+                           "investi": investi, "multiple": valeur / investi})
+    return sortie
 
 
 def corriger_sauts_de_cours(prix_hist, colonnes):

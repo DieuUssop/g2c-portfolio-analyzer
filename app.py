@@ -33,7 +33,8 @@ import streamlit as st
 from src import config, images, langues, lecture, market_data, mouvements, theme
 from src import graphiques_interactifs as gi
 from src import interface as ui
-from src import (expositions, fond_de_carte, import_fichier, indices, vues_compte, vues_conseil, vues_transactions,
+from src import (expositions, fond_de_carte, import_fichier, indices, vues_compte, vues_conseil, vues_signalement,
+                 vues_transactions,
                  vues_expositions, vues_gestion, vues_import, vues_manuel, vues_mouvements, vues_pdf)
 from src.analyse import analyse_complete
 from src.interface import euros, nombre, pct, tendance
@@ -149,7 +150,7 @@ def projeter(valeur, mu, sigma, annees, versement, methode, objectif, rendements
 
 
 @st.cache_data(show_spinner=False)
-def produire_rapport(contenu_csv, indice, taux_sans_risque, niveau_var, nom_indice):
+def produire_rapport(contenu_csv, indice, taux_sans_risque, niveau_var, nom_indice, taux_fiscaux=()):
     """Construit le rapport PDF en mémoire et renvoie son contenu (octets).
     Le rapport PDF reste en français, quelle que soit la langue du tableau de bord."""
     from src.rapport import generer_rapport      # nécessite reportlab
@@ -165,7 +166,7 @@ def produire_rapport(contenu_csv, indice, taux_sans_risque, niveau_var, nom_indi
                   methode=config.METHODE_SIMULATION, rendements_historiques=rendements,
                   date_depart=res["historique"].index[-1])
     from src.extensions import calculer_extensions   # fiscalité, stress tests... : réglages de src/config.py
-    extensions = calculer_extensions(res, taux_sans_risque)
+    extensions = calculer_extensions(res, taux_sans_risque, taux_fiscaux=dict(taux_fiscaux))
     tampon = io.BytesIO()
     generer_rapport(res, tampon, nom_indice, taux_sans_risque, niveau_var, opti=opti, sim=sim,
                     extensions=extensions)
@@ -284,14 +285,18 @@ with st.sidebar:
     if fichiers_envoyes and session_compte is None:
         zone_enregistrement.caption(t("Pour garder ce fichier, connectez-vous (« Se connecter », en haut de la "
                                       "barre latérale)."))
-    lien_a, lien_b = st.columns(2, vertical_alignment="center")
-    zone_operations = lien_a.container()        # « Ajouter des opérations » (affiché une fois le portefeuille lu)
-    lien_b.download_button(t("Modèle de fichier"), data=MODELE_CSV.encode("utf-8-sig"),
-                           file_name="modele_transactions.csv", mime="text/csv", type="tertiary",
-                           key="modele_fichier")
-    if fichier_envoye is not None and st.button(t("Ouvrir l'assistant d'import"), type="tertiary",
-                                                help=t("Pour indiquer vous-même comment lire le fichier envoyé"),
-                                                key="assistant_barre"):
+    # Liens de la zone Données : une seule colonne, un lien par ligne, alignés à gauche avec une icône
+    # (deux colonnes étroites faisaient passer les libellés sur deux lignes, qui se chevauchaient)
+    liens = st.container(key="liens_donnees")
+    zone_operations = liens.container()         # « Ajouter des opérations » (affiché une fois le portefeuille lu)
+    liens.download_button(t("Modèle de fichier"), data=MODELE_CSV.encode("utf-8-sig"),
+                          file_name="modele_transactions.csv", mime="text/csv", type="tertiary",
+                          icon=":material/description:", key="modele_fichier",
+                          help=t("Fichier CSV vide avec les bonnes colonnes, à remplir"))
+    if fichier_envoye is not None and liens.button(t("Ouvrir l'assistant d'import"), type="tertiary",
+                                                   icon=":material/tune:",
+                                                   help=t("Pour indiquer vous-même comment lire le fichier envoyé"),
+                                                   key="assistant_barre"):
         st.session_state["assistant_force"] = hashlib.md5(vues_pdf.version_lisible(fichier_envoye.getvalue())).hexdigest()[:12]
     html(ui.separateur())
 
@@ -426,7 +431,7 @@ if isinstance(fichier_choisi, tuple) and not fichiers_envoyes and session_compte
 else:
     cible_portefeuille = {"type": "session", "origine": origine, "nom": nom_base}
 with zone_operations:
-    if st.button(t("Ajouter des opérations"), type="tertiary",
+    if st.button(t("Ajouter des opérations"), type="tertiary", icon=":material/playlist_add:",
                  help=t("Mettre à jour ce portefeuille avec de nouveaux mouvements : avis d'opéré PDF, export "
                         "Excel / CSV ou saisie manuelle"), key="bouton_ajout_operations"):
         if isinstance(fichier_choisi, tuple) and not fichiers_envoyes and session_compte is not None:
@@ -437,6 +442,7 @@ with zone_operations:
         st.rerun()
     if mis_a_jour:
         st.download_button(t("Télécharger le fichier mis à jour"), data=contenu, type="tertiary",
+                           icon=":material/download:",
                            file_name=f"{Path(str(fusion_session['nom'])).stem}_mis_a_jour.csv", mime="text/csv",
                            key="telecharger_fusion")
 
@@ -445,6 +451,9 @@ try:
         res = charger(contenu, code_indice, taux_sans_risque, niveau_var)
 except Exception as erreur:  # message clair plutôt qu'un plantage
     st.error(t("Impossible d'analyser le portefeuille : {erreur}", erreur=erreur))
+    vues_signalement.noter_erreur("analyse", erreur)
+    vues_signalement.bouton(fichier_envoye.getvalue() if fichier_envoye is not None else None,
+                            fichier_envoye.name if fichier_envoye is not None else None, cle="erreur_analyse")
     if fichier_envoye is not None:
         vues_pdf.bouton_annuler(vues_pdf.version_lisible(fichier_envoye.getvalue()), "erreur_analyse")
     if fichier_envoye is not None and st.button(t("Ouvrir l'assistant d'import"), icon=":material/tune:",
@@ -473,14 +482,17 @@ with st.sidebar:
         (t("Fichier"), nom_fichier),
         (t("Période"), f"{date_debut} → {date_fin}"),
         (t("Opérations"), str(len(res["transactions"]))),
-        (t("Cours"), t("Yahoo Finance (en direct)") if en_direct
+        (t("Cours"), t("Sources de secours : {sources}", sources=res["source_cours"].split("(")[1].split(")")[0])
+         if en_direct and "secours" in res["source_cours"].lower()
+         else t("Yahoo Finance (en direct)") if en_direct
          else t("Cache local du {date} (Yahoo Finance injoignable)", date=langues.date(res["date_cours"]))
          if res.get("date_cours") is not None else t("Cache local (Yahoo Finance injoignable)")),
     ], replie=(t("Taux de change ({n})", n=len(res["taux_actuels"])),
                [(t("1 € en {devise}", devise=devise), nombre(taux, 4))
                 for devise, taux in res["taux_actuels"].items()])))
 
-    cle_rapport = (hash(contenu), code_indice, taux_sans_risque, niveau_var)
+    cle_rapport = (hash(contenu), code_indice, taux_sans_risque, niveau_var,
+                   tuple(sorted(vues_conseil.taux_choisis(session_compte).items())))
     rapport_pret = st.session_state.get("rapport", (None,))[0] == cle_rapport
     if rapport_pret:
         # On ne propose le téléchargement que si le rapport correspond aux réglages actuels.
@@ -494,7 +506,8 @@ with st.sidebar:
         try:
             with st.spinner(t("Génération du rapport...")):
                 st.session_state["rapport"] = (cle_rapport, produire_rapport(
-                    contenu, code_indice, taux_sans_risque, niveau_var, INDICES[code_indice]))
+                    contenu, code_indice, taux_sans_risque, niveau_var, INDICES[code_indice],
+                    tuple(sorted(vues_conseil.taux_choisis(session_compte).items()))))
             st.rerun()
         except ImportError:
             st.error(t("Installer reportlab : python -m pip install reportlab"))
@@ -502,6 +515,10 @@ with st.sidebar:
                  help=t("Télécharge à nouveau les cours (Internet nécessaire)")):
         st.cache_data.clear()   # on oublie les résultats en mémoire...
         st.rerun()              # ... et on relance la page
+    vues_signalement.bouton(fichier_envoye.getvalue() if fichier_envoye is not None else None,
+                            fichier_envoye.name if fichier_envoye is not None else None, cle="barre", dans_barre=True)
+    from src.version import VERSION
+    st.caption(t("Version {version}", version=VERSION))
 
 # ======================================================================
 # EN-TÊTE ET CHIFFRES CLÉS
@@ -575,6 +592,8 @@ with onglets[0]:
         vues_transactions.proposer_divisions(a_ajuster, contenu, cible_portefeuille, session_compte)
     vues_transactions.alertes_titres(res.get("alertes"))
     vues_transactions.cours_corriges(res.get("cours_corriges"))
+    vues_transactions.operations_appliquees(res.get("operations_appliquees"))
+    vues_transactions.valeurs_incoherentes(res.get("valeurs_incoherentes"))
     gauche, droite = st.columns([2, 1], gap="medium")
     with gauche, st.container(border=True):
         html(ui.titre_section(t("Évolution du portefeuille"), t("Valeur de marché et capital investi (apports nets)")))

@@ -4,13 +4,14 @@
 Ce chapitre indique l'origine de chaque donnée utilisée par le logiciel : cours de bourse, base locale de titres, devises, reconnaissance des codes ISIN, composition des ETF, classement des titres, indices de référence, taux sans risque et fond de carte. Il détaille ensuite, honnêtement, ce que le logiciel vérifie, ce qu'il ne vérifie pas, et que faire si un chiffre vous paraît faux.
 
 ## D'où viennent les données du logiciel ?
-<!-- fiche: sources-vue-ensemble | questions: d'où viennent les données ; quelle est la source des cours ; d'ou viennent les chiffres du logiciel ; quelles sources de données sont utilisées ; les données viennent de bloomberg ; qui fournit les prix ; source des informations sur les etf ; le logiciel est-il connecté à ma banque | mots: sources, provenance, origine des données, Yahoo Finance, Wikipédia, MSCI, BCE, Natural Earth, référentiel -->
+<!-- fiche: sources-vue-ensemble | questions: d'où viennent les données ; quelle est la source des cours ; d'ou viennent les chiffres du logiciel ; quelles sources de données sont utilisées ; les données viennent de bloomberg ; qui fournit les prix ; source des informations sur les etf ; le logiciel est-il connecté à ma banque ; et si yahoo finance ne marche plus ; yahoo bloque les requêtes ; source de secours des cours | mots: sources, provenance, origine des données, Yahoo Finance, Wikipédia, MSCI, BCE, Natural Earth, référentiel -->
 
 Le logiciel n'a pas d'abonnement à un fournisseur professionnel (Bloomberg, Refinitiv…) et n'est relié à aucune banque. Ses données viennent des sources suivantes.
 
 | Donnée | Source | Mise à jour |
 |---|---|---|
 | Cours quotidiens des titres, des indices et des taux de change | Yahoo Finance, par la bibliothèque Python `yfinance` | à chaque analyse avec Internet ; sinon base locale et cache |
+| Cours de secours si Yahoo Finance ne répond pas | Banque centrale européenne (taux de change de référence) et Stooq (actions et ETF américains, allemands, britanniques, japonais, de Hong Kong) | automatiquement, titre par titre, quand Yahoo bloque ou est en panne |
 | Devise de cotation de chaque titre | Yahoo Finance, sinon base locale, sinon règle d'après le code du titre | une fois par titre, puis gardée |
 | Liste des titres de la base locale | pages Wikipédia de 32 indices boursiers, une liste de 66 ETF et le référentiel du projet | à la construction de la base |
 | Correspondance ISIN, nom ou code Bloomberg vers le ticker | table intégrée de 31 ETF, mémoire locale, base locale, puis moteur de recherche de Yahoo Finance | à chaque import d'un titre inconnu |
@@ -27,6 +28,7 @@ Les opérations (dates, quantités, prix, frais, dividendes) viennent uniquement
 ### Où voir la source des cours
 
 - Dans le bandeau en haut de page : « Cours en direct · Yahoo Finance » (point vert) ou « Cours en cache (hors ligne) » (point orange), et la mention « Données au » suivie de la date du dernier cours de l'historique.
+- Si Yahoo Finance ne répond pas (panne, ou trop de requêtes quand beaucoup d'étudiants l'utilisent en même temps), l'application réessaie une fois, puis interroge les **sources de secours gratuites** : la BCE pour les taux de change, Stooq pour les actions et ETF des places couvertes. Le bandeau affiche alors « Cours en direct · sources de secours (Yahoo Finance injoignable) ». Les titres qu'aucune source ne donne (par exemple certaines valeurs de Paris) reprennent les derniers cours gardés en mémoire.
 - En bas de la barre latérale, la ligne « Cours » : « Yahoo Finance (en direct) », ou « cache local du » suivi d'une date, avec la mention « Yahoo Finance injoignable ».
 
 ## Quels cours exactement le logiciel utilise-t-il ?
@@ -121,7 +123,16 @@ La base locale est la « mémoire » du logiciel : elle lui permet de fonctionne
 - Le nombre exact de titres dépend de la version livrée : certaines pages Wikipédia peuvent être illisibles le jour de la construction, et les codes inconnus de Yahoo Finance sont écartés.
 
 ## Comment la base de titres est construite et mise à jour
-<!-- fiche: sources-base-construction | questions: comment mettre à jour la base de titres ; construire_base_titres.py comment ça marche ; la base se met-elle à jour toute seule ; construire_base.bat ; mettre a jour les cours hors connexion ; combien de temps pour construire la base ; base cumulative ça veut dire quoi ; echecs.csv c'est quoi | mots: construction, mise à jour, construire_base_titres.py, construire_base.bat, --mise-a-jour, base cumulative, Wikipédia, lots, reprise, echecs.csv -->
+<!-- fiche: sources-base-construction | questions: comment mettre à jour la base de titres ; construire_base_titres.py comment ça marche ; la base se met-elle à jour toute seule ; construire_base.bat ; mettre a jour les cours hors connexion ; combien de temps pour construire la base ; base cumulative ça veut dire quoi ; echecs.csv c'est quoi ; mettre à jour la liste des etf ; listes officielles euronext xetra ; mettre_a_jour_titres ; reconnaître plus d'etf | mots: construction, mise à jour, construire_base_titres.py, construire_base.bat, --mise-a-jour, base cumulative, Wikipédia, lots, reprise, echecs.csv -->
+
+### Les listes officielles des titres (Euronext, Xetra)
+
+Pour reconnaître des **milliers d'ETF et d'actions** hors connexion, lancez une fois (puis de temps en temps) la mise à jour des listes officielles, avec Internet :
+
+- application installée sous Windows : menu Démarrer → **Portfolio Tracker → Mettre à jour la base des titres** ;
+- depuis le code source : double-clic sur `mettre_a_jour_titres.bat`, ou `python mettre_a_jour_titres.py` dans le terminal (Mac compris).
+
+Le script télécharge, en une à quelques minutes, les listes gratuites d'**Euronext** (ETF et actions de Paris, Amsterdam, Bruxelles, Lisbonne, Milan, Dublin, Oslo) et de **Deutsche Börse Xetra** (« All tradable instruments » : ETF, ETC et actions). Chaque titre devient une fiche de la base locale : ticker Yahoo Finance, nom officiel complet, ISIN, devise ; pour un ETF, l'indice suivi, la région et l'éligibilité au PEA par swap. Les fiches existantes sont complétées, jamais effacées. Un compte rendu est écrit dans `data/base/mise_a_jour_titres.txt` : si une source ne répond plus (le site a changé d'adresse), envoyez-le au créateur du logiciel.
 
 ### La construction complète
 
@@ -333,24 +344,25 @@ La performance d'un titre étranger combine la variation de son cours et celle d
 - Hors connexion, pour une place peu courante, la devise déduite du code peut être fausse (l'euro est retenu par défaut).
 
 ## La composition des ETF : d'où vient l'analyse en transparence ?
-<!-- fiche: sources-composition-etf | questions: comment le logiciel connait la composition de mon etf ; la répartition par pays de mon etf est-elle exacte ; d'où viennent les pourcentages du msci world ; analyse en transparence c'est fiable ; date des données de composition des etf ; mon etf est classé non classé ; pourquoi 73 % états-unis dans mon etf monde | mots: transparence, composition, ETF, MSCI World, répartition par pays, secteurs, look-through, approximation, fiches MSCI -->
+<!-- fiche: sources-composition-etf | questions: comment le logiciel connait la composition de mon etf ; la répartition par pays de mon etf est-elle exacte ; d'où viennent les pourcentages du msci world ; analyse en transparence c'est fiable ; date des données de composition des etf ; mon etf est classé non classé ; pourquoi 73 % états-unis dans mon etf monde ; mon etf asie n'est pas reconnu ; mon etf est classé en france ; quels etf sont reconnus ; libellé abrégé de mon etf ; etf asie pacifique hors japon | mots: transparence, composition, ETF, MSCI World, répartition par pays, secteurs, look-through, approximation, fiches MSCI -->
 
 L'onglet Expositions « éclate » chaque ETF selon la composition de l'indice qu'il suit. Ces compositions **ne sont pas téléchargées** : elles sont inscrites dans le logiciel.
 
 ### Les sources et leur date
 
 - **MSCI World, MSCI ACWI, MSCI Emerging Markets, MSCI Europe** : les 5 premiers pays et les secteurs viennent des fiches MSCI au **30/09/2026**. Les pays suivants sont des ordres de grandeur habituels, ramenés au total « autres pays » de la fiche.
-- **S&P 500, Nasdaq-100, Euro Stoxx 50, CAC 40, DAX, Russell 2000**, emprunts d'État et obligations d'entreprises : ordres de grandeur 2025-2026, d'après les fiches des émetteurs d'ETF.
+- **Une cinquantaine d'autres indices** : S&P 500 (et sa version équipondérée), Nasdaq-100, Russell 2000, MSCI USA, MSCI World Small Cap, MSCI EMU, Europe hors Royaume-Uni, Europe petites capitalisations, Euro Stoxx 50, CAC 40, petites et moyennes valeurs françaises (PEA-PME), DAX, MDAX, FTSE 100, Suisse, Japon (MSCI Japan, Topix, Nikkei), Pacifique, Pacifique hors Japon, **Asie-Pacifique hors Japon**, Asie hors Japon, Asie émergente, Amérique latine, émergents hors Chine, Chine, Inde, Corée, Taïwan, Brésil, Canada, Australie, Italie, Espagne, Pays-Bas ; côté obligations : emprunts d'État et obligations d'entreprises de la zone euro, haut rendement euro, obligations indexées sur l'inflation euro, agrégat euro, agrégat mondial, emprunts d'État mondiaux, obligations d'entreprises mondiales et américaines, emprunts d'État américains, émergents en dollars et en devises locales. Ordres de grandeur 2025-2026, d'après les fiches des fournisseurs d'indices et des émetteurs d'ETF.
 
 Le MSCI World compte ainsi 72,94 % d'États-Unis : un ETF MSCI World de 10 000 € est compté pour environ 7 300 € d'actions américaines. L'écran le rappelle : « approximation au 30/09/2026 ».
 
 ### Comment l'ETF est rattaché à un indice
 
-1. par une table de 58 tickers d'ETF (CW8.PA et IWDA.AS pour le MSCI World, ESE.PA pour le S&P 500…) ;
-2. sinon, par des mots du nom : « All-World » ou « ACWI », « Emerging », « World », « S&P 500 », « Stoxx Europe 600 »… ;
-3. un nom contenant « Hedged » ou « couvert » est considéré comme couvert contre le risque de change.
+1. par une table d'une centaine de tickers d'ETF très détenus (CW8.PA et IWDA.AS pour le MSCI World, ESE.PA pour le S&P 500…) ;
+2. sinon, par le **nom**, du plus précis au plus général (« Asia Pacific ex Japan » avant « Japan », « World Small Cap » avant « World »). Les **libellés abrégés des avis d'opéré** sont d'abord développés : « AM P AP M AC AP EX JAP ETF-C » devient « Amundi PEA … MSCI All Country Asia Pacific ex Japan » (AM = Amundi, P = PEA, M = MSCI, AC = All Country, AP = Asia Pacific, EX JAP = ex Japan, EM = émergents, WLD = World, SP = S&P…) ;
+3. sinon, avec Internet, par le **nom complet et la catégorie Morningstar** donnés par Yahoo Finance (« Asia-Pacific ex-Japan Equity », « Japan Large-Cap Equity »…), gardés en mémoire ;
+4. un nom contenant « Hedged » ou « couvert » est considéré comme couvert contre le risque de change.
 
-Un fonds qui ne correspond à rien reste « Non classé ».
+La région de l'ETF est déduite de son indice (« Asie-Pacifique » pour un indice asiatique de plusieurs pays, « Japon », « Émergents »…). Un ETF coté à Paris n'est jamais compté comme une action française : son exposition est celle de son indice. Un fonds qui ne correspond à rien reste « Monde (ETF) » ou « Non classé ».
 
 ### Les approximations à connaître
 
@@ -364,7 +376,7 @@ Un fonds qui ne correspond à rien reste « Non classé ».
 L'attribution de performance utilise les poids régionaux du MSCI ACWI IMI au 30/06/2026, également inscrits dans le logiciel.
 
 ## Comment chaque titre est classé (pays, secteur, classe d'actifs)
-<!-- fiche: sources-classification | questions: d'où viennent le pays et le secteur de mes titres ; mon action est non classé ; c'est quoi referentiel.csv ; mon titre est classé dans le mauvais pays ; pourquoi mon obligation est comptée comme action ; où est la duration des fonds obligataires ; ajouter un titre au référentiel ; classe d'actifs par défaut | mots: classification, référentiel, referentiel.csv, pays, région, secteur, classe d'actifs, duration, Non classé, GICS -->
+<!-- fiche: sources-classification | questions: d'où viennent le pays et le secteur de mes titres ; mon action est non classé ; c'est quoi referentiel.csv ; mon titre est classé dans le mauvais pays ; pourquoi mon obligation est comptée comme action ; où est la duration des fonds obligataires ; ajouter un titre au référentiel ; classe d'actifs par défaut ; pourquoi mon pea est exposé aux états-unis ; mon pea a plus d'actions américaines qu'européennes ; c'est quoi un etf synthétique swap ; etf pea swap ; mon pea est surtout en asie est-ce normal | mots: classification, référentiel, referentiel.csv, pays, région, secteur, classe d'actifs, duration, Non classé, GICS -->
 
 ### Deux sources, dans cet ordre
 
@@ -398,7 +410,9 @@ Pour réduire les « Non classé », chaque titre passe par ces étapes, dans l'
 
 ### Les ETF éligibles au PEA par « swap »
 
-Un ETF comme « Amundi PEA S&P 500 » détient juridiquement un panier d'actions européennes (c'est ce qui le rend éligible au PEA) et échange sa performance, par un contrat d'échange (swap), contre celle du S&P 500. Le logiciel le classe donc selon l'**indice suivi** (États-Unis), pas selon le panier détenu, et le compte **éligible au PEA** (ETF connus, ou « PEA » dans le nom). Un ETF coté à Paris sur un indice hors Europe sans « PEA » dans son nom n'est pas compté éligible.
+Un ETF comme « Amundi PEA S&P 500 » détient juridiquement un panier d'actions européennes (c'est ce qui le rend éligible au PEA) et échange sa performance, par un contrat d'échange (swap), contre celle du S&P 500. Le logiciel le classe donc selon l'**indice suivi** (États-Unis), pas selon le panier détenu, et le compte **éligible au PEA** (ETF connus, « PEA » dans le nom, ou « P » dans un libellé abrégé d'avis comme « AM P … »). Un ETF coté à Paris sur un indice hors Europe sans « PEA » dans son nom n'est pas compté éligible.
+
+Conséquence normale : un PEA composé de ces ETF peut être **plus exposé aux États-Unis ou à l'Asie qu'à l'Europe**. Ce n'est ni une erreur ni un problème de conformité : l'onglet [[Expositions]] le rappelle par une note dès qu'un ETF par swap est détenu. Le risque propre à ces fonds est la contrepartie du swap, limitée à 10 % de l'actif du fonds par la réglementation européenne (UCITS).
 
 ## Les indices de référence et les indices composites
 <!-- fiche: sources-indices | questions: quels indices de référence sont proposés ; comment est calculé l'indice mixte 60 40 ; l'indice de référence inclut il les dividendes ; pourquoi comparer à un etf plutôt qu'à l'indice ; indice composite rééquilibré chaque mois ; changer d'indice de référence ; le cac 40 est hors dividendes ; d'où vient l'historique de l'indice | mots: benchmark, indice de référence, composite, mixte, 60/40, rééquilibrage mensuel, MSCI World, CAC 40, €STR, dividendes réinvestis -->

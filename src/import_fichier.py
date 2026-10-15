@@ -132,6 +132,14 @@ PLACES = {
     "MTAA": ".MI", "XLIS": ".LS", "XLON": ".L", "XSWX": ".SW", "XVTX": ".SW", "XNAS": "", "XNYS": "",
     "ARCX": "", "XASE": "", "XTKS": ".T", "XTSE": ".TO", "XASX": ".AX", "XHKG": ".HK", "XCSE": ".CO",
     "XSTO": ".ST", "XHEL": ".HE", "XOSL": ".OL", "XWBO": ".VI", "XDUB": ".IR",
+    # Codes de place d'Interactive Brokers (relevés et exports Flex : colonne Exchange / ListingExchange)
+    "SBF": ".PA", "IBIS": ".DE", "IBIS2": ".DE", "FWB": ".F", "FWB2": ".F", "GETTEX": ".DE", "AEB": ".AS",
+    "ENEXT.BE": ".BR", "BVME": ".MI", "BVME.ETF": ".MI", "BM": ".MC", "BVL": ".LS", "LSEETF": ".L", "EBS": ".SW",
+    "VSE": ".VI", "SFB": ".ST", "OSE": ".OL", "HEX": ".HE", "SEHK": ".HK", "TSEJ": ".T", "ARCA": "",
+    "ISLAND": "", "NYSENAT": "", "AMEX": "", "PINK": "", "IEX": "",
+    # Codes de place de DEGIRO
+    "XET": ".DE", "TDG": ".DE", "EAM": ".AS", "MIL": ".MI", "MAD": ".MC", "LIS": ".LS", "NSY": "", "NDQ": "",
+    "NYA": "", "ASE": "", "OMX": ".ST", "OMXCO": ".CO", "OMXHE": ".HE", "OSL.": ".OL",
     # Noms usuels (sans accents, en majuscules)
     "EURONEXT PARIS": ".PA", "PARIS": ".PA", "EURONEXT": ".PA", "XETRA": ".DE", "FRANCFORT": ".F",
     "FRANKFURT": ".F", "EURONEXT AMSTERDAM": ".AS", "AMSTERDAM": ".AS", "EURONEXT BRUXELLES": ".BR",
@@ -146,6 +154,34 @@ SUFFIXES_REUTERS = {".O": "", ".N": "", ".OQ": "", ".A": "", ".P": "", ".K": "",
 # Places essayées pour un ticker "nu" (MC, AIR, TSLA...) : on garde celle dont le cours colle au prix
 PLACES_A_ESSAYER = ["", ".PA", ".DE", ".AS", ".MI", ".MC", ".L", ".SW", ".TO"]
 MOTIF_COURT = re.compile(r"^[A-Z0-9][A-Z0-9\-]{0,5}$")
+
+
+MOTIF_SUFFIXE_MINUSCULE = re.compile(r"^([A-Z0-9]{2,6})[a-z]$")          # IBKR « ESEd », « PAEEMd »
+MOTIF_CLASSE_ACTION = re.compile(r"^([A-Z]{1,5})[ ./]([A-C])$")         # « BRK B », « BRK.B », « BF/B »
+MOTIF_SYMBOLE_PLACE = re.compile(r"^([A-Z0-9.\-]{1,12})(?:\s+|@)([A-Z0-9.]{2,9})$")  # « ESE SBF », « SAP@IBIS »
+
+
+def normaliser_symbole_courtier(valeur):
+    """Symbole écrit à la façon d'un courtier -> symbole de bourse (ou ticker Yahoo) :
+        « ESEd » (Interactive Brokers : lettre minuscule ajoutée pour distinguer deux cotations) -> « ESE » ;
+        « BRK B », « BRK.B », « BRK/B » (classe d'actions) -> « BRK-B » ;
+        « ESE SBF », « SAP@IBIS » (symbole + code de place IBKR / DEGIRO) -> « ESE.PA », « SAP.DE ».
+    Un ISIN, un nom ou un ticker ordinaire est rendu tel quel."""
+    texte = str(valeur or "").strip()
+    m = MOTIF_SUFFIXE_MINUSCULE.match(texte)
+    if m:
+        return m.group(1)
+    haut = texte.upper()
+    if MOTIF_ISIN.match(haut):
+        return texte
+    m = MOTIF_CLASSE_ACTION.match(haut)
+    if m and "." + m.group(2) not in SUFFIXES_YAHOO:
+        return f"{m.group(1)}-{m.group(2)}"
+    m = MOTIF_SYMBOLE_PLACE.match(haut)
+    if m and m.group(2) in PLACES and len(m.group(2)) >= 3 and not convertir_code_global(haut):
+        racine = m.group(1)
+        return racine + PLACES[m.group(2)] if "." not in racine else racine
+    return texte
 
 
 def suffixe_de_place(place):
@@ -259,12 +295,21 @@ def convertir_dates(serie, ordre=None):
     """'2024-01-15', '15/01/2024', '01/15/2024', '15.01.2024', '2024-01-15 00:00:00' -> dates.
     L'ordre jour/mois est déduit de l'ensemble de la colonne. Illisible -> NaT."""
     ordre = ordre or ordre_des_dates(serie)[0]
-    texte = serie.astype(str).str.strip().str.replace(".", "/", regex=False).str.replace("T", " ", regex=False)
+    brut = serie.astype(str).str.strip()
+    texte = brut.str.replace(".", "/", regex=False).str.replace("T", " ", regex=False)
     iso = pd.to_datetime(texte.str[:10], format="%Y-%m-%d", errors="coerce")
-    reste = iso.isna() & serie.notna()
+    # date Excel enregistrée comme un nombre (45291 = 31/12/2023 ; jours depuis le 30/12/1899)
+    numero = pd.to_numeric(brut.where(brut.str.fullmatch(r"\d{5}(?:\.0+)?")), errors="coerce")
+    excel = iso.isna() & numero.between(25000, 80000)
+    if excel.any():
+        iso[excel] = pd.Timestamp("1899-12-30") + pd.to_timedelta(numero[excel].round(), unit="D")
+    reste = iso.isna() & serie.notna() & ~excel
     if reste.any():
-        iso[reste] = pd.to_datetime(texte[reste].str.split(" ").str[0], dayfirst=(ordre == "jour"),
-                                    errors="coerce")
+        import warnings
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", UserWarning)
+            iso[reste] = pd.to_datetime(texte[reste].str.split(" ").str[0], dayfirst=(ordre == "jour"),
+                                        errors="coerce")
     return iso.astype("datetime64[ns]")
 
 
@@ -272,6 +317,8 @@ def convertir_dates(serie, ordre=None):
 # 1. Lecture brute
 # ======================================================================
 def _texte(brut):
+    if bytes(brut[:2]) in (b"\xff\xfe", b"\xfe\xff"):          # Excel « Texte Unicode » (UTF-16)
+        return brut.decode("utf-16")
     try:
         return brut.decode("utf-8-sig")
     except UnicodeDecodeError:
@@ -757,6 +804,11 @@ def _lire_pages_texte(pages, texte_total):
         lignes = [ligne] if ligne else []
     if lignes and all(_ligne_complete(l, texte_total) for l in lignes) and len(lignes) >= nb_titres:
         return [COLONNES_AVIS] + lignes, "pdf_avis"
+    # 2 bis. Cas particuliers : souscription lors d'une opération sur titres, assurance-vie
+    #        (valeur liquidative × nombre d'unités de compte = montant)
+    operations = _lp.lire_cas_particuliers("\n".join(p["texte"] for p in pages))
+    if operations:
+        return [COLONNES_AVIS] + [_lp.en_ligne_avis(o) for o in operations], "pdf_contenu"
     # 3. Relevé « une ligne par opération » sans tableau reconnu (code, date, sens, quantité × cours = montant)
     lignes = _par_lignes([p["texte"] for p in pages])
     if lignes:
@@ -847,7 +899,11 @@ def _grille(brut, feuille=None):
                              "python -m pip install openpyxl. Ou l'enregistrer au format CSV.")
         grille = [["" if pd.isna(v) else str(v) for v in ligne] for ligne in tableau.itertuples(index=False)]
         return grille, "excel"
-    return _lignes_csv(_texte(brut))
+    texte = _texte(brut)
+    from . import releves_courtiers
+    if releves_courtiers.est_releve_ibkr(texte):          # relevé d'activité Interactive Brokers (CSV)
+        return releves_courtiers.grille_ibkr(texte)
+    return _lignes_csv(texte)
 
 
 def detecter_ligne_entete(grille, limite=30):
@@ -1295,8 +1351,12 @@ def resoudre_identifiants(valeurs, noms=None, tickers_connus=(), chercher=None, 
     """
     chercher = chercher or _chercher_yahoo
     lignes = []
-    for valeur in valeurs:
-        valeur = str(valeur).strip()
+    for identifiant in valeurs:
+        identifiant = str(identifiant).strip()
+        # « ESEd », « BRK B », « ESE SBF » : symboles écrits à la façon du courtier
+        valeur = normaliser_symbole_courtier(identifiant)
+        if noms and identifiant in noms and valeur not in noms:
+            noms = {**noms, valeur: noms[identifiant]}
         nature = nature_identifiant(valeur, tickers_connus)
         ticker, nom, statut = valeur.upper(), (noms or {}).get(valeur, ""), "tel quel"
         if nature == "global":
@@ -1332,7 +1392,9 @@ def resoudre_identifiants(valeurs, noms=None, tickers_connus=(), chercher=None, 
                         pass
             else:
                 ticker, statut = ("" if nature == "isin" else valeur.upper()), "introuvable"
-        lignes.append({"identifiant": valeur, "nature": nature, "ticker": ticker, "nom": nom, "statut": statut})
+        if statut == "tel quel" and valeur != identifiant:
+            statut = "converti"
+        lignes.append({"identifiant": identifiant, "nature": nature, "ticker": ticker, "nom": nom, "statut": statut})
     return pd.DataFrame(lignes, columns=["identifiant", "nature", "ticker", "nom", "statut"])
 
 
@@ -1599,6 +1661,10 @@ def importer_automatiquement(brut, chercher=None, marche=donnees_de_marche):
     resume["sans_entete"] = ligne < 0
     if nature_fichier(brut) == "pdf":
         resume["source_pdf"] = grille_pdf(brut)[1]          # déjà lu : résultat gardé en mémoire
+    else:
+        from . import releves_courtiers
+        if releves_courtiers.est_releve_ibkr(_texte(brut)) if nature_fichier(brut) == "csv" else False:
+            resume["releve_ibkr"] = dict(releves_courtiers.IGNOREES)
     if not confiance(tableau, correspondance):
         manquants = correspondance_complete(correspondance)
         raison = ("Colonne(s) non reconnue(s) : " + ", ".join(CHAMPS[m] for m in manquants)) if manquants \

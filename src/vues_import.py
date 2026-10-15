@@ -18,6 +18,7 @@ La logique est dans src/import_fichier.py ; ce fichier ne fait que l'affichage.
 import pandas as pd
 import streamlit as st
 
+from . import vues_signalement
 from . import import_fichier as imp
 from . import interface as ui
 from .analyse import charger_referentiel
@@ -82,6 +83,13 @@ def texte_resume(resume):
     for message in resume.get("controles_pdf", []):
         valeurs = {k: (t(v) if k == "jour" else v) for k, v in message.get("valeurs", {}).items()}
         parties.append(t(message["texte"], **valeurs))
+    if "releve_ibkr" in resume:
+        parties.append(t("Relevé d'activité Interactive Brokers reconnu : achats, ventes et dividendes (retenue à la "
+                         "source en frais)."))
+        ignorees = resume["releve_ibkr"]
+        if ignorees:
+            parties.append(t("Lignes ignorées : {detail}.", detail=", ".join(
+                f"{n} {t(raison)}" for raison, n in ignorees.items())))
     if resume.get("sans_entete"):
         parties.append(t("Colonnes identifiées d'après leur contenu (pas de ligne de titres)."))
     if resume.get("tickers_reconnus"):
@@ -132,6 +140,7 @@ def afficher(brut, nom_fichier, cle, erreur_directe=None):
             feuilles = imp.feuilles_excel(brut)
         except Exception as erreur:
             st.error(t("Fichier illisible : {erreur}", erreur=erreur))
+            vues_signalement.noter_erreur('import', t("Fichier illisible : {erreur}", erreur=erreur))
             return
         feuille = a.selectbox(t("Feuille Excel"), feuilles, index=feuilles.index(imp.meilleure_feuille(brut)),
                               key=f"imp_feuille_{cle}") if len(feuilles) > 1 \
@@ -145,6 +154,7 @@ def afficher(brut, nom_fichier, cle, erreur_directe=None):
             tableau, _ = imp.lire_tableau_brut(brut, feuille, ligne)
         except ValueError as erreur:
             st.error(str(erreur))
+            vues_signalement.noter_erreur('import', str(erreur))
             return
         st.caption(t("Aperçu des premières lignes ({n} lignes au total)", n=len(tableau)))
         st.dataframe(tableau.head(8), hide_index=True, width="stretch")
@@ -254,6 +264,7 @@ def afficher(brut, nom_fichier, cle, erreur_directe=None):
                                                                  correspondances_titres, montant_inclut_frais)
         except ValueError as erreur:
             st.error(str(erreur))
+            vues_signalement.noter_erreur('import', str(erreur))
             return
         # Les noms trouvés par la recherche remplacent les codes quand le fichier n'a pas de colonne de nom
         if not correspondance.get("nom"):

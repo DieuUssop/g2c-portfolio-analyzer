@@ -714,7 +714,7 @@ Le résumé indique « Avis d'opéré PDF lu d'après son contenu (quantité × 
 L'opération n'est retenue automatiquement que si l'ISIN, la date, un trio de nombres cohérent et le sens sont tous trouvés (le sens peut aussi venir d'une quantité précédée de + ou −). Aucune lecture ne peut garantir de comprendre 100 % des documents existants : si l'un de ces éléments manque, le logiciel essaie encore un modèle appris (voir la fiche « Le logiciel apprend vos avis d'opéré »), puis le formulaire [[Compléter l'opération]] prend le relais avec les valeurs trouvées (voir la fiche suivante).
 
 ## Un relevé d'opérations « une ligne par opération » (ex. Interactive Brokers)
-<!-- fiche: import-releve-une-ligne-par-operation | questions: mon relevé interactive brokers est il lu ; trade confirmation report avec plusieurs opérations ; mon relevé n'a pas de code isin seulement des symboles ; le pdf contient toutes mes opérations de l'année ; ibkr pdf import ; relevé imprimé en mode sombre ; mon pdf a un fond noir ; plusieurs achats et ventes dans un seul pdf | mots: relevé d'opérations, Interactive Brokers, IBKR, Trade Confirmation Report, symbole, une ligne par opération, mode sombre, fond noir, pdf_lignes -->
+<!-- fiche: import-releve-une-ligne-par-operation | questions: mon relevé interactive brokers est il lu ; trade confirmation report avec plusieurs opérations ; mon relevé n'a pas de code isin seulement des symboles ; le pdf contient toutes mes opérations de l'année ; ibkr pdf import ; relevé imprimé en mode sombre ; mon pdf a un fond noir ; plusieurs achats et ventes dans un seul pdf ; relevé csv interactive brokers ; activity statement ibkr ; mon export ibkr a plusieurs tableaux ; les opérations de change ibkr ; symbole ESEd | mots: relevé d'opérations, Interactive Brokers, IBKR, Trade Confirmation Report, symbole, une ligne par opération, mode sombre, fond noir, pdf_lignes -->
 
 Certains courtiers produisent un relevé où **chaque ligne porte une opération complète** : un code (ISIN ou simple symbole boursier comme « ESE », « PAEJ », « RMS »), la date, le sens (achat, vente, BUY, SELL), puis la quantité, le cours, le montant et la commission. C'est le cas du « Trade Confirmation Report » d'Interactive Brokers.
 
@@ -726,6 +726,16 @@ Certains courtiers produisent un relevé où **chaque ligne porte une opération
 - Une vente est reconnue au mot SELL / vente, ou au signe « − » de la quantité.
 - Un symbole suivi d'une minuscule ajoutée par le courtier (« LYSXd ») est ramené au symbole (« LYSX »). « ESEEd », le symbole d'Interactive Brokers pour le BNP Paribas Easy S&P 500 coté à Paris, souvent lu « ESEED » par la reconnaissance de caractères, est ramené à « ESE » (ESE.PA). Le titre est ensuite identifié par ses cours (la place de cotation dont les prix collent aux prix du relevé), ou par le moteur de recherche.
 - Le relevé n'est retenu que si **toutes** ses lignes d'opération sont cohérentes ; sinon le formulaire « Compléter l'opération » prend le relais.
+
+### Relevé d'activité CSV d'Interactive Brokers (« Activity Statement »)
+
+Le relevé d'activité téléchargé au format **CSV** depuis l'espace client d'Interactive Brokers contient plusieurs tableaux dans un même fichier (Trades, Dividends, Withholding Tax, Financial Instrument Information…). Le logiciel le reconnaît et en tire :
+
+- les **achats et ventes** d'actions et d'ETF, avec leur ISIN (tableau « Financial Instrument Information ») ou, à défaut, le symbole et la place de cotation (« ESEd » sur SBF → ESE.PA) ;
+- les **dividendes bruts**, avec la **retenue à la source** du même titre et du même jour en frais ; un dividende corrigé (versement, annulation, nouveau versement) n'est compté qu'une fois ;
+- les lignes **ignorées** sont annoncées dans le résumé de l'import : opérations de **change** (« EUR.USD »), ordres **annulés** (code « Ca »), options, futures, CFD, sous-totaux et totaux.
+
+Les symboles écrits à la façon du courtier sont aussi compris dans les autres fichiers : « ESEd », « BRK B » (classe d'actions), « ESE SBF » ou « SAP@IBIS » (symbole + code de place d'Interactive Brokers ou de DEGIRO : SBF = Paris, IBIS = Xetra, AEB = Amsterdam, LSEETF = Londres, XET, EAM, MIL…), « ESE:xpar » (Saxo).
 
 ### Relevé imprimé en « mode sombre »
 
@@ -1315,6 +1325,9 @@ Sans opération du titre avant la date d'effet, l'encadré indique qu'il n'y a r
 Certains regroupements ne figurent pas dans les données de division de Yahoo Finance, ou Yahoo n'a même pas ajusté son historique. Exemple réel : 2 000 actions ORPEA achetées 0,0145 € en décembre 2023, puis regroupement de 1 000 actions en 1. Sans correction, le logiciel valorisait 2 000 actions au cours d'aujourd'hui (environ 12 €), soit près de 24 000 € au lieu de 2 actions.
 
 - **Division déduite des cours** : si le prix de vos opérations vaut un facteur rond (au moins ×5 ou ÷5 : 10, 1 000, 1/1 000…) fois le cours ajusté du jour, et que les opérations suivantes collent au cours, l'encadré « Division ou regroupement d'actions détecté » le propose (« Regroupement constaté d'après les cours (date exacte inconnue) : 1 000 anciennes → 1 nouvelle »), même hors connexion.
+- **Regroupements connus, appliqués d'office** : quelques regroupements certains de la bourse de Paris sont inscrits dans le logiciel — ORPEA, devenu emeis (1 000 actions anciennes pour 1 nouvelle, le 22/03/2024), Casino (100 pour 1, le 14/06/2024), Atos (10 000 pour 1, le 24/04/2025). Les achats et ventes d'avant la date, restés dans les anciennes unités, sont ramenés dans les nouvelles pour les calculs (2 000 ORPEA à 0,0145 € → 2 à 14,50 €), quel que soit l'historique de Yahoo, sans clic et sans modifier votre fichier ; une note le signale. Une opération déjà corrigée n'est pas touchée, ni les droits de souscription (un autre titre).
+- **Facteur pas tout à fait rond** : Yahoo ajuste souvent aussi ses cours pour les augmentations de capital de la même période ; pour un facteur de 100 et plus, un écart de 40 % est donc toléré (au lieu de 15 %).
+- **Valeur incohérente** : une ligne qui vaut plus de 50 fois son prix de revient (et au moins 500 €) est signalée en haut de la [[Vue d'ensemble]] : c'est presque toujours une division ou un regroupement non appliqué, pas une vraie hausse. Ce contrôle vaut pour toutes les sociétés.
 - **Historique non ajusté par Yahoo** : un cours qui fait un bond d'un facteur rond d'au moins ×10 d'un jour à l'autre, et reste à ce niveau, est un regroupement non ajusté ; les cours d'avant sont ramenés dans les nouvelles unités pour les calculs, et une note le signale. Une chute de 90 % n'est jamais « corrigée » : elle peut être réelle.
 
 ## Scission (spin-off) ou attribution gratuite : un titre sans prix d'achat

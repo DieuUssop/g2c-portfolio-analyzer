@@ -41,6 +41,40 @@ PS_ASSURANCE_VIE = 0.172      # l'assurance-vie reste à 17,2 %
 PFU_TOTAL = IR_PFU + PS_CAPITAL          # 31,4 %
 IR_AV_APRES_8_ANS = 0.075
 ABATTEMENT_AV = {"célibataire": 4600, "couple": 9200}
+
+# Les taux ne sont pas lus sur Internet : ils changent avec une nouvelle version de l'application.
+# L'utilisateur peut les modifier lui-même (simulation, loi changée entre deux versions) : les
+# fonctions ci-dessous acceptent un dictionnaire « taux » ; sans lui, ce sont les taux légaux.
+DATE_TAUX = "2026-01-01"
+SOURCE_TAUX = "loi n° 2025-1403 du 30 décembre 2025 de financement de la sécurité sociale pour 2026"
+TAUX_LEGAUX = {
+    "ir_pfu": IR_PFU,                          # impôt sur le revenu du prélèvement forfaitaire unique
+    "ps_capital": PS_CAPITAL,                  # prélèvements sociaux (CTO, PEA)
+    "ps_assurance_vie": PS_ASSURANCE_VIE,      # prélèvements sociaux de l'assurance-vie
+    "ir_av_apres_8_ans": IR_AV_APRES_8_ANS,    # impôt sur le revenu de l'assurance-vie après 8 ans
+    "abattement_celibataire": ABATTEMENT_AV["célibataire"],
+    "abattement_couple": ABATTEMENT_AV["couple"],
+}
+AGE_MAX_VERSION = 365          # au-delà (en jours), les taux sont peut-être dépassés : on le signale
+
+
+def taux_complets(taux=None):
+    """Les taux à utiliser : ceux donnés par l'utilisateur, complétés par les taux légaux."""
+    complets = dict(TAUX_LEGAUX)
+    complets.update({k: float(v) for k, v in (taux or {}).items() if k in TAUX_LEGAUX and v is not None})
+    return complets
+
+
+def taux_personnalises(taux):
+    """Vrai si au moins un taux diffère du taux légal."""
+    complets = taux_complets(taux)
+    return any(abs(complets[k] - TAUX_LEGAUX[k]) > 1e-9 for k in TAUX_LEGAUX)
+
+
+def taux_peut_etre_depasses(aujourd_hui=None):
+    """Vrai si la version de l'application a plus d'un an : la loi a pu changer depuis."""
+    from .version import age_en_jours
+    return age_en_jours(aujourd_hui) > AGE_MAX_VERSION
 DUREE_PEA = 5
 DUREE_AV = 8
 
@@ -55,7 +89,27 @@ PAYS_EEE = {
 ETF_ELIGIBLES_PEA = {"CW8.PA", "ESE.PA"}
 
 
-def impot_sortie(gain_total, duree_annees, enveloppe, dividendes=0.0, situation="célibataire"):
+def _pct(x, anglais=False):
+    texte = f"{x * 100:.1f}".replace(".0", "")
+    return texte + "%" if anglais else texte.replace(".", ",") + " %"
+
+
+def resume_taux(taux=None, langue="fr"):
+    """Phrase courte des taux utilisés (rapport PDF, notes) :
+    « Flat tax 31,4 % (12,8 % + 18,6 %) ; PEA après 5 ans : 18,6 % ; assurance-vie après 8 ans : 7,5 %
+    après abattement + 17,2 % »."""
+    tx = taux_complets(taux)
+    if langue == "en":
+        p = lambda x: _pct(x, anglais=True)
+        return (f"Flat tax {p(tx['ir_pfu'] + tx['ps_capital'])} ({p(tx['ir_pfu'])} + {p(tx['ps_capital'])}); "
+                f"PEA after {DUREE_PEA} years: {p(tx['ps_capital'])}; life insurance after {DUREE_AV} years: "
+                f"{p(tx['ir_av_apres_8_ans'])} after allowance + {p(tx['ps_assurance_vie'])}")
+    return (f"Flat tax {_pct(tx['ir_pfu'] + tx['ps_capital'])} ({_pct(tx['ir_pfu'])} + {_pct(tx['ps_capital'])}) ; "
+            f"PEA après {DUREE_PEA} ans : {_pct(tx['ps_capital'])} ; assurance-vie après {DUREE_AV} ans : "
+            f"{_pct(tx['ir_av_apres_8_ans'])} après abattement + {_pct(tx['ps_assurance_vie'])}")
+
+
+def impot_sortie(gain_total, duree_annees, enveloppe, dividendes=0.0, situation="célibataire", taux=None):
     """Impôt dû si l'on vend tout le portefeuille.
 
     gain_total   : gain total (plus-values + dividendes), en euros
@@ -64,30 +118,34 @@ def impot_sortie(gain_total, duree_annees, enveloppe, dividendes=0.0, situation=
     dividendes   : part du gain venant des dividendes (utile pour le CTO :
                    une moins-value ne peut pas effacer des dividendes)
 
+    taux         : taux à utiliser (voir taux_complets) ; par défaut, les taux légaux
+
     Renvoie un dictionnaire : impôt sur le revenu, prélèvements sociaux, total.
     """
+    tx = taux_complets(taux)
+    abattement = tx["abattement_couple"] if situation == "couple" else tx["abattement_celibataire"]
     if enveloppe == "CTO":
         plus_values = gain_total - dividendes
         base = max(0.0, plus_values) + max(0.0, dividendes)
-        ir, ps = IR_PFU * base, PS_CAPITAL * base
+        ir, ps = tx["ir_pfu"] * base, tx["ps_capital"] * base
     elif enveloppe == "PEA":
         base = max(0.0, gain_total)
-        ir = 0.0 if duree_annees >= DUREE_PEA else IR_PFU * base
-        ps = PS_CAPITAL * base
+        ir = 0.0 if duree_annees >= DUREE_PEA else tx["ir_pfu"] * base
+        ps = tx["ps_capital"] * base
     elif enveloppe == "Assurance-vie":
         base = max(0.0, gain_total)
-        ps = PS_ASSURANCE_VIE * base
+        ps = tx["ps_assurance_vie"] * base
         if duree_annees >= DUREE_AV:
-            ir = IR_AV_APRES_8_ANS * max(0.0, base - ABATTEMENT_AV[situation])
+            ir = tx["ir_av_apres_8_ans"] * max(0.0, base - abattement)
         else:
-            ir = IR_PFU * base
+            ir = tx["ir_pfu"] * base
     else:
         raise ValueError(f"Enveloppe inconnue : {enveloppe}")
     return {"impot_revenu": ir, "prelevements_sociaux": ps, "total": ir + ps}
 
 
 def comparer_enveloppes(gain_total, capital_investi, duree_annees, dividendes=0.0,
-                        situation="célibataire"):
+                        situation="célibataire", taux=None):
     """Tableau comparatif des trois enveloppes pour un même gain brut.
 
     Renvoie une liste de dictionnaires (une ligne par enveloppe) :
@@ -99,7 +157,7 @@ def comparer_enveloppes(gain_total, capital_investi, duree_annees, dividendes=0.
         # duree_annees : une ancienneté commune, ou {enveloppe: ancienneté} (date d'ouverture du PEA,
         # date de souscription de l'assurance-vie)
         duree = duree_annees.get(enveloppe, 0.0) if isinstance(duree_annees, dict) else duree_annees
-        imp = impot_sortie(gain_total, duree, enveloppe, dividendes, situation)
+        imp = impot_sortie(gain_total, duree, enveloppe, dividendes, situation, taux)
         net = gain_total - imp["total"]
         lignes.append({
             "enveloppe": enveloppe,

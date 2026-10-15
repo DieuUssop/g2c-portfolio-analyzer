@@ -12,6 +12,7 @@ DOSSIER_TEST = tempfile.mkdtemp(prefix="portfolio_tests_")
 os.environ["PORTFOLIO_BASE"] = os.path.join(DOSSIER_TEST, "base")
 os.environ["PORTFOLIO_COMPTES"] = os.path.join(DOSSIER_TEST, "comptes")
 os.environ["PORTFOLIO_ITERATIONS"] = "2000"      # tests rapides (l'application en utilise 600 000)
+os.environ["PORTFOLIO_SANS_SECOURS"] = "1"         # pas d'Internet dans les tests (sources de secours)
 
 import pytest  # noqa: E402
 

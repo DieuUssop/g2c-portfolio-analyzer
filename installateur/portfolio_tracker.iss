@@ -52,6 +52,7 @@ Source: "{#Source}\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs cre
 
 [Icons]
 Name: "{group}\Portfolio Tracker"; Filename: "{app}\python\python.exe"; Parameters: """{app}\lanceur.py"""; WorkingDir: "{app}"; IconFilename: "{app}\assets\icone.ico"; Comment: "Suivi et analyse de portefeuille"
+Name: "{group}\Mettre à jour la base des titres"; Filename: "{app}\python\python.exe"; Parameters: """{app}\mettre_a_jour_titres.py"""; WorkingDir: "{app}"; Comment: "Listes officielles Euronext et Xetra (Internet nécessaire)"
 Name: "{group}\{cm:UninstallProgram,Portfolio Tracker}"; Filename: "{uninstallexe}"
 Name: "{autodesktop}\Portfolio Tracker"; Filename: "{app}\python\python.exe"; Parameters: """{app}\lanceur.py"""; WorkingDir: "{app}"; IconFilename: "{app}\assets\icone.ico"; Tasks: bureau
 

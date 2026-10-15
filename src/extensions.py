@@ -12,7 +12,8 @@ import pandas as pd
 from . import attribution, backtest, budget_risque, config, fiscalite, stress
 
 
-def calculer_extensions(res, taux_sans_risque=config.TAUX_SANS_RISQUE, situation=config.SITUATION_FAMILIALE):
+def calculer_extensions(res, taux_sans_risque=config.TAUX_SANS_RISQUE, situation=config.SITUATION_FAMILIALE,
+                        taux_fiscaux=None):
     resume, positions = res["resume"], res["positions"]
     ext = {"erreurs": {}}
 
@@ -20,7 +21,10 @@ def calculer_extensions(res, taux_sans_risque=config.TAUX_SANS_RISQUE, situation
     anciennete = (res["historique"].index[-1] - res["date_ouverture"]).days / 365.25
     ext["anciennete"] = anciennete
     ext["fiscalite"] = fiscalite.comparer_enveloppes(resume["gain_total"], resume["montant_investi"],
-                                                      anciennete, resume["dividendes"], situation)
+                                                      anciennete, resume["dividendes"], situation,
+                                                      taux_fiscaux)
+    ext["taux_fiscaux"] = fiscalite.taux_complets(taux_fiscaux)
+    ext["taux_personnalises"] = fiscalite.taux_personnalises(taux_fiscaux)
     ext["part_pea"] = fiscalite.eligibilite_pea(positions)[0]
 
     # 2. Stress tests

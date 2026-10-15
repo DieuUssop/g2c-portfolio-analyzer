@@ -216,3 +216,31 @@ def test_attribution_porte_sur_la_poche_actions():
                                               poids_indice={"États-Unis": 1.0})
     assert a["Rp"] == pytest.approx(a["Rb"])            # la baisse de l'obligation ne pèse pas
     assert a["part_actions"] == pytest.approx(0.6 * 1.2 / (0.6 * 1.2 + 0.4 * 0.9))
+
+
+# ----------------------------------------------------------------------
+# Taux d'imposition : taux légaux par défaut, taux personnalisés, version ancienne
+# ----------------------------------------------------------------------
+def test_taux_legaux_par_defaut_et_taux_personnalises():
+    import datetime
+    from src import fiscalite
+    assert fiscalite.taux_complets()["ir_pfu"] + fiscalite.taux_complets()["ps_capital"] == pytest.approx(0.314)
+    assert not fiscalite.taux_personnalises({}) and not fiscalite.taux_personnalises(fiscalite.TAUX_LEGAUX)
+    legal = fiscalite.impot_sortie(1000, 1, "CTO")
+    assert legal["total"] == pytest.approx(314)
+    # loi changée (ex. prélèvements sociaux à 20 %) : repris dans tous les calculs
+    nouveaux = {"ps_capital": 0.20}
+    assert fiscalite.taux_personnalises(nouveaux)
+    assert fiscalite.impot_sortie(1000, 1, "CTO", taux=nouveaux)["total"] == pytest.approx(328)
+    assert fiscalite.impot_sortie(1000, 6, "PEA", taux=nouveaux)["total"] == pytest.approx(200)
+    lignes = fiscalite.comparer_enveloppes(1000, 10000, 1, taux=nouveaux)
+    assert lignes[0]["impots"] == pytest.approx(328)
+    assert "32,8 %" in fiscalite.resume_taux(nouveaux) and "31,4 %" in fiscalite.resume_taux()
+    assert "31.4%" in fiscalite.resume_taux(langue="en")
+    # abattement de l'assurance-vie modifiable
+    av = fiscalite.impot_sortie(10000, 9, "Assurance-vie", situation="couple", taux={"abattement_couple": 0})
+    assert av["impot_revenu"] == pytest.approx(750)
+    # avertissement quand la version a plus d'un an
+    from src import version
+    assert not fiscalite.taux_peut_etre_depasses(version.DATE_VERSION + datetime.timedelta(days=200))
+    assert fiscalite.taux_peut_etre_depasses(version.DATE_VERSION + datetime.timedelta(days=400))

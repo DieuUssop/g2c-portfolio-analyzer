@@ -70,6 +70,69 @@ def _enregistrer_dates(cible, session_compte, dates):
         st.session_state.setdefault("dates_enveloppes", {})[(cible or {}).get("origine", "")] = dates
 
 
+# Réglage des taux d'imposition : (clé, libellé, en pourcentage ?)
+REGLAGES_TAUX = [
+    ("ir_pfu", "Impôt sur le revenu (flat tax)", True),
+    ("ps_capital", "Prélèvements sociaux (CTO, PEA)", True),
+    ("ps_assurance_vie", "Prélèvements sociaux (assurance-vie)", True),
+    ("ir_av_apres_8_ans", "Impôt assurance-vie après 8 ans", True),
+    ("abattement_celibataire", "Abattement assurance-vie, personne seule (€)", False),
+    ("abattement_couple", "Abattement assurance-vie, couple (€)", False),
+]
+
+
+def _revenir_aux_taux_legaux(session_compte=None):
+    for cle, _, _ in REGLAGES_TAUX:
+        st.session_state.pop(f"taux_{cle}", None)
+    st.session_state.pop("taux_fiscaux", None)
+    if session_compte is not None:
+        session_compte.definir_preference("taux_fiscaux", {})
+
+
+def taux_choisis(session_compte=None):
+    """Taux d'imposition choisis par l'utilisateur (ou les taux légaux) : session, puis compte."""
+    if "taux_fiscaux" in st.session_state:
+        return st.session_state["taux_fiscaux"]
+    if session_compte is not None:
+        return session_compte.preference("taux_fiscaux", {}) or {}
+    return {}
+
+
+def _reglage_taux(session_compte=None):
+    """Repli pour modifier soi-même les taux, puis les taux utilisés avec leur date et leur source
+    (ou la mention « taux personnalisés »). Renvoie les taux à utiliser."""
+    enregistres = fiscalite.taux_complets(taux_choisis(session_compte))
+    with st.expander(t("Modifier les taux d'imposition")):
+        st.caption(t("Pour une simulation, ou si la loi a changé avant la prochaine version de l'application."))
+        nouveaux = {}
+        colonnes = st.columns(2)
+        for i, (cle, libelle, en_pct) in enumerate(REGLAGES_TAUX):
+            valeur = enregistres[cle] * 100 if en_pct else enregistres[cle]
+            saisie = colonnes[i % 2].number_input(
+                t(libelle), min_value=0.0, max_value=100.0 if en_pct else 100_000.0, value=float(valeur),
+                step=0.1 if en_pct else 100.0, format="%.1f" if en_pct else "%.0f", key=f"taux_{cle}")
+            nouveaux[cle] = round(saisie / 100, 6) if en_pct else float(saisie)
+        st.button(t("Revenir aux taux légaux"), type="tertiary", icon=":material/restart_alt:",
+                  on_click=_revenir_aux_taux_legaux, args=(session_compte,), key="taux_legaux")
+    taux = fiscalite.taux_complets(nouveaux)
+    if taux != enregistres:                                  # changement : gardé (session, et compte)
+        st.session_state["taux_fiscaux"] = taux
+        if session_compte is not None:
+            session_compte.definir_preference("taux_fiscaux", taux if fiscalite.taux_personnalises(taux) else {})
+    if fiscalite.taux_personnalises(taux):
+        html(ui.note(t("Taux personnalisés (simulation) : {taux}. Les taux légaux sont rétablis avec « Revenir "
+                       "aux taux légaux ».", taux=fiscalite.resume_taux(taux, 'en' if langues.anglais() else 'fr')), attention=True))
+    else:
+        st.caption(t("Taux en vigueur au {date} (source : {source}) : {taux}.",
+                     date=langues.date(pd.Timestamp(fiscalite.DATE_TAUX)), source=t(fiscalite.SOURCE_TAUX),
+                     taux=fiscalite.resume_taux(taux, 'en' if langues.anglais() else 'fr')))
+    if fiscalite.taux_peut_etre_depasses():
+        html(ui.note(t("Cette version de l'application a plus d'un an : les taux d'imposition ont peut-être changé. "
+                       "Vérifiez-les sur impots.gouv.fr, installez la dernière version, ou modifiez-les ci-dessus."),
+                     attention=True))
+    return taux
+
+
 def _fiscalite(res, cible=None, session_compte=None):
     import datetime
     resume = res["resume"]
@@ -79,6 +142,7 @@ def _fiscalite(res, cible=None, session_compte=None):
     with st.container(border=True):
         html(ui.titre_section(t("Hypothèses"), t("Premier ordre le {date} · taux 2026",
                                                   date=langues.date(premier_ordre))))
+        taux = _reglage_taux(session_compte)
         # « Date 1 » de l'avantage fiscal : la date d'ouverture de l'enveloppe, pas celle du premier ordre
         enregistrees = _dates_enregistrees(cible, session_compte)
         c, d = st.columns(2)
@@ -108,7 +172,7 @@ def _fiscalite(res, cible=None, session_compte=None):
 
     # Sortie aujourd'hui
     lignes = fiscalite.comparer_enveloppes(resume["gain_total"], resume["montant_investi"], anciennetes,
-                                           resume["dividendes"], situation)
+                                           resume["dividendes"], situation, taux)
     cartes = []
     for ligne in lignes:
         attente = ligne["annees_avant_avantage"]
@@ -143,7 +207,8 @@ def _fiscalite(res, cible=None, session_compte=None):
         courbes[enveloppe] = []
         for n in annees:
             gain = resume["gain_total"] + valeur * ((1 + croissance) ** n - 1)
-            impot = fiscalite.impot_sortie(gain, anciennetes[enveloppe] + n, enveloppe, resume["dividendes"], situation)
+            impot = fiscalite.impot_sortie(gain, anciennetes[enveloppe] + n, enveloppe, resume["dividendes"], situation,
+                                           taux)
             courbes[enveloppe].append(gain - impot["total"])
     gauche, droite = st.columns([3, 2], gap="medium")
     with gauche, st.container(border=True):
@@ -164,8 +229,9 @@ def _fiscalite(res, cible=None, session_compte=None):
             remarques.append(t("Le montant investi dépasse le plafond de versements du PEA (150 000 €) et le "
                                "seuil de 150 000 € de primes au-delà duquel l'assurance-vie est taxée à 12,8 % "
                                "au lieu de 7,5 % après 8 ans (non modélisé)."))
-        remarques.append(t("Taux 2026 : flat tax de 31,4 % (12,8 % + 18,6 % de prélèvements sociaux) ; "
-                           "assurance-vie : prélèvements sociaux maintenus à 17,2 %."))
+        if not fiscalite.taux_personnalises(taux):
+            remarques.append(t("Taux 2026 : flat tax de 31,4 % (12,8 % + 18,6 % de prélèvements sociaux) ; "
+                               "assurance-vie : prélèvements sociaux maintenus à 17,2 %."))
         for r in remarques:
             html(ui.note(r))
 

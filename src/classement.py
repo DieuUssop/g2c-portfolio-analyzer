@@ -125,12 +125,13 @@ PAYS_ANGLAIS = {
 # ----------------------------------------------------------------------
 # 3. ETF : reconnaissance et classement selon l'indice suivi
 # ----------------------------------------------------------------------
-MOTIF_ETF = re.compile(r"\betf\b|ucits|\bfund\b|\bfonds\b|ishares|amundi|lyxor|xtrackers|vanguard|spdr|"
+MOTIF_ETF = re.compile(r"\betf\b|ucits|\bfund\b|\bfonds\b|ishares|amundi|lyxor|xtrackers|vanguard|spdr|\beasy\b|"
                        r"invesco|bnp paribas easy|\bbnpp\b|\bbnpetf\b|wisdomtree|vaneck|\bhsbc msci|franklin|"
                        r"\btracker\b|\bopcvm\b|\bsicav\b|\bfcp\b|\bpea\b.*(s&p|msci|nasdaq|monde|world|emerg)",
                        re.IGNORECASE)
 REGION_PAR_INDICE = {
     "MSCI World": "Monde (ETF)", "MSCI ACWI": "Monde (ETF)", "MSCI EAFE": "Monde (ETF)",
+    "MSCI World Small Cap": "Monde (ETF)",
     "S&P 500": "États-Unis", "Nasdaq-100": "États-Unis", "Russell 2000": "États-Unis", "US Total Market": "États-Unis",
     "MSCI Europe": "Europe", "Euro Stoxx 50": "Europe", "CAC 40": "Europe", "DAX": "Europe",
     "MSCI Emerging Markets": "Émergents",
@@ -139,6 +140,11 @@ REGION_PAR_INDICE = {
     "Obligations émergentes en dollars": "Émergents",
 }
 SECTEUR_OBLIGATAIRE = {
+    "Emprunts d'État japonais": "Obligations d'État", "Emprunts d'État britanniques": "Obligations d'État", "Emprunts d'État mondiaux": "Obligations d'État",
+    "Obligations agrégées mondiales": "Obligations d'État", "Obligations agrégées euro": "Obligations d'État",
+    "Obligations indexées sur l'inflation euro": "Obligations indexées sur l'inflation",
+    "Obligations émergentes en devises locales": "Obligations émergentes",
+    "Obligations d'entreprises mondiales": "Obligations d'entreprises",
     "Emprunts d'État zone euro": "Obligations d'État", "Emprunts d'État américains": "Obligations d'État",
     "Obligations d'entreprises euro": "Obligations d'entreprises",
     "Obligations d'entreprises américaines": "Obligations d'entreprises",
@@ -153,7 +159,7 @@ MOTIFS_ETF_SECTEUR = [
     (r"health|santé|healthcare|biotech|pharma", "Santé"),
     (r"financ|bank|banque|insurance", "Finance"),
     (r"energy|énergie|oil|pétrole", "Énergie"),
-    (r"real estate|immobilier|reit|property", "Immobilier"),
+    (r"real estate|immobilier|reit|property|epra|nareit", "Immobilier"),
     (r"consumer staples|food|consommation de base", "Consommation de base"),
     (r"consumer discretionary|luxury|luxe", "Consommation discrétionnaire"),
     (r"industrials|industrie|defen[cs]e|aerospace", "Industrie"),
@@ -162,7 +168,7 @@ MOTIFS_ETF_SECTEUR = [
 ]
 _MOTIFS_ETF_SECTEUR = [(re.compile(m, re.IGNORECASE), s) for m, s in MOTIFS_ETF_SECTEUR]
 MOTIF_OR = re.compile(r"\bgold\b|\bor physique\b|xetra-gold|\bor\b.*etc|bullion", re.IGNORECASE)
-MOTIF_MONETAIRE = re.compile(r"overnight|monétaire|monetaire|money market|€str|\bestr\b|cash|\beonia\b",
+MOTIF_MONETAIRE = re.compile(r"overnight|overn\b|\bovern\.|monétaire|monetaire|money market|€str|\bestr\b|cash|\beonia\b",
                              re.IGNORECASE)
 MOTIF_OBLIGATION = re.compile(r"bond|govt|government|treasury|aggregate|oblig|corp(orate)?\b|high yield|"
                               r"inflation linked|\btips\b|souverain", re.IGNORECASE)
@@ -181,11 +187,13 @@ def est_un_etf(ticker, nom, fiche=None):
     return bool(MOTIF_ETF.search(str(nom or "")))
 
 
-def classer_etf(ticker, nom, fiche=None):
-    """Classe, région, secteur d'un ETF d'après l'indice suivi (et son nom)."""
+def classer_etf(ticker, nom, fiche=None, categorie="", autre_nom=""):
+    """Classe, région, secteur d'un ETF d'après l'indice suivi (et son nom). categorie, autre_nom :
+    catégorie Morningstar et nom long donnés par Yahoo Finance (quand le nom de l'avis est trop abrégé)."""
     nom = str(nom or "")
     fiche = fiche or {}
-    indice = composition_etf.indice_suivi(ticker, nom)
+    indice = composition_etf.indice_suivi(ticker, nom) or composition_etf.indice_suivi(ticker, autre_nom, categorie)
+    nom = nom + " " + str(autre_nom or "")
     if MOTIF_OR.search(nom):
         return {"classe": "Or", "region": "Monde", "secteur": "Or", "indice": None}
     if MOTIF_MONETAIRE.search(nom):
@@ -196,16 +204,21 @@ def classer_etf(ticker, nom, fiche=None):
              "Obligations à haut rendement" if re.search(r"high yield|haut rendement", nom, re.IGNORECASE) else
              "Obligations d'entreprises" if re.search(r"corp", nom, re.IGNORECASE) else
              "Obligations émergentes" if re.search(r"emerg", nom, re.IGNORECASE) else "Obligations d'État")
-        return {"classe": "Obligations", "region": REGION_PAR_INDICE.get(indice, fiche.get("region") or "Monde"),
+        return {"classe": "Obligations", "region": REGION_PAR_INDICE.get(indice) or
+                composition_etf.region_de_l_indice(indice) or fiche.get("region") or "Monde",
                 "secteur": secteur, "indice": indice}
     secteur = next((s for m, s in _MOTIFS_ETF_SECTEUR if m.search(nom)), "ETF diversifié")
-    region = REGION_PAR_INDICE.get(indice) or fiche.get("region") or "Monde (ETF)"
+    region = REGION_PAR_INDICE.get(indice) or composition_etf.region_de_l_indice(indice) or fiche.get("region") \
+        or "Monde (ETF)"
     return {"classe": "Actions", "region": region, "secteur": secteur, "indice": indice}
 
 
 def eligible_pea_synthetique(ticker, nom):
     """ETF éligible au PEA par swap (« Amundi PEA S&P 500 ») : connu, ou « PEA » dans son nom."""
-    return ticker in ETF_PEA_SYNTHETIQUES or bool(MOTIF_PEA.search(str(nom or "")))
+    if ticker in ETF_PEA_SYNTHETIQUES or MOTIF_PEA.search(str(nom or "")):
+        return True
+    # libellé abrégé d'un avis (« AM P AP M AC AP EX JAP ETF-C » : le « P » est « PEA »)
+    return bool(MOTIF_ETF.search(str(nom or ""))) and bool(MOTIF_PEA.search(composition_etf.developper(nom)))
 
 
 # ----------------------------------------------------------------------
@@ -231,7 +244,8 @@ def infos_yahoo(tickers, en_ligne=True):
     encore inconnus (si en_ligne). Un titre que Yahoo ne connaît pas est noté vide pour ne pas être
     redemandé à chaque analyse."""
     cache = _lire_cache()
-    manquants = [t for t in tickers if t not in cache]
+    # ancien format du cache (sans la catégorie Morningstar) : redemandé une fois
+    manquants = [t for t in tickers if t not in cache or "categorie" not in cache[t]]
     if manquants and en_ligne:
         try:
             import yfinance as yf
@@ -246,7 +260,8 @@ def infos_yahoo(tickers, en_ligne=True):
             except Exception:
                 continue
             cache[ticker] = {"secteur": info.get("sector", "") or "", "pays": info.get("country", "") or "",
-                             "type": info.get("quoteType", "") or "", "nom": info.get("longName", "") or ""}
+                             "type": info.get("quoteType", "") or "", "nom": info.get("longName", "") or "",
+                             "categorie": info.get("category", "") or ""}
             modifie = True
         if modifie:
             _ecrire_cache(cache)
@@ -268,22 +283,28 @@ def classer(ticker, nom="", fiche=None, yahoo=None):
     if est_un_etf(ticker, nom, fiche) or yahoo.get("type", "").upper() in ("ETF", "MUTUALFUND") \
             or MOTIF_OR.search(str(nom)) or MOTIF_MONETAIRE.search(str(nom)) \
             or fiche.get("classe") in ("Obligations", "Or", "Monétaire"):
-        resultat = classer_etf(ticker, nom, fiche)
+        # second nom : le nom officiel complet (base locale, listes Euronext / Xetra) ou celui de Yahoo,
+        # utile quand le libellé de l'avis d'opéré est trop abrégé
+        autre = " ".join(n for n in (fiche.get("nom", ""), yahoo.get("nom", "")) if n and n != nom)
+        resultat = classer_etf(ticker, nom, fiche, yahoo.get("categorie", ""), autre)
         # une fiche du référentiel du projet, vérifiée à la main, garde la priorité pour la classe
         if fiche.get("classe") in ("Obligations", "Or", "Monétaire"):
             resultat["classe"] = fiche["classe"]
             resultat["secteur"] = normaliser_secteur(fiche.get("secteur")) or resultat["secteur"]
             resultat["region"] = fiche.get("region") or resultat["region"]
+        # pays : celui de la fiche ; jamais celui de la place de cotation (un ETF Asie coté à Paris
+        # n'est pas français : son exposition est celle de son indice)
         return {"classe": resultat["classe"], "region": resultat["region"],
-                "pays": fiche.get("pays") or pays_place or "", "secteur": resultat["secteur"],
-                "pea_synthetique": eligible_pea_synthetique(ticker, nom)}
+                "pays": fiche.get("pays") or ("" if resultat.get("indice") else pays_place) or "",
+                "secteur": resultat["secteur"], "pea_synthetique": eligible_pea_synthetique(ticker, nom),
+                "indice": resultat.get("indice") or ""}
 
     secteur = (normaliser_secteur(fiche.get("secteur")) or ACTIONS_FR.get(ticker, "")
                or normaliser_secteur(yahoo.get("secteur")))
     pays = fiche.get("pays") or PAYS_ANGLAIS.get(yahoo.get("pays", ""), "") or pays_place
     region = fiche.get("region") or (composition_etf.region_du_pays(pays) if pays else "") or region_place
     return {"classe": fiche.get("classe") or "Actions", "region": region or NON_CLASSE, "pays": pays,
-            "secteur": secteur or NON_CLASSE, "pea_synthetique": False}
+            "secteur": secteur or NON_CLASSE, "pea_synthetique": False, "indice": ""}
 
 
 def classer_tous(tickers, noms, fiches, en_ligne=False):
@@ -292,7 +313,10 @@ def classer_tous(tickers, noms, fiches, en_ligne=False):
     restés non classés."""
     fiches_dict = fiches.to_dict("index") if fiches is not None and not fiches.empty else {}
     resultat = {t: classer(t, noms.get(t, ""), fiches_dict.get(t)) for t in tickers}
-    a_completer = [t for t, c in resultat.items() if NON_CLASSE in (c["secteur"], c["region"])]
+    # à compléter avec Yahoo : les titres non classés, et les ETF dont l'indice n'a pas été reconnu
+    # (nom trop abrégé) : le nom long et la catégorie Morningstar de Yahoo le donnent souvent
+    a_completer = [t for t, c in resultat.items() if NON_CLASSE in (c["secteur"], c["region"])
+                   or (c["region"] == "Monde (ETF)" and not c.get("indice"))]
     if a_completer:
         infos = infos_yahoo(a_completer, en_ligne=en_ligne)
         for t in a_completer:

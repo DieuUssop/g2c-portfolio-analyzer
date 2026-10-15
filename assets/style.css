@@ -256,9 +256,59 @@ section[data-testid="stSidebar"] [data-testid="stFileUploaderDropzone"]::after {
     order: 2; font-size: 0.72rem; color: var(--texte-3); line-height: 1.3;
 }
 section[data-testid="stSidebar"] [data-testid="stFileUploaderDropzone"] > :not(button):not(:has(button)) { display: none; }
+/* Fichiers déjà envoyés (Streamlit les affiche dans la même zone) : une ligne par fichier, sur toute
+   la largeur, nom coupé par « … », et une petite croix pour retirer le fichier (pas « Parcourir ») */
+section[data-testid="stSidebar"] [data-testid="stFileUploaderDropzone"] { flex-wrap: wrap; }
+section[data-testid="stSidebar"] [data-testid="stFileUploaderDropzone"] > :has(button):not(button) {
+    order: 0; flex: 1 1 100%; min-width: 0; max-width: 100%;
+}
+section[data-testid="stSidebar"] [data-testid="stFileUploaderDropzone"] :has(> [data-testid="stFileUploaderFileName"]) {
+    min-width: 0; max-width: 100%; overflow: hidden; text-align: left;
+}
+section[data-testid="stSidebar"] [data-testid="stFileUploaderFile"] {
+    display: flex; align-items: center; gap: 0.4rem; min-width: 0; max-width: 100%; overflow: hidden;
+    text-align: left;
+}
+section[data-testid="stSidebar"] [data-testid="stFileUploaderFile"] > div { min-width: 0; text-align: left; }
+section[data-testid="stSidebar"] [data-testid="stFileUploaderFileName"] {
+    min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 0.78rem;
+}
+section[data-testid="stSidebar"] [data-testid="stFileUploaderDropzone"] :is([data-testid="stFileUploaderDeleteBtn"] button, button[data-testid="stBaseButton-minimal"], button[data-testid*="Delete"], [data-testid*="Delete"] button) {
+    order: 9; flex: none; margin-left: auto; width: 1.6rem; height: 1.6rem; padding: 0;
+    border-radius: 50%; border: none; background: transparent;
+}
+section[data-testid="stSidebar"] [data-testid="stFileUploaderDropzone"] :is([data-testid="stFileUploaderDeleteBtn"] button, button[data-testid="stBaseButton-minimal"], button[data-testid*="Delete"], [data-testid*="Delete"] button)::after {
+    content: "\2715" !important; font-size: 0.8rem; font-weight: 600; color: var(--texte-2);
+}
+section[data-testid="stSidebar"] [data-testid="stFileUploaderDropzone"] :is([data-testid="stFileUploaderDeleteBtn"] button, button[data-testid="stBaseButton-minimal"], button[data-testid*="Delete"], [data-testid*="Delete"] button):hover {
+    background: rgba(15, 42, 74, 0.08);
+}
+section[data-testid="stSidebar"] [data-testid="stFileUploaderDropzone"] :is([data-testid="stFileUploaderDeleteBtn"] button, button[data-testid="stBaseButton-minimal"], button[data-testid*="Delete"], [data-testid*="Delete"] button):hover::after {
+    color: var(--negatif);
+}
 
-/* « Ajouter des opérations » et « Modèle de fichier » sur la même ligne */
+/* Liens de la zone Données (« Ajouter des opérations », « Modèle de fichier »…) : une colonne, un lien
+   par ligne, alignés à gauche, icône + texte sur une seule ligne (coupé par « … » si trop long) */
 section[data-testid="stSidebar"] [data-testid="stDownloadButton"] { display: flex; }
+section[data-testid="stSidebar"] .st-key-liens_donnees { gap: 0.1rem; margin-top: 0.15rem; }
+section[data-testid="stSidebar"] .st-key-liens_donnees [data-testid="stVerticalBlock"] { gap: 0.1rem; }
+section[data-testid="stSidebar"] .st-key-liens_donnees [data-testid="stElementContainer"],
+section[data-testid="stSidebar"] .st-key-liens_donnees [data-testid="stButton"],
+section[data-testid="stSidebar"] .st-key-liens_donnees [data-testid="stDownloadButton"] { width: 100%; justify-content: flex-start; }
+section[data-testid="stSidebar"] .st-key-liens_donnees button {
+    width: auto; max-width: 100%; height: 1.7rem; min-height: 1.7rem; padding: 0; gap: 0.4rem;
+    justify-content: flex-start; text-align: left; overflow: hidden;
+}
+section[data-testid="stSidebar"] .st-key-liens_donnees button > div,
+section[data-testid="stSidebar"] .st-key-liens_donnees button [data-testid="stMarkdownContainer"] {
+    min-width: 0; justify-content: flex-start; text-align: left; overflow: hidden;
+}
+section[data-testid="stSidebar"] .st-key-liens_donnees button p {
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.7rem;
+}
+section[data-testid="stSidebar"] .st-key-liens_donnees button [data-testid="stIconMaterial"] {
+    font-size: 1.05rem; color: var(--texte-3); flex: none;
+}
 
 /* Paramètres repliés */
 section[data-testid="stSidebar"] [data-testid="stExpander"] details {

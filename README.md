@@ -1,6 +1,7 @@
 # Portfolio Tracker — Outil de suivi et d'analyse de portefeuille
 
-Projet du Master G2C (Gestion d'actifs, Contrôle des risques et Conformité) · IAE Caen, Université de Caen Normandie · Année universitaire 2026-2027
+Projet réalisé par un groupe de 4 étudiants du Master G2C (Gestion d'actifs, Contrôle des risques et Conformité) · IAE Caen, Université de Caen Normandie · Année universitaire 2026-2027
+Destiné à tous les étudiants de l'IAE Caen (et à leurs enseignants), pas seulement au Master G2C.
 Auteurs : *[Prénom NOM, Prénom NOM, Prénom NOM]*
 
 Outil en Python qui lit l'historique des transactions d'un portefeuille (achats, ventes,
@@ -29,7 +30,7 @@ un tableau de bord web interactif et dans un rapport PDF généré automatiqueme
 | **Expositions** | Analyse en transparence (ETF répartis selon leur indice) : carte du monde, pays, secteurs, devise réelle, concentration (règle 5/10/40), sensibilité aux taux, diversification réelle (blocs de titres corrélés, ratio de diversification) ; diagnostic vert / orange / rouge avec risques et pistes, selon le profil — voir docs/GUIDE_EXPOSITIONS.md |
 | **Indices de référence** | 14 indices : actions (monde, États-Unis, Europe, France, émergents), obligations, monétaire (€STR) et mixtes 20/80, 60/40, 80/20 calculés par l'outil |
 | **Mise à jour** | Ajout de nouvelles opérations sans renvoyer tout l'historique (avis d'opéré PDF, Excel, CSV, saisie manuelle), doublons détectés, contrôles ; suppression ou correction de n'importe quelle opération (onglet Transactions) ; annulation de la dernière modification |
-| **Fiabilité** | 255 tests automatiques, contrôle croisé du gain total, base cumulative hors ligne |
+| **Fiabilité** | 285 tests automatiques, contrôle croisé du gain total, base cumulative hors ligne |
 
 ## Démarrage rapide
 
@@ -42,6 +43,7 @@ fonctionne hors connexion) — voir docs/GUIDE_INSTALLATEUR.md. Pour le fabrique
 - `lancer_tableau_de_bord.bat` : ouvre le tableau de bord dans le navigateur ;
 - `lancer_analyse.bat` : analyse complète dans le terminal, graphiques et rapport PDF ;
 - `construire_base.bat` : construit (≈ 1 h la première fois) ou met à jour la base locale de titres, pour travailler hors connexion.
+- `mettre_a_jour_titres.bat` : ajoute à la base les listes officielles Euronext et Xetra (milliers d'ETF et d'actions, quelques minutes ; dans l'application installée : menu Démarrer → « Mettre à jour la base des titres »).
 
 **En ligne de commande** (depuis le dossier du projet) :
 
@@ -56,7 +58,8 @@ python generer_portefeuille_mondial.py              # crée le fonds actions mon
 python generer_portefeuille_diversifie.py           # crée le portefeuille diversifié (50 lignes, depuis 2017)
 python construire_base_titres.py                    # base locale hors connexion (≈ 1 h, une fois)
 python construire_base_titres.py --mise-a-jour      # ajoute les derniers cours (quelques minutes)
-python -m pytest                                    # lance les 255 tests
+python mettre_a_jour_titres.py                      # listes officielles Euronext et Xetra (quelques minutes)
+python -m pytest                                    # lance les 285 tests
 ```
 
 Python 3.11 ou plus récent est nécessaire, ainsi qu'une connexion Internet pour l'installation.
@@ -108,6 +111,7 @@ portfolio_tracker/
 ├── lancer_tableau_de_bord.bat       # raccourcis Windows
 ├── lancer_analyse.bat
 ├── construire_base_titres.py · construire_base.bat  # base locale de titres (hors connexion)
+├── mettre_a_jour_titres.py · mettre_a_jour_titres.bat  # listes officielles Euronext / Xetra
 ├── lanceur.py                       # ouvre le tableau de bord (raccourci, .bat), sur cet ordinateur uniquement
 ├── fabriquer_installateur.bat/.ps1  # fabrique l'installateur Windows (Python embarqué + Inno Setup)
 ├── installateur/portfolio_tracker.iss  # recette de l'installateur (Inno Setup)
@@ -167,7 +171,7 @@ portfolio_tracker/
 │   ├── theme.py                     # mode clair / nuit
 │   └── rapport.py                   # rapport PDF (reportlab)
 ├── assets/style.css · assets/icone.ico · .streamlit/config.toml   # apparence du tableau de bord
-├── tests/                           # 255 tests automatiques (pytest)
+├── tests/                           # 285 tests automatiques (pytest)
 └── docs/                            # guides pas à pas ; docs/manuel/ : le manuel (fr, en, Word, PDF)
 ```
 

@@ -57,6 +57,24 @@ def _p1(x):
     return pct(x, signe=False, decimales=1)
 
 
+def _note_swap(positions):
+    """ETF éligibles au PEA par réplication synthétique (swap) : l'exposition affichée est celle de leur
+    indice (États-Unis, Asie…), pas le panier d'actions européennes qu'ils détiennent. C'est voulu et
+    conforme au PEA : on le dit, pour qu'un PEA exposé aux États-Unis ou à l'Asie ne surprenne pas."""
+    if "pea_synthetique" not in positions.columns or "valeur" not in positions.columns:
+        return
+    swap = positions[positions["pea_synthetique"].fillna(False).astype(bool)]
+    if swap.empty or not positions["valeur"].sum():
+        return
+    part = float(swap["valeur"].sum() / positions["valeur"].sum())
+    html(ui.note(t("{part} du portefeuille est investi via des ETF éligibles au PEA par réplication synthétique "
+                   "(swap) : juridiquement, ils détiennent des actions européennes, mais un contrat d'échange leur "
+                   "donne la performance de leur indice. L'analyse retient donc l'exposition réelle à l'indice "
+                   "(États-Unis, Asie, émergents…) : un PEA plus exposé aux États-Unis ou à l'Asie qu'à l'Europe est "
+                   "normal avec ces ETF, et reste conforme au PEA. Risque propre : la contrepartie du swap, limitée "
+                   "à 10 % de l'actif du fonds par la réglementation européenne (UCITS).", part=_p0(part))))
+
+
 def afficher(res, cle, code_indice):
     positions = res["positions"]
     with st.spinner(t("Analyse des expositions...")):
@@ -94,6 +112,7 @@ def afficher(res, cle, code_indice):
         "diversification": t("Corrélation moyenne : {rho}", rho=nombre(div["moyenne"])),
     }
     html(ui.synthese([(t(DIMENSIONS[d]), niveaux[d], chiffres[d]) for d in ex.DIMENSIONS]))
+    _note_swap(positions)
 
     # ------------------------------------------------------------------ 2. constats
     a_traiter = [c for c in constats if c["niveau"] != "ok"]

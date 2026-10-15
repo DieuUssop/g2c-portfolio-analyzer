@@ -659,3 +659,18 @@ Each method relies on a different assumption; comparing them is part of the anal
 ### Why over one day?
 
 The software's VaRs cover the loss over **one trading day**, calculated on daily returns. For longer horizons, see the max drawdown, the stress tests and the projection.
+
+## An import does not work: how do I report the problem?
+<!-- fiche: faq-signaler-probleme | questions: how do I report a bug ; my file does not go through what do I do ; send an error report ; report a problem ; who do I send the diagnostic to ; does the diagnostic contain my personal data ; the software crashes how do I tell the creator ; software version | mots: report a problem, diagnostic, bug, error, anonymised report, personal data, version, support -->
+
+At the bottom of the sidebar (and under an analysis error message), the **"Report a problem"** section prepares a small text file that says what went wrong:
+
+- the application version (also shown at the bottom of the sidebar), the system and the reading modules installed (character recognition, Excel, photos);
+- the last errors displayed;
+- for the file sent: its nature (text or image PDF, Excel, CSV) and its **anonymised** content.
+
+### Your personal data does not leave
+
+Name, address, e-mail, phone, IBAN and account or reference numbers are masked; so is the file name, except for common words ("avis", "opéré", the broker's name…). ISIN codes, dates, labels and amounts remain: what is needed to fix the reading. A photo is not copied.
+
+Click "Prepare the diagnostic": the text is shown **before** the download, so you can read it. Nothing is sent automatically: you send the downloaded file to the address shown under the button (kevin.brule@etu.unicaen.fr).

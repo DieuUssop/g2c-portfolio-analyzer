@@ -19,6 +19,7 @@ import hashlib
 import pandas as pd
 import streamlit as st
 
+from . import vues_signalement
 from . import images, import_fichier, lecture_pdf, mouvements, vues_pdf
 from . import interface as ui
 from .langues import t, td
@@ -136,6 +137,7 @@ def page(session_compte, importer):
                     st.rerun()
             else:
                 st.error(t("{nom} : {raison}", nom=f.name, raison=t(resultat["raison"])))
+                vues_signalement.noter_erreur("ajout d'opérations", t("{nom} : {raison}", nom=f.name, raison=t(resultat["raison"])))
                 st.caption(t("Pour un format inhabituel, envoyez le fichier depuis la barre latérale : "
                              "l'assistant d'import vous guidera."))
     with saisie_tab:
@@ -160,6 +162,7 @@ def page(session_compte, importer):
                                      "frais": frais, "source": "saisie"})
                 except Exception as erreur:
                     st.error(str(erreur))
+                    vues_signalement.noter_erreur("ajout d'opérations", str(erreur))
 
     if not ajoutees:
         return
@@ -190,6 +193,7 @@ def page(session_compte, importer):
         bloquantes = [a for a in alertes if a["bloquant"]]
         for a in bloquantes:
             st.error(t(a["message"], **a["valeurs"]))
+            vues_signalement.noter_erreur("ajout d'opérations", t(a["message"], **a["valeurs"]))
         avant = mouvements.lire(cible["contenu"])
         st.caption(t("{n} opération(s) ajoutée(s) · {total} au total ({avant} avant)", n=len(retenues),
                      total=len(fusion), avant=len(avant)))

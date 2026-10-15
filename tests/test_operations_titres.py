@@ -178,3 +178,70 @@ def test_regroupement_non_ajuste_par_yahoo():
     chute = pd.Series(10.0, index=jours)
     chute[chute.index >= "2024-08-20"] = 1.0
     assert mouvements.corriger_sauts_de_cours(pd.DataFrame({"X.PA": chute}), ["X.PA"])[1] == []
+
+
+# ----------------------------------------------------------------------
+# Regroupements connus appliqués d'office (ORPEA, Casino, Atos)
+# ----------------------------------------------------------------------
+def _orpea(*autres):
+    return _transactions([("2023-12-12", "ACHAT", "ORP.PA", "ORPEA", 2000, 0.0145, 1.02)] + list(autres))
+
+
+@pytest.mark.parametrize("cas", ["ajuste_avec_dilution", "historique_depuis_le_regroupement", "sans_cours",
+                                 "nouveau_ticker"])
+def test_regroupement_orpea_applique_d_office(cas):
+    """Avis Crédit Agricole : 2 000 ORPEA achetées avant le regroupement. Quel que soit l'historique
+    de Yahoo (cours ajustés aussi pour les augmentations de capital, rapport non « rond » ; historique
+    qui ne commence qu'au regroupement ; aucun cours), la ligne est ramenée à 2 actions à 14,50 €."""
+    ticker = "EMEIS.PA" if cas == "nouveau_ticker" else "ORP.PA"
+    fichier = _orpea().assign(ticker=ticker)
+    if cas == "ajuste_avec_dilution":
+        cours = pd.DataFrame({ticker: pd.Series(6.0, index=pd.bdate_range("2023-11-01", "2026-09-30"))})
+    elif cas in ("historique_depuis_le_regroupement", "nouveau_ticker"):
+        cours = pd.DataFrame({ticker: pd.Series(12.4, index=pd.bdate_range("2024-03-22", "2026-09-30"))})
+    else:
+        cours = None
+    ajuste, notes = mouvements.appliquer_operations_connues(fichier, cours)
+    assert [(n["ticker"], n["operations"]) for n in notes] == [(ticker, 1)]
+    ligne = ajuste.iloc[0]
+    assert ligne["quantite"] == pytest.approx(2) and ligne["prix"] == pytest.approx(14.5)
+    positions = Portfolio(ajuste).valoriser({ticker: 12.4})
+    assert positions.loc[ticker, "valeur"] == pytest.approx(24.8)          # et non 24 800 €
+
+
+def test_regroupements_casino_et_atos():
+    fichier = _transactions([("2023-05-02", "ACHAT", "CO.PA", "CASINO GUICHARD", 300, 0.9, 1.0),
+                             ("2024-12-02", "ACHAT", "ATO.PA", "ATOS", 50000, 0.0012, 1.0)])
+    ajuste, notes = mouvements.appliquer_operations_connues(fichier)
+    assert {n["ticker"]: n["facteur"] for n in notes} == {"CO.PA": 0.01, "ATO.PA": 0.0001}
+    assert list(ajuste["quantite"]) == pytest.approx([3, 5])
+    assert list(ajuste["prix"]) == pytest.approx([90, 12])
+
+
+def test_regroupement_orpea_deja_applique_ou_posterieur():
+    """Rien n'est touché : achat déjà ramené dans les nouvelles unités (2 à 14,50 €), achat après le
+    regroupement, droits de souscription ORPEA (un autre titre), autre société."""
+    cours = pd.DataFrame({"ORP.PA": pd.Series(12.0, index=pd.bdate_range("2023-11-01", "2026-09-30"))})
+    fichier = _transactions([("2023-12-12", "ACHAT", "ORP.PA", "ORPEA", 2, 14.5, 1.02),
+                             ("2024-06-03", "ACHAT", "ORP.PA", "ORPEA", 10, 11.0, 1.0),
+                             ("2023-12-05", "ACHAT", "FR001400MXO7", "DROITS ORPEA DS24", 16, 0.01, 0.0),
+                             ("2023-12-05", "ACHAT", "MC.PA", "LVMH", 1, 700.0, 1.0)])
+    ajuste, notes = mouvements.appliquer_operations_connues(fichier, cours)
+    assert notes == [] and ajuste.equals(fichier)
+
+
+def test_regroupement_deduit_malgre_l_ajustement_des_augmentations_de_capital():
+    """Cours ajusté de Yahoo à 11 € (et non 14,50 €) : rapport 0,0013, pas tout à fait 1/1 000.
+    Pour un facteur de 100 et plus, l'écart toléré est plus large ; pour un petit facteur, non."""
+    cours = pd.DataFrame({"X.PA": pd.Series(11.0, index=pd.bdate_range("2023-11-01", "2024-12-31"))})
+    fichier = _transactions([("2023-12-12", "ACHAT", "X.PA", "X", 2000, 0.0145, 1.0)])
+    assert mouvements.division_deduite(fichier, "X.PA", cours)["facteur"] == pytest.approx(0.001)
+    assert mouvements._facteur_rond(12.5, 0.15) is None                    # ni 10 ni 15 (écart > 15 %)
+    assert mouvements._facteur_rond(0.0013, 0.15) == pytest.approx(0.001)
+
+
+def test_valeur_incoherente_signalee():
+    positions = Portfolio(_orpea(("2024-01-10", "ACHAT", "MC.PA", "LVMH", 2, 700.0, 1.0))).valoriser(
+        {"ORP.PA": 12.4, "MC.PA": 650.0})
+    alertes = mouvements.valeurs_incoherentes(positions)
+    assert [a["ticker"] for a in alertes] == ["ORP.PA"] and alertes[0]["multiple"] > 500

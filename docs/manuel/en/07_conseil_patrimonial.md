@@ -23,7 +23,7 @@ The main results of these two tabs also appear in the PDF report; the taxation t
 As the footer reminds you, the tool is educational and does not constitute investment advice.
 
 ## Which tax rates does the software use (2026)?
-<!-- fiche: conseil-taux-2026 | questions: what is the flat tax rate in 2026 ; why 31.4% and not 30% ; social contributions went up ; what tax rates does the software use ; PFU 2026 ; why is life insurance at 17.2% ; what are the tax rates in the software ; did the CSG go up in 2026 | mots: flat tax, PFU, single flat-rate levy, social contributions, CSG, 2026 rates, CSG increase, income tax, social security financing act 2026 | aller: Conseil patrimonial/Fiscalité -->
+<!-- fiche: conseil-taux-2026 | questions: what is the flat tax rate in 2026 ; why 31.4% and not 30% ; social contributions went up ; what tax rates does the software use ; PFU 2026 ; why is life insurance at 17.2% ; what are the tax rates in the software ; did the CSG go up in 2026 ; what if the tax rules change ; how do I change the flat tax rate ; are the rates updated automatically ; change the social contributions ; simulate another tax rate | mots: flat tax, PFU, single flat-rate levy, social contributions, CSG, 2026 rates, CSG increase, income tax, social security financing act 2026 | aller: Conseil patrimonial/Fiscalité -->
 
 The software applies the rules for an **individual who is tax resident in France, in 2026**. The source cited in the code is Law No. 2025-1403 of 30 December 2025 on the financing of social security for 2026, which raised the CSG (a social contribution) on investment income.
 
@@ -41,6 +41,14 @@ The software applies the rules for an **individual who is tax resident in France
 Before 2026, the flat tax was 30% (12.8% + 17.2%). The CSG increase takes social contributions to 18.6% and the flat tax to **31.4%**. Life insurance stays at 17.2% social contributions: before 8 years it is therefore taxed at 30% in total, slightly less than the securities account.
 
 The subtitle of the "Assumptions" box on the tab shows "2026 rates", and a note at the bottom of the "PEA eligibility" box summarises these rates.
+
+### If the law changes: rates shown and editable
+
+The rates are **not read from the Internet**: they are built into the software and change with a new version. To keep this transparent:
+
+- under "Assumptions", a line recalls the rates used, the date they came into force (1 January 2026) and their source;
+- if your version of the application is **more than a year old**, a warning says the rates may have changed (check them on impots.gouv.fr or install the latest version);
+- the **"Change the tax rates"** section lets you enter the income tax, social contributions (CTO / PEA and life insurance), life insurance tax after 8 years and allowances yourself: for a simulation, or if the law changes before the next version. Every calculation (exit today, net gain by exit year, PDF report) uses them, marked **"custom rates"**; the "Back to the legal rates" button restores the legal values. When signed in, your rates are kept in your account.
 
 ### What is not modelled
 

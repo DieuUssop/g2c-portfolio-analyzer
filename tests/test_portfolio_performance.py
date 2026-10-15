@@ -80,8 +80,8 @@ def test_banc_portfolio_performance_global():
     operations = sum(len(c["operations"]) for c, _, _ in r.values())
     lues = sum(b for _, _, b in r.values())
     assert len(r) >= 150
-    assert statuts["exact"] >= 101, statuts
-    assert statuts["exact"] + statuts["lu"] >= 105, statuts
+    assert statuts["exact"] >= 106, statuts
+    assert statuts["exact"] + statuts["lu"] >= 119, statuts
     # une lecture fausse est pire qu'un échec (le formulaire prend alors le relais)
     assert statuts["faux"] <= 3, [k for k, v in r.items() if v[1] == "faux"]
     assert lues >= 0.85 * operations, (lues, operations)

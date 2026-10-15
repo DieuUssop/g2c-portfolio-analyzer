@@ -4,13 +4,14 @@
 This chapter states where each piece of data used by the software comes from: share prices, the local securities database, currencies, recognition of ISIN codes, ETF composition, security classification, benchmark indices, the risk-free rate and the world map background. It then sets out, honestly, what the software checks, what it does not check, and what to do if a figure looks wrong.
 
 ## Where does the software's data come from?
-<!-- fiche: sources-vue-ensemble | questions: where does the data come from ; what is the source of the prices ; where do the numbers in the software come from ; which data sources are used ; is the data from bloomberg ; who provides the prices ; where does the ETF information come from ; is the software connected to my bank | mots: sources, origin of the data, provenance, Yahoo Finance, Wikipedia, MSCI, ECB, Natural Earth, reference file -->
+<!-- fiche: sources-vue-ensemble | questions: where does the data come from ; what is the source of the prices ; where do the numbers in the software come from ; which data sources are used ; is the data from bloomberg ; who provides the prices ; where does the ETF information come from ; is the software connected to my bank ; what if yahoo finance stops working ; yahoo blocks the requests ; backup price source | mots: sources, origin of the data, provenance, Yahoo Finance, Wikipedia, MSCI, ECB, Natural Earth, reference file -->
 
 The software has no subscription to a professional data provider (Bloomberg, Refinitiv…) and is not linked to any bank. Its data comes from the following sources.
 
 | Data | Source | Updated |
 |---|---|---|
 | Daily prices of securities, indices and exchange rates | Yahoo Finance, through the Python library `yfinance` | at every analysis with Internet; otherwise local database and cache |
+| Backup prices if Yahoo Finance does not respond | European Central Bank (reference exchange rates) and Stooq (US, German, UK, Japanese and Hong Kong shares and ETFs) | automatically, security by security, when Yahoo blocks or is down |
 | Quotation currency of each security | Yahoo Finance, otherwise the local database, otherwise a rule based on the security's code | once per security, then kept |
 | List of securities in the local database | Wikipedia pages of 32 stock indices, a list of 66 ETFs and the project's reference file | when the database is built |
 | Matching an ISIN, name or Bloomberg code to a ticker | built-in table of 31 ETFs, local memory, local database, then the Yahoo Finance search engine | at every import of an unknown security |
@@ -27,6 +28,7 @@ Transactions (dates, quantities, prices, fees, dividends) come only from your fi
 ### Where to see the source of the prices
 
 - In the banner at the top of the page: "Live prices · Yahoo Finance" (green dot) or "Cached prices (offline)" (orange dot), and the "Data as of" note followed by the date of the last price in the history.
+- If Yahoo Finance does not respond (outage, or too many requests when many students use it at the same time), the application tries once more, then asks the **free backup sources**: the ECB for exchange rates, Stooq for shares and ETFs on the exchanges it covers. The banner then shows "Live prices · backup sources (Yahoo Finance unreachable)". Securities that no source provides (some Paris stocks, for example) use the last prices kept in memory.
 - At the bottom of the sidebar, the "Prices" line: "Yahoo Finance (en direct)", or "cache local du" followed by a date, with the note "Yahoo Finance injoignable". These two strings come from the program as it stands and are shown in French.
 
 ## Which prices exactly does the software use?
@@ -121,7 +123,16 @@ The local database is the software's "memory": it lets it work without Internet 
 - The exact number of securities depends on the version shipped: some Wikipedia pages may be unreadable on the day of building, and codes unknown to Yahoo Finance are discarded.
 
 ## How the securities database is built and updated
-<!-- fiche: sources-base-construction | questions: how do I update the securities database ; how does construire_base_titres.py work ; does the database update itself ; construire_base.bat ; update prices offline ; how long does it take to build the database ; what does cumulative database mean ; what is echecs.csv | mots: building, update, construire_base_titres.py, construire_base.bat, --mise-a-jour, cumulative database, Wikipedia, batches, resume, echecs.csv -->
+<!-- fiche: sources-base-construction | questions: how do I update the securities database ; how does construire_base_titres.py work ; does the database update itself ; construire_base.bat ; update prices offline ; how long does it take to build the database ; what does cumulative database mean ; what is echecs.csv ; update the ETF list ; official euronext xetra lists ; mettre_a_jour_titres ; recognise more ETFs | mots: building, update, construire_base_titres.py, construire_base.bat, --mise-a-jour, cumulative database, Wikipedia, batches, resume, echecs.csv -->
+
+### Official lists of securities (Euronext, Xetra)
+
+To recognise **thousands of ETFs and shares** offline, run the update of the official lists once (then from time to time), with Internet:
+
+- installed application on Windows: Start menu → **Portfolio Tracker → Mettre à jour la base des titres**;
+- from the source code: double-click `mettre_a_jour_titres.bat`, or `python mettre_a_jour_titres.py` in the terminal (Mac included).
+
+In one to a few minutes the script downloads the free lists of **Euronext** (ETFs and shares in Paris, Amsterdam, Brussels, Lisbon, Milan, Dublin, Oslo) and **Deutsche Börse Xetra** ("All tradable instruments": ETFs, ETCs and shares). Each security becomes a record in the local database: Yahoo Finance ticker, full official name, ISIN, currency; for an ETF, the index tracked, the region and PEA eligibility through a swap. Existing records are completed, never erased. A report is written to `data/base/mise_a_jour_titres.txt`: if a source no longer responds (the site changed its address), send it to the creator of the software.
 
 ### The full build
 
@@ -335,24 +346,25 @@ The performance of a foreign security combines the change in its price and that 
 - Offline, for an uncommon venue, the currency deduced from the code may be wrong (the euro is used by default).
 
 ## ETF composition: where does the look-through analysis come from?
-<!-- fiche: sources-composition-etf | questions: how does the software know the composition of my ETF ; is the country breakdown of my ETF accurate ; where do the msci world percentages come from ; is the look-through analysis reliable ; date of the ETF composition data ; my ETF is classed as unclassified ; why 73% united states in my world ETF | mots: look-through, transparency, composition, ETF, MSCI World, country breakdown, sectors, approximation, MSCI factsheets -->
+<!-- fiche: sources-composition-etf | questions: how does the software know the composition of my ETF ; is the country breakdown of my ETF accurate ; where do the msci world percentages come from ; is the look-through analysis reliable ; date of the ETF composition data ; my ETF is classed as unclassified ; why 73% united states in my world ETF ; my asia ETF is not recognised ; my ETF is classed as french ; which ETFs are recognised ; abbreviated label of my ETF ; asia pacific ex japan ETF | mots: look-through, transparency, composition, ETF, MSCI World, country breakdown, sectors, approximation, MSCI factsheets -->
 
 The Exposures tab "breaks down" each ETF according to the composition of the index it tracks. These compositions **are not downloaded**: they are written into the software.
 
 ### The sources and their dates
 
 - **MSCI World, MSCI ACWI, MSCI Emerging Markets, MSCI Europe**: the top 5 countries and the sectors come from the MSCI factsheets as of **30/09/2026**. The following countries are usual orders of magnitude, scaled to the factsheet's "other countries" total.
-- **S&P 500, Nasdaq-100, Euro Stoxx 50, CAC 40, DAX, Russell 2000**, government and corporate bonds: 2025-2026 orders of magnitude, based on ETF issuers' factsheets.
+- **About fifty other indices**: S&P 500 (and its equal-weight version), Nasdaq-100, Russell 2000, MSCI USA, MSCI World Small Cap, MSCI EMU, Europe ex UK, Europe small caps, Euro Stoxx 50, CAC 40, French small and mid caps (PEA-PME), DAX, MDAX, FTSE 100, Switzerland, Japan (MSCI Japan, Topix, Nikkei), Pacific, Pacific ex Japan, **Asia Pacific ex Japan**, Asia ex Japan, emerging Asia, Latin America, emerging markets ex China, China, India, Korea, Taiwan, Brazil, Canada, Australia, Italy, Spain, Netherlands; on the bond side: euro area government and corporate bonds, euro high yield, euro inflation-linked bonds, euro aggregate, global aggregate, global government bonds, global and US corporate bonds, US Treasuries, emerging markets in dollars and in local currencies. 2025-2026 orders of magnitude, based on index providers' and ETF issuers' factsheets.
 
 The MSCI World thus has 72.94% in the United States: a €10,000 MSCI World ETF is counted as about €7,300 of US equities. The screen reminds you: "approximation as of 30/09/2026".
 
 ### How an ETF is linked to an index
 
-1. through a table of 58 ETF tickers (CW8.PA and IWDA.AS for the MSCI World, ESE.PA for the S&P 500…);
-2. otherwise, through words in the name: "All-World" or "ACWI", "Emerging", "World", "S&P 500", "Stoxx Europe 600"…;
-3. a name containing "Hedged" or "couvert" is considered hedged against currency risk.
+1. through a table of about a hundred widely held ETF tickers (CW8.PA and IWDA.AS for the MSCI World, ESE.PA for the S&P 500…);
+2. otherwise, through the **name**, from the most specific to the most general ("Asia Pacific ex Japan" before "Japan", "World Small Cap" before "World"). The **abbreviated labels of contract notes** are expanded first: "AM P AP M AC AP EX JAP ETF-C" becomes "Amundi PEA … MSCI All Country Asia Pacific ex Japan" (AM = Amundi, P = PEA, M = MSCI, AC = All Country, AP = Asia Pacific, EX JAP = ex Japan, EM = emerging, WLD = World, SP = S&P…);
+3. otherwise, with Internet, through the **full name and the Morningstar category** given by Yahoo Finance ("Asia-Pacific ex-Japan Equity", "Japan Large-Cap Equity"…), kept in memory;
+4. a name containing "Hedged" or "couvert" is considered hedged against currency risk.
 
-A fund that matches nothing stays "Unclassified".
+The ETF's region is derived from its index ("Asia-Pacific" for a multi-country Asian index, "Japan", "Emerging"…). An ETF listed in Paris is never counted as a French share: its exposure is that of its index. A fund that matches nothing stays "World (ETF)" or "Unclassified".
 
 ### Approximations to be aware of
 
@@ -366,7 +378,7 @@ A fund that matches nothing stays "Unclassified".
 Performance attribution uses the regional weights of the MSCI ACWI IMI as of 30/06/2026, also written into the software.
 
 ## How each security is classified (country, sector, asset class)
-<!-- fiche: sources-classification | questions: where do the country and sector of my securities come from ; my share is unclassified ; what is referentiel.csv ; my security is classed in the wrong country ; why is my bond counted as an equity ; where is the duration of bond funds ; add a security to the reference file ; default asset class | mots: classification, reference file, referentiel.csv, country, region, sector, asset class, duration, Unclassified, GICS -->
+<!-- fiche: sources-classification | questions: where do the country and sector of my securities come from ; my share is unclassified ; what is referentiel.csv ; my security is classed in the wrong country ; why is my bond counted as an equity ; where is the duration of bond funds ; add a security to the reference file ; default asset class ; why is my PEA exposed to the united states ; my PEA has more US than European shares ; what is a synthetic swap ETF ; PEA swap ETF ; my PEA is mostly in asia is that normal | mots: classification, reference file, referentiel.csv, country, region, sector, asset class, duration, Unclassified, GICS -->
 
 ### Two sources, in this order
 
@@ -400,7 +412,9 @@ To reduce « Non classé » (unclassified), each security goes through these ste
 
 ### PEA-eligible ETFs through a « swap »
 
-An ETF such as « Amundi PEA S&P 500 » legally holds a basket of European shares (which makes it PEA-eligible) and exchanges its performance, through a swap contract, for that of the S&P 500. The software therefore classifies it by the **index tracked** (United States), not by the basket held, and counts it **PEA-eligible** (known ETFs, or « PEA » in the name). An ETF listed in Paris on a non-European index without « PEA » in its name is not counted eligible.
+An ETF such as « Amundi PEA S&P 500 » legally holds a basket of European shares (which makes it PEA-eligible) and exchanges its performance, through a swap contract, for that of the S&P 500. The software therefore classifies it by the **index tracked** (United States), not by the basket held, and counts it **PEA-eligible** (known ETFs, « PEA » in the name, or « P » in an abbreviated contract-note label such as « AM P … »). An ETF listed in Paris on a non-European index without « PEA » in its name is not counted eligible.
+
+A normal consequence: a PEA made of these ETFs can be **more exposed to the United States or Asia than to Europe**. This is neither an error nor a compliance problem: the [[Exposures]] tab says so in a note as soon as a swap ETF is held. The specific risk of these funds is the swap counterparty, capped at 10% of the fund's assets by European rules (UCITS).
 
 ## Benchmark indices and composite indices
 <!-- fiche: sources-indices | questions: which benchmark indices are offered ; how is the 60 40 blended index calculated ; does the benchmark include dividends ; why compare with an ETF rather than the index ; composite index rebalanced every month ; how do I change the benchmark ; the cac 40 excludes dividends ; where does the index history come from | mots: benchmark, benchmark index, composite, blended, 60/40, monthly rebalancing, MSCI World, CAC 40, €STR, dividends reinvested -->

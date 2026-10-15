@@ -714,7 +714,7 @@ The summary says "PDF trade confirmation read from its content (quantity × pric
 The transaction is kept automatically only if the ISIN, the date, a consistent trio of numbers and the direction are all found (the direction may also come from a quantity preceded by + or −). No reader can guarantee to understand 100% of existing documents: if one of these elements is missing, the software still tries a learned model (see the fiche "The software learns your trade confirmations"), then the [[Complete the transaction]] form takes over with the values found (see the next fiche).
 
 ## A transaction statement with one transaction per line (e.g. Interactive Brokers)
-<!-- fiche: import-releve-une-ligne-par-operation | questions: is my interactive brokers statement read ; trade confirmation report with several transactions ; my statement has no isin only symbols ; the pdf contains all my transactions of the year ; ibkr pdf import ; statement printed in dark mode ; my pdf has a black background ; several buys and sells in one pdf | mots: transaction statement, Interactive Brokers, IBKR, Trade Confirmation Report, symbol, one transaction per line, dark mode, black background, pdf_lignes -->
+<!-- fiche: import-releve-une-ligne-par-operation | questions: is my interactive brokers statement read ; trade confirmation report with several transactions ; my statement has no isin only symbols ; the pdf contains all my transactions of the year ; ibkr pdf import ; statement printed in dark mode ; my pdf has a black background ; several buys and sells in one pdf ; interactive brokers csv statement ; ibkr activity statement ; my ibkr export has several tables ; ibkr currency exchange trades ; ESEd symbol | mots: transaction statement, Interactive Brokers, IBKR, Trade Confirmation Report, symbol, one transaction per line, dark mode, black background, pdf_lignes -->
 
 Some brokers produce a statement where **each line holds a complete transaction**: a code (ISIN or a plain ticker symbol such as "ESE", "PAEJ", "RMS"), the date, the direction (buy, sell), then the quantity, price, amount and commission. This is the case of Interactive Brokers' "Trade Confirmation Report".
 
@@ -726,6 +726,16 @@ Some brokers produce a statement where **each line holds a complete transaction*
 - A sale is recognised by the word SELL / vente, or by the "−" sign of the quantity.
 - A symbol followed by a lowercase letter added by the broker ("LYSXd") is reduced to the symbol ("LYSX"). « ESEEd », Interactive Brokers' symbol for the BNP Paribas Easy S&P 500 listed in Paris, often read « ESEED » by character recognition, is brought back to « ESE » (ESE.PA). The security is then identified by its prices (the exchange whose prices match those of the statement), or by the search engine.
 - The statement is used only if **all** its transaction lines are consistent; otherwise the "Complete the transaction" form takes over.
+
+### Interactive Brokers CSV activity statement
+
+The activity statement downloaded as **CSV** from the Interactive Brokers client portal contains several tables in one file (Trades, Dividends, Withholding Tax, Financial Instrument Information…). The software recognises it and extracts:
+
+- **purchases and sales** of shares and ETFs, with their ISIN ("Financial Instrument Information" table) or, failing that, the symbol and the listing exchange ("ESEd" on SBF → ESE.PA);
+- **gross dividends**, with the **withholding tax** of the same security on the same day as fees; a corrected dividend (payment, reversal, new payment) is counted only once;
+- **ignored** lines are listed in the import summary: **currency exchange** trades ("EUR.USD"), **cancelled** orders (code "Ca"), options, futures, CFDs, subtotals and totals.
+
+Symbols written the broker's way are also understood in other files: "ESEd", "BRK B" (share class), "ESE SBF" or "SAP@IBIS" (symbol + Interactive Brokers or DEGIRO exchange code: SBF = Paris, IBIS = Xetra, AEB = Amsterdam, LSEETF = London, XET, EAM, MIL…), "ESE:xpar" (Saxo).
 
 ### Statement printed in "dark mode"
 
@@ -1315,6 +1325,9 @@ With no transaction of the security before the effective date, the box says ther
 Some reverse splits are missing from Yahoo Finance's split data, or Yahoo has not even adjusted its history. Real example: 2,000 ORPEA shares bought at €0.0145 in December 2023, then a 1,000-for-1 reverse split. Without correction, the software valued 2,000 shares at today's price (about €12), nearly €24,000 instead of 2 shares.
 
 - **Split deduced from prices**: if the price of your transactions is a round factor (at least ×5 or ÷5: 10, 1,000, 1/1,000…) times the day's adjusted price, and later transactions match the price, the « Stock split or reverse split detected » box suggests it (« Reverse split found from the prices (exact date unknown): 1,000 old → 1 new »), even offline.
+- **Known reverse splits, applied automatically**: a few certain reverse splits on the Paris stock exchange are built into the software — ORPEA, now emeis (1,000 old shares for 1 new share on 22/03/2024), Casino (100 for 1 on 14/06/2024), Atos (10,000 for 1 on 24/04/2025). Purchases and sales before the date, still in the old units, are brought into the new units for the calculations (2,000 ORPEA at €0.0145 → 2 at €14.50), whatever Yahoo's history, without a click and without changing your file; a note says so. A transaction already corrected is left alone, as are subscription rights (a different security).
+- **Factor not quite round**: Yahoo often also adjusts its prices for capital increases in the same period; for a factor of 100 or more, a 40% gap is therefore accepted (instead of 15%).
+- **Inconsistent value**: a holding worth more than 50 times its cost (and at least €500) is flagged at the top of the [[Overview]]: it is almost always a split or reverse split not applied, not a real rise. This check applies to every company.
 - **History not adjusted by Yahoo**: a price that jumps by a round factor of at least ×10 from one day to the next, and stays there, is an unadjusted reverse split; earlier prices are brought into the new units for the calculations, and a note says so. A 90% fall is never « corrected »: it may be real.
 
 ## Spin-off or free allotment: a security without a purchase price

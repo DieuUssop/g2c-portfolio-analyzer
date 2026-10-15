@@ -23,7 +23,7 @@ Les principaux résultats de ces deux onglets figurent aussi dans le rapport PDF
 Comme le rappelle le pied de page, l'outil est pédagogique et ne constitue pas un conseil en investissement.
 
 ## Quels taux d'imposition le logiciel utilise-t-il (2026) ?
-<!-- fiche: conseil-taux-2026 | questions: quel taux de flat tax en 2026 ; pourquoi 31,4 % et pas 30 % ; les prélèvements sociaux ont augmenté ; taux d'imposition utilisés par le logiciel ; pfu 2026 ; pourquoi l'assurance vie est à 17,2 % ; quels sont les taux de la fiscalité dans le logiciel ; la csg a augmenté en 2026 | mots: flat tax, PFU, prélèvement forfaitaire unique, prélèvements sociaux, CSG, taux 2026, hausse de la CSG, impôt sur le revenu, loi de financement de la sécurité sociale 2026 | aller: Conseil patrimonial/Fiscalité -->
+<!-- fiche: conseil-taux-2026 | questions: quel taux de flat tax en 2026 ; pourquoi 31,4 % et pas 30 % ; les prélèvements sociaux ont augmenté ; taux d'imposition utilisés par le logiciel ; pfu 2026 ; pourquoi l'assurance vie est à 17,2 % ; quels sont les taux de la fiscalité dans le logiciel ; la csg a augmenté en 2026 ; et si la fiscalité change ; comment modifier le taux de la flat tax ; les taux sont-ils mis à jour automatiquement ; changer les prélèvements sociaux ; simuler un autre taux d'imposition | mots: flat tax, PFU, prélèvement forfaitaire unique, prélèvements sociaux, CSG, taux 2026, hausse de la CSG, impôt sur le revenu, loi de financement de la sécurité sociale 2026 | aller: Conseil patrimonial/Fiscalité -->
 
 Le logiciel applique les règles d'un **particulier résident fiscal en France, en 2026**. La source citée dans le code est la loi n° 2025-1403 du 30 décembre 2025 de financement de la sécurité sociale pour 2026, qui a relevé la CSG sur les revenus du capital.
 
@@ -41,6 +41,14 @@ Le logiciel applique les règles d'un **particulier résident fiscal en France, 
 Avant 2026, la flat tax valait 30 % (12,8 % + 17,2 %). La hausse de la CSG porte les prélèvements sociaux à 18,6 % et la flat tax à **31,4 %**. L'assurance-vie reste à 17,2 % de prélèvements sociaux : avant 8 ans, elle est donc taxée à 30 % au total, soit un peu moins que le compte-titres.
 
 Le sous-titre du cadre « Hypothèses » de l'onglet rappelle « taux 2026 », et une note en bas de l'encadré « Éligibilité au PEA » récapitule ces taux.
+
+### Si la loi change : taux affichés et modifiables
+
+Les taux ne sont **pas lus sur Internet** : ils sont inscrits dans le logiciel et changent avec une nouvelle version. Pour que ce soit transparent :
+
+- sous « Hypothèses », une ligne rappelle les taux utilisés, leur date d'entrée en vigueur (1er janvier 2026) et leur source ;
+- si votre version de l'application a **plus d'un an**, un avertissement indique que les taux ont peut-être changé (vérifiez-les sur impots.gouv.fr ou installez la dernière version) ;
+- le repli **« Modifier les taux d'imposition »** permet de saisir vous-même l'impôt sur le revenu, les prélèvements sociaux (CTO / PEA et assurance-vie), l'impôt de l'assurance-vie après 8 ans et les abattements : pour une simulation, ou si la loi change avant la prochaine version. Tous les calculs (sortie aujourd'hui, gain net selon l'année de sortie, rapport PDF) les reprennent, avec la mention **« taux personnalisés »** ; le bouton « Revenir aux taux légaux » rétablit les valeurs de la loi. Connecté, vos taux sont gardés dans votre compte.
 
 ### Ce qui n'est pas modélisé
 
