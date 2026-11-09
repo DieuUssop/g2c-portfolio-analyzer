@@ -97,9 +97,21 @@ MOTS_TYPES = {
               "verkauf", "venta", "vendita", "verkoop", "reprise sicav", "reprise fcp", "reprise f.c.p", "reprise opc"],
     "DIVIDENDE": ["dividende", "dividend", "coupon", "distribution", "detachement", "revenu",
                   "ausschuttung", "dividendo"],
+    # Mouvements d'espèces du compte (pas des titres) : versements, retraits, frais de compte
+    "VERSEMENT": ["versement", "depot", "apport", "alimentation", "virement recu", "virement entrant",
+              "virement en votre faveur", "remise de cheque", "deposit", "cash in", "einzahlung", "ingreso",
+              "versamento", "storting"],
+    "RETRAIT": ["retrait", "virement emis", "virement sortant", "virement en faveur de", "withdrawal",
+                "cash out", "auszahlung", "retirada", "prelievo", "opname"],
+    "FRAIS": ["frais", "droits de garde", "droit de garde", "tenue de compte", "cotisation", "abonnement",
+              "custody", "account fee", "other fee", "fees", "gebuhr", "depotgebuhr", "comision", "commissione"],
+    "VIREMENT": ["virement", "transfert d'especes", "transfert especes", "cash transfer", "uberweisung",
+                 "transferencia", "bonifico"],
 }
 IGNORER = "IGNORER"
-TYPES_POSSIBLES = ["ACHAT", "VENTE", "DIVIDENDE", IGNORER]
+TYPES_ESPECES = ["VERSEMENT", "RETRAIT", "FRAIS"]
+TICKER_ESPECES = "ESPECES"
+TYPES_POSSIBLES = ["ACHAT", "VENTE", "DIVIDENDE"] + TYPES_ESPECES + [IGNORER]
 
 MOTIF_ISIN = re.compile(r"^[A-Z]{2}[A-Z0-9]{9}[0-9]$")
 MOTIF_TICKER = re.compile(r"^[A-Z0-9^][A-Z0-9\-=&]{0,11}(\.[A-Z]{1,3})?$")
@@ -728,9 +740,12 @@ def _grille_pdf(brut):
                 lignes = _par_le_contenu(textes) or _par_un_modele(textes)
             if lignes:
                 break
+        especes = lecture_pdf.lire_mouvements_especes([{"texte": t} for t in textes]) if "textes" in dir() else []
         if not lignes:
+            if especes:
+                return [COLONNES_AVIS] + lecture_pdf.especes_en_lignes_avis(especes), "pdf_especes"
             raise PdfIllisible(MESSAGE_SCAN_OCR)
-        return [COLONNES_AVIS] + lignes, "pdf_ocr"
+        return [COLONNES_AVIS] + lignes + lecture_pdf.especes_en_lignes_avis(especes), "pdf_ocr"
     return _lire_pages_texte(pages, texte_total)
 
 
@@ -758,6 +773,30 @@ def _tableau_fidele(tableau, texte_page, seuil=0.15):
 
 
 def _lire_pages_texte(pages, texte_total):
+    """Lectures d'un PDF texte : les opérations sur titres (_lire_pages_titres), puis les mouvements
+    d'espèces (versements, retraits, frais : lecture_pdf.lire_mouvements_especes), ajoutés aux lignes lues
+    ou lus seuls quand le document ne contient aucune opération sur titres."""
+    from . import lecture_pdf as _lp
+    especes = _lp.lire_mouvements_especes(pages)
+    try:
+        grille, source = _lire_pages_titres(pages, texte_total)
+    except PdfNonReconnu:
+        if especes:
+            return [COLONNES_AVIS] + _lp.especes_en_lignes_avis(especes), "pdf_especes"
+        raise
+    if especes and source == "pdf_tableau":
+        # le tableau trouvé est le relevé d'espèces lui-même (Date | Désignation | Débit | Crédit, sans
+        # quantité ni ISIN) : ses lignes sont les mouvements d'espèces déjà lus
+        entete = " ".join(normaliser(c) for l in grille[:3] for c in l)
+        if re.search(r"debit|credit|montant", entete) and not re.search(r"quantit|isin|cours|nombre", entete):
+            return [COLONNES_AVIS] + _lp.especes_en_lignes_avis(especes), "pdf_especes"
+    if especes and grille and grille[0] == COLONNES_AVIS:
+        deja = {(l[0], l[1], l[8]) for l in grille[1:]}
+        grille = grille + [l for l in _lp.especes_en_lignes_avis(especes) if (l[0], l[1], l[8]) not in deja]
+    return grille, source
+
+
+def _lire_pages_titres(pages, texte_total):
     """Les lectures successives d'un PDF texte (voir _grille_pdf)."""
     # 0. Relevé de portefeuille (positions et prix de revient) : un portefeuille de départ
     from . import lecture_pdf as _lp
@@ -1227,7 +1266,8 @@ def confiance(tableau, correspondance):
 
 
 def classer_type(valeur):
-    """'Achat Comptant' -> ACHAT, 'Coupons/Dividende' -> DIVIDENDE, 'Frais de garde' -> IGNORER."""
+    """'Achat Comptant' -> ACHAT, 'Coupons/Dividende' -> DIVIDENDE, 'Versement' -> VERSEMENT,
+    'Frais de garde' -> FRAIS, 'Virement' -> VIREMENT (sens d'après le signe du montant), sinon IGNORER."""
     texte = normaliser(valeur)
     for type_, mots in MOTS_TYPES.items():
         if any(re.search(rf"\b{mot}", texte) for mot in mots):
@@ -1298,6 +1338,24 @@ def appliquer_correspondance(tableau, correspondance, types=None, identifiants=N
         if montant is not None:
             df.loc[(quantite.fillna(0) == 0) & (montant.abs() > 0), "type"] = "DIVIDENDE"
 
+    # Mouvements d'espèces : « Virement » sans sens -> versement (montant positif) ou retrait (négatif)
+    signe = montant if montant is not None else (prix if prix is not None else pd.Series(0.0, index=df.index))
+    df.loc[df["type"] == "VIREMENT", "type"] = ["VERSEMENT" if s >= 0 else "RETRAIT"
+                                                 for s in signe[df["type"] == "VIREMENT"].fillna(0.0)]
+    sans_titre = identifiant.str.lower().isin(["", "nan", "none", "-", TICKER_ESPECES.lower(), "cash", "eur"])
+    if not correspondance.get("type"):
+        # sans colonne « type » : une ligne sans titre avec un montant est un versement (+) ou un retrait (−)
+        sans_qte = quantite.fillna(0) == 0
+        df.loc[sans_titre & sans_qte & (signe.fillna(0) > 0), "type"] = "VERSEMENT"
+        df.loc[sans_titre & sans_qte & (signe.fillna(0) < 0), "type"] = "RETRAIT"
+    else:
+        # « Versement » ou « Retrait » d'un TITRE (assurance-vie : versement investi en unités de compte, retrait
+        # obligatoire d'une action…) : c'est un achat ou une vente de titres, pas un mouvement d'espèces
+        avec_titre = ~sans_titre & (quantite.fillna(0).abs() > 0)
+        df.loc[avec_titre & (df["type"] == "VERSEMENT"), "type"] = "ACHAT"
+        df.loc[avec_titre & (df["type"] == "RETRAIT"), "type"] = "VENTE"
+    est_especes = df["type"].isin(TYPES_ESPECES)
+
     q = quantite.abs().fillna(0.0)
     m = montant.abs() if montant is not None else None
     f = frais if isinstance(frais, pd.Series) else pd.Series(frais, index=df.index)
@@ -1323,6 +1381,26 @@ def appliquer_correspondance(tableau, correspondance, types=None, identifiants=N
     p = p.where(~est_div, total_div)
     q = q.where(~est_div, 0.0)
 
+    # Espèces : montant dans la colonne prix, quantité 0, pas de frais (pour des FRAIS de compte, le montant
+    # est parfois seulement dans la colonne « frais »)
+    if est_especes.any():
+        f_brut = f.copy()
+        total_esp = (m if m is not None else pd.Series(float("nan"), index=df.index))
+        total_esp = total_esp.where(total_esp.notna() & (total_esp > 0), p * q.where(q > 0, 1))
+        total_esp = total_esp.where(total_esp.notna() & (total_esp > 0), f_brut.where(f_brut > 0))
+        p = p.where(~est_especes, total_esp)
+        q = q.where(~est_especes, 0.0)
+        f = f.where(~est_especes, 0.0)
+        df.loc[est_especes, "ticker"] = TICKER_ESPECES
+        # libellé : la désignation du fichier, sinon le type écrit (« Droits de garde »), sinon le type
+        par_defaut = df["type"].map({"VERSEMENT": "Versement", "RETRAIT": "Retrait", "FRAIS": "Frais"})
+        ecrit = col("type").astype(str).str.strip() if correspondance.get("type") else par_defaut
+        ecrit = ecrit.where(~ecrit.str.upper().isin(TYPES_ESPECES + ["", "NAN", "NONE"]), par_defaut)
+        nom_fichier = (col("nom").astype(str).str.strip() if correspondance.get("nom")
+                       else pd.Series("", index=df.index))
+        vide = nom_fichier.str.upper().isin(["", "NAN", "NONE", "-"])
+        df.loc[est_especes, "nom"] = nom_fichier.where(~vide, ecrit)[est_especes]
+
     df["quantite"], df["prix"], df["frais"] = q, p, f
 
     # Lignes qui ne sont pas des opérations (total, note, commentaire sous le tableau) :
@@ -1334,7 +1412,7 @@ def appliquer_correspondance(tableau, correspondance, types=None, identifiants=N
     controles = [
         (lambda d: d["date"].isna(), "date illisible"),
         (lambda d: d["prix"].isna(), "prix ou montant manquant"),
-        (lambda d: (d["quantite"] <= 0) & (d["type"] != "DIVIDENDE"), "quantité nulle"),
+        (lambda d: (d["quantite"] <= 0) & ~d["type"].isin(["DIVIDENDE"] + TYPES_ESPECES), "quantité nulle"),
         (lambda d: d["ticker"].isin(["", "NAN", "NONE"]), "titre manquant"),
     ]
     for controle, message in controles:
@@ -1440,7 +1518,12 @@ def resoudre_identifiants(valeurs, noms=None, tickers_connus=(), chercher=None, 
         if noms and identifiant in noms and valeur not in noms:
             noms = {**noms, valeur: noms[identifiant]}
         nature = nature_identifiant(valeur, tickers_connus)
-        ticker, nom, statut = valeur.upper(), (noms or {}).get(valeur, ""), "tel quel"
+        nom = (noms or {}).get(valeur, "")
+        # un « libellé » qui n'est que le code lui-même (avis d'opéré sans désignation : le libellé vaut
+        # l'ISIN) n'est pas un nom : le nom trouvé dans la base ou chez Yahoo le remplace
+        if str(nom).strip().upper() in (valeur.upper(), identifiant.upper()) or MOTIF_ISIN.match(str(nom).strip().upper()):
+            nom = ""
+        ticker, statut = valeur.upper(), "tel quel"
         if nature == "global":
             ticker, statut = convertir_code_global(valeur), "converti"
         elif nature != "ticker":
@@ -1576,6 +1659,38 @@ def reconnaitre_par_les_prix(transactions, codes, tickers_connus=(), chercher=No
 # ======================================================================
 # Lecture directe (fichier déjà au format du projet, ou presque)
 # ======================================================================
+def tickers_depuis_isin(transactions, chercher=None):
+    """Fichier au format du projet dont la colonne « ticker » contient des codes ISIN (« FR0011550185 ») :
+    chaque ISIN devient le ticker Yahoo Finance du titre (« ESE.PA »), trouvé dans la base locale (tables
+    d'ISIN intégrées, base des titres, mémoire), sinon par la recherche de Yahoo Finance (avec Internet).
+    Sans cela, le titre n'est pas reconnu : nom affiché = ISIN, région et secteur devinés. Un ISIN introuvable
+    reste tel quel (Yahoo Finance donne parfois quand même son cours). Le nom vide ou égal au code est
+    remplacé par le nom trouvé."""
+    codes = sorted({tk for tk in transactions["ticker"].astype(str) if MOTIF_ISIN.match(tk.strip().upper())})
+    if not codes:
+        return transactions
+    try:
+        resolution = resoudre_identifiants(codes, chercher=chercher)
+    except Exception:
+        return transactions
+    trouves = {r["identifiant"]: (r["ticker"], r["nom"]) for _, r in resolution.iterrows()
+               if r["statut"] != "introuvable" and r["ticker"]}
+    if not trouves:
+        return transactions
+    t = transactions.copy()
+    anciens = t["ticker"].astype(str).str.strip().str.upper()
+    t["nom"] = [trouves[a][1] if a in trouves and trouves[a][1] and _est_un_code(n, a) else n
+                for a, n in zip(anciens, t["nom"])]
+    t["ticker"] = [trouves[a][0] if a in trouves else tk for a, tk in zip(anciens, t["ticker"])]
+    return t
+
+
+def _est_un_code(nom, ticker):
+    """Vrai si le « nom » d'un titre n'est en fait qu'un code : vide, ISIN ou le ticker lui-même."""
+    texte = str(nom or "").strip().upper()
+    return not texte or texte in ("NAN", "NONE") or bool(MOTIF_ISIN.match(texte)) or texte == str(ticker).upper()
+
+
 def lire_directement(brut):
     """Essaie de lire le fichier sans aide : renvoie les transactions standard, ou
     lève ValueError si une colonne obligatoire n'est pas reconnue.
@@ -1591,6 +1706,7 @@ def lire_directement(brut):
             "(un modèle est téléchargeable dans la barre latérale du tableau de bord)."
         )
     transactions, rapport = appliquer_correspondance(tableau, correspondance, montant_inclut_frais=True)
+    transactions = tickers_depuis_isin(transactions)
     if rapport["erreurs"] or rapport["ignorees"]:
         raise ValueError("Certaines lignes n'ont pas pu être lues : "
                          + " ; ".join(message_erreur(e) for e in rapport["erreurs"])
@@ -1637,6 +1753,8 @@ def harmoniser_devises(transactions, info_devises, historique, mode="auto"):
     for ticker, lignes in t.groupby("ticker"):
         devise, facteur = info_devises.get(ticker, ("EUR", 1.0))
         change = f"EUR{devise}=X"
+        if ticker == TICKER_ESPECES:                     # versements, retraits, frais : en euros
+            continue
         echanges = lignes[lignes["type"].isin(["ACHAT", "VENTE"])]
         cours = historique[ticker] if historique is not None and ticker in historique.columns else None
         taux_serie = historique[change] if historique is not None and change in historique.columns else None
@@ -1712,7 +1830,7 @@ def donnees_de_marche(transactions, chemin_cache=None):
 
     from .devises import detecter_devises, devises_etrangeres, ticker_change
     from .market_data import obtenir_historique
-    tickers = sorted(transactions["ticker"].unique())
+    tickers = sorted(tk for tk in transactions["ticker"].unique() if tk != TICKER_ESPECES)
     info = detecter_devises(tickers)
     changes = [ticker_change(d) for d in devises_etrangeres(info)]
     debut = (transactions["date"].min() - pd.Timedelta(days=10)).strftime("%Y-%m-%d")
@@ -1757,7 +1875,8 @@ def importer_automatiquement(brut, chercher=None, marche=donnees_de_marche):
 
     # Codes ISIN et noms -> tickers
     colonne_id = correspondance["identifiant"]
-    identifiants = [v for v in tableau[colonne_id].astype(str).str.strip().unique() if v and v != "nan"]
+    identifiants = [v for v in tableau[colonne_id].astype(str).str.strip().unique()
+                    if v and v != "nan" and v.upper() not in (TICKER_ESPECES, "CASH", "-")]
     noms = {}
     if correspondance.get("nom"):
         for v, n in zip(tableau[colonne_id].astype(str).str.strip(), tableau[correspondance["nom"]].astype(str)):
@@ -1802,8 +1921,12 @@ def importer_automatiquement(brut, chercher=None, marche=donnees_de_marche):
         return {"sur": False, "transactions": None, "resume": resume,
                 "raison": " ; ".join(message_erreur(e) for e in rapport["erreurs"]) or "Aucune transaction lue."}
     # Noms officiels (Yahoo Finance) à la place des libellés abrégés des avis d'opéré (« AM.C.C.40 UC.ETF C »)
-    if (not correspondance.get("nom") or resume.get("source_pdf") in ("pdf_avis", "pdf_ocr", "pdf_contenu", "pdf_modele", "pdf_lignes")) and noms_trouves:
-        transactions["nom"] = [noms_trouves.get(tk, n) for tk, n in zip(transactions["ticker"], transactions["nom"])]
+    # (et dans tous les cas, un « nom » qui n'est que le code ISIN ou le ticker)
+    if noms_trouves:
+        tout_remplacer = not correspondance.get("nom") or resume.get("source_pdf") in (
+            "pdf_avis", "pdf_ocr", "pdf_contenu", "pdf_modele", "pdf_lignes")
+        transactions["nom"] = [noms_trouves.get(tk, n) if tout_remplacer or _est_un_code(n, tk) else n
+                               for tk, n in zip(transactions["ticker"], transactions["nom"])]
     resume["ignorees"] = rapport["ignorees"]
 
     # Devises : vérification avec les cours du marché (si Internet est disponible)

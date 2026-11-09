@@ -40,11 +40,13 @@ def test_releve_de_courtier_converti():
     tableau, _ = imp.lire_tableau_brut(RELEVE.encode("cp1252"))
     c = imp.proposer_correspondance(tableau.columns)
     df, rapport = imp.appliquer_correspondance(tableau, c, identifiants={"FR0000121014": "MC.PA"})
-    assert rapport["ignorees"] == 1                              # la ligne de frais de garde
-    assert list(df["type"]) == ["ACHAT", "DIVIDENDE", "VENTE"]
-    assert list(df["ticker"]) == ["MC.PA"] * 3
-    assert list(df["quantite"]) == [3, 0, 1]                     # vente : quantité rendue positive
-    assert list(df["prix"]) == pytest.approx([780.0, 39.0, 700.0])   # dividende : montant total
+    assert rapport["ignorees"] == 0
+    # la ligne « Frais de garde » est gardée : frais de compte payés en espèces (sans titre)
+    assert list(df["type"]) == ["ACHAT", "DIVIDENDE", "FRAIS", "VENTE"]
+    assert list(df["ticker"]) == ["MC.PA", "MC.PA", "ESPECES", "MC.PA"]
+    assert list(df["quantite"]) == [3, 0, 0, 1]                  # vente : quantité rendue positive
+    assert list(df["prix"]) == pytest.approx([780.0, 39.0, 5.0, 700.0])   # dividende, frais : montant total
+    assert df.loc[df["type"] == "FRAIS", "nom"].iloc[0] == "Frais de garde"
 
 
 def test_prix_deduit_du_montant_net():
@@ -53,7 +55,7 @@ def test_prix_deduit_du_montant_net():
     tableau, _ = imp.lire_tableau_brut(RELEVE.encode("cp1252"))
     c = imp.proposer_correspondance(tableau.drop(columns="Cours").columns)
     df, _ = imp.appliquer_correspondance(tableau.drop(columns="Cours"), c)
-    assert list(df["prix"]) == pytest.approx([780.0, 39.0, 700.0])
+    assert list(df["prix"]) == pytest.approx([780.0, 39.0, 5.0, 700.0])
 
 
 def test_sans_colonne_type_le_signe_decide():

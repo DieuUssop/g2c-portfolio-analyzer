@@ -1584,3 +1584,154 @@ def ticker_ibkr(symbole, instruments):
     if suffixe is not None and "." not in racine:
         return racine + suffixe
     return info["isin"] or symbole
+
+
+# ----------------------------------------------------------------------
+# 17. Mouvements d'espèces : versements, retraits, frais et prélèvements
+# ----------------------------------------------------------------------
+# Relevés et « avis d'opération » qui ne portent pas sur un titre (Bourse Direct, comme la plupart des
+# courtiers) : tableau « Date | Désignation | Débit (€) | Crédit (€) » :
+#     11/04/2025  INVESTISSEMENT ESPECES VRT DE 12345678           crédit 1 000,00   -> versement
+#     15/11/2024  REGULARISATION PEA VIRT 12345678        débit 200,00               -> retrait
+#     15/11/2024  REGULARISATION PEA CSG FG 9.2%          débit 2,11                 -> frais (prélèvements sociaux)
+#     18/11/2024  REGULARISATION PEA INT. RBT AMUNDI 202409       crédit 3,80        -> crédit d'espèces
+# Le sens vient de la colonne (débit / crédit) ; la nature (retrait ou frais) des mots de la désignation.
+# Les lignes qui parlent d'un titre (ISIN, achat, vente, dividende, coupon) ne sont pas lues ici : les
+# autres lectures s'en chargent.
+MOTS_OPERATION_TITRE = re.compile(r"[A-Z]{2}[A-Z0-9]{9}\d|\b(?:achat|vente|ach\.?|vte\.?|souscription|rachat|"
+                                  r"dividende|dividend|coupon|buy|sell|bought|sold)\b", re.IGNORECASE)
+MOTS_FRAIS_ESPECES = re.compile(
+    r"\b(?:csg|crds|nps|ps|prsoc|pr[ée]l[èe]v\w*|sociaux|frais|fg|droits?\s+de\s+garde|garde|commission|"
+    r"cotisation|tenue\s+de\s+compte|abonnement|taxe|imp[ôo]t|ifu|agios?|retenue|fee|fees|custody)\b",
+    re.IGNORECASE)
+MOTS_RETRAIT_ESPECES = re.compile(r"\b(?:virt|vrt|virement|retrait|transfert|withdrawal|cl[ôo]ture|remboursement\s+pea)\b",
+                                  re.IGNORECASE)
+MOTS_VERSEMENT_ESPECES = re.compile(r"\b(?:versement|investissement\s+esp[èe]ces|vrt\s+de|virement\s+(?:de|re[çc]u|"
+                                    r"entrant)|apport|alimentation|d[ée]p[ôo]t|deposit|remise)\b", re.IGNORECASE)
+MOTS_DEBIT = re.compile(r"d[ée]bit|debit|sortie|withdrawal|soll", re.IGNORECASE)
+MOTS_CREDIT = re.compile(r"cr[ée]dit|credit|entr[ée]e|haben", re.IGNORECASE)
+MOTS_LIGNE_A_IGNORER = re.compile(r"\b(?:solde|total|report|ancien\s+solde|nouveau\s+solde)\b", re.IGNORECASE)
+
+
+def nature_mouvement_especes(designation, sens):
+    """VERSEMENT, RETRAIT ou FRAIS d'après la désignation et le sens (« debit » / « credit »), ou None."""
+    texte = " ".join(str(designation or "").split())
+    if not texte or MOTS_OPERATION_TITRE.search(texte):
+        return None
+    if sens == "credit":
+        return "VERSEMENT"                      # versement, virement reçu, remboursement ou intérêts crédités
+    if MOTS_FRAIS_ESPECES.search(texte):
+        return "FRAIS"
+    if MOTS_RETRAIT_ESPECES.search(texte):
+        return "RETRAIT"
+    return "FRAIS"                          # autre débit d'espèces sans titre : frais (libellé gardé)
+
+
+def _montant_especes(cellule):
+    cellule = str(cellule or "").strip()
+    if not re.fullmatch(r"[+\-]?\s*\d[\d   .,']*", cellule):
+        return None
+    valeur = imp.convertir_nombres(pd.Series([cellule])).iloc[0]
+    return abs(float(valeur)) if valeur == valeur and valeur != 0 else None
+
+
+def _mouvements_du_tableau(tableau):
+    """Lignes d'un tableau « Date | Désignation | Débit | Crédit » (ou « Montant » signé)."""
+    operations = []
+    for h, entete in enumerate(tableau[:6]):
+        noms = [" ".join(str(c or "").split()) for c in entete]
+        c_date = next((j for j, c in enumerate(noms) if re.match(r"date", c, re.IGNORECASE)), None)
+        c_debit = next((j for j, c in enumerate(noms) if MOTS_DEBIT.search(c)), None)
+        c_credit = next((j for j, c in enumerate(noms) if MOTS_CREDIT.search(c)), None)
+        c_montant = next((j for j, c in enumerate(noms) if re.search(r"montant|amount|betrag", c, re.IGNORECASE)), None)
+        c_libelle = next((j for j, c in enumerate(noms) if re.search(r"d[ée]signation|libell[ée]|description|op[ée]ration|"
+                                                                     r"nature|motif", c, re.IGNORECASE)), None)
+        if c_date is not None and c_libelle is not None and ((c_debit is not None and c_credit is not None)
+                                                             or c_montant is not None):
+            break
+    else:
+        return []
+    if any(re.search(r"quantit|isin|cours|nombre", c, re.IGNORECASE) for c in noms):
+        return []                           # tableau d'opérations sur titres
+    for ligne in tableau[h + 1:]:
+        # cellules fusionnées (« 15/11/2024\n15/11/2024 », « 200,00\n2,11 ») : une ligne par retour à la ligne
+        morceaux = [str(c or "").split("\n") for c in ligne]
+        hauteur = max(len(m) for m in morceaux)
+        colonnes_pleines = [m if len(m) == hauteur else (m + [""] * (hauteur - len(m)) if len(m) > 1 else m * hauteur)
+                            for m in morceaux]
+        # une colonne Débit ou Crédit vide en entier : elle reste vide sur chaque sous-ligne
+        for j, m in enumerate(morceaux):
+            if len(m) == 1 and not m[0].strip():
+                colonnes_pleines[j] = [""] * hauteur
+        for k in range(hauteur):
+            cel = [colonnes_pleines[j][k] if j < len(colonnes_pleines) else "" for j in range(len(ligne))]
+            date = dates(cel[c_date])
+            libelle = " ".join(cel[c_libelle].split())
+            if not date or MOTS_LIGNE_A_IGNORER.search(libelle):
+                continue
+            if c_debit is not None and c_credit is not None:
+                debit, credit = _montant_especes(cel[c_debit]), _montant_especes(cel[c_credit])
+                if bool(debit) == bool(credit):
+                    continue
+                sens, montant = ("debit", debit) if debit else ("credit", credit)
+            else:
+                brut = str(cel[c_montant]).strip()
+                montant = _montant_especes(brut)
+                if not montant:
+                    continue
+                sens = "debit" if brut.startswith("-") or brut.endswith("-") else "credit"
+            nature = nature_mouvement_especes(libelle, sens)
+            if nature:
+                operations.append({"date": date[0][0], "sens": nature, "libelle": libelle[:80], "montant": montant})
+    return operations
+
+
+MOTIF_LIGNE_ESPECES = re.compile(r"^\s*(\d{1,2}[/.\-]\d{1,2}[/.\-]\d{2,4})\s+(.+?)\s+([+\-]?\d{1,3}(?:[   .]?\d{3})*,\d{2})"
+                                 r"\s*(-)?\s*(?:€|EUR)?\s*$")
+
+
+def lire_mouvements_especes(pages):
+    """Versements, retraits et frais d'un relevé d'espèces : [{"date", "sens" (VERSEMENT / RETRAIT / FRAIS),
+    "libelle", "montant"}]. pages : [{"texte", "tableaux_bruts"…}] (import_fichier._pages_pdf).
+    D'abord les tableaux Débit / Crédit (le sens est sûr) ; à défaut (texte lu par reconnaissance de
+    caractères, sans colonnes), les lignes « date  désignation  montant » dont la désignation dit
+    clairement la nature (versement, virement, frais, prélèvements)."""
+    operations = []
+    for p in pages:
+        for tableau in (p.get("tableaux_bruts") or []) + (p.get("tableaux") or []):
+            trouvees = _mouvements_du_tableau(tableau)
+            if trouvees:
+                operations += trouvees
+                break
+    if operations:
+        return operations
+    for p in pages:
+        for ligne in (p.get("texte") or "").split("\n"):
+            m = MOTIF_LIGNE_ESPECES.match(ligne)
+            if not m or MOTS_LIGNE_A_IGNORER.search(m.group(2)) or MOTS_OPERATION_TITRE.search(m.group(2)):
+                continue
+            libelle = " ".join(m.group(2).split())
+            if MOTS_VERSEMENT_ESPECES.search(libelle):
+                nature = "VERSEMENT"
+            elif MOTS_FRAIS_ESPECES.search(libelle):
+                nature = "FRAIS"
+            elif MOTS_RETRAIT_ESPECES.search(libelle):
+                nature = "RETRAIT"
+            else:
+                continue                    # sens inconnu sans colonne : pas de lecture au hasard
+            date = dates(m.group(1))
+            montant = _montant_especes(m.group(3))
+            if date and montant:
+                operations.append({"date": date[0][0], "sens": nature, "libelle": libelle[:80], "montant": montant})
+    return operations
+
+
+def _libelle_sans_numero(libelle):
+    """« VRT DE 12345678 » -> « VRT DE » : les numéros de compte ou de virement ne sont pas gardés."""
+    return " ".join(re.sub(r"\b[A-Z]{0,4}\d{6,}[A-Z0-9]*\b", " ", libelle).split()) or libelle
+
+
+def especes_en_lignes_avis(operations):
+    """Mouvements d'espèces -> lignes au format import_fichier.COLONNES_AVIS (sans ISIN ni quantité)."""
+    return [[o["date"], o["sens"], "", _libelle_sans_numero(o["libelle"]), "", "", "EUR", "", f"{o['montant']:.2f}"]
+            for o in operations]

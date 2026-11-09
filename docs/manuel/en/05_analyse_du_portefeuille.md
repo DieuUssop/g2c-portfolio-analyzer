@@ -257,11 +257,11 @@ You hold 20 shares at a PRU of €110.50 and sell 5 at €130, with €4 in fees
 
 ### Where to see it
 
-The **Realised gains** card ("realised") in the [[Overview]] tab adds up the gains and losses from all sales, since inception.
+The **Realised gains** card ("realised") in the [[Overview]] tab adds up the gains and losses from all sales, since inception. The [[Holdings]] tab clearly separates them from unrealised gains: four cards at the top (unrealised · securities held, realised · securities sold, total, transaction fees), then, in the holdings table, an "Unrealized +/-" column and a "Realized +/-" column (partial sales already made on the holding), plus a "Transaction fees" column (brokerage on the holding's purchases and sales).
 
 ### A holding sold in full
 
-A holding sold in full disappears from the table in the [[Holdings]] tab, which only shows securities still held. It is not forgotten, though:
+A holding sold in full disappears from the table of current holdings, which only shows securities still held; it appears in the "Sold securities" box just below, with its realised gain, dividends and fees. It also remains counted elsewhere:
 
 - its realised gain and its dividends remain counted in the total gain;
 - its history remains used for the value curve and the performance indicators;

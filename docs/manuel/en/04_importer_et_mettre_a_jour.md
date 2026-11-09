@@ -101,13 +101,18 @@ If your statement gives prices already converted into euros, that is not a probl
 ## Buy, sell, dividend: what goes in the price and the fees?
 <!-- fiche: import-types-operations | questions: how do I enter a dividend ; what do I put in price for a dividend ; is zero quantity normal for a dividend ; buy sell dividend which types are accepted ; how do I record a bond coupon ; are fees included in the price ; how is the cost basis calculated with fees ; how do I enter a sale ; dividend in dollars | mots: ACHAT, VENTE, DIVIDENDE, coupon, distribution, cost basis, PRU, brokerage fees, total amount, transaction type -->
 
-The project format knows only three transaction types. Each uses the columns in a specific way.
+The project format knows three types of transactions on securities and three cash movements. Each uses the columns in a specific way.
 
 | Type | `quantite` | `prix` | `frais` |
 |---|---|---|---|
 | `ACHAT` | Number of securities bought | Unit purchase price (trading currency) | Brokerage fees in euros |
 | `VENTE` | Number of securities sold (positive) | Unit selling price (trading currency) | Brokerage fees in euros |
 | `DIVIDENDE` | 0 | **Total gross amount** of the row (trading currency) | Amounts withheld: withholding tax, levies, fees (same currency as the amount) |
+| `VERSEMENT` | 0 | Amount deposited into the account (euros) | 0 |
+| `RETRAIT` | 0 | Amount withdrawn from the account (euros) | 0 |
+| `FRAIS` | 0 | Amount of account fees or levies (euros) | 0 |
+
+For `VERSEMENT` (deposit), `RETRAIT` (withdrawal) and `FRAIS` (fees), the `ticker` column is `ESPECES` (cash) and `nom` holds the label (« Droits de garde », « CSG »…). Example: `2025-04-11,VERSEMENT,ESPECES,Transfer received,0,1000.00,0`.
 
 ### The case of the dividend
 
@@ -125,7 +130,36 @@ Selling more securities than you own at that date causes an error during analysi
 
 ### Other transactions
 
-Custody fees, transfers, taxes or corporate actions that are neither purchases, nor sales, nor dividends have no place in the project format. In a broker export, these rows are recognised and ignored (see the fiche on recognised transaction types).
+Deposits, withdrawals and account fees (custody fees, social levies…) are cash movements: they are read in exports and PDF statements and make up the cash balance (see the fiche « Deposits, withdrawals and fees: the cash balance »). Corporate actions (merger, exchange…) that are neither purchases, nor sales, nor dividends are still ignored.
+
+## Deposits, withdrawals and fees: the cash balance
+<!-- fiche: import-especes | questions: how do I import a deposit ; my transfers are not recognised ; the software ignores my withdrawals ; where do I see the cash balance ; how do I enter custody fees ; social levies on my pea ; bourse direct cash statement ; account cash balance ; account maintenance fees ; pea adjustment | mots: deposit, withdrawal, transfer, account fees, custody fees, social levies, CSG, cash, cash balance, VERSEMENT, RETRAIT, FRAIS -->
+
+A securities account or a PEA holds securities **and cash**. The software reads three cash movements, which concern no security:
+
+| Movement | Example labels | Effect |
+|---|---|---|
+| `VERSEMENT` (deposit) | Versement, Investissement espèces, transfer received, deposit | + cash balance |
+| `RETRAIT` (withdrawal) | Retrait, transfer sent, « VIRT » in the debit column | − cash balance |
+| `FRAIS` (fees) | Custody fees, account maintenance fees, CSG, CRDS, social levies | − cash balance, − gain |
+
+### Where they are read
+
+- **PDF statements and transaction notices** laid out as a « Date | Description | Debit | Credit » table (Bourse Direct and most brokers): the direction comes from the column (debit or credit), the nature from the words of the description. A credit with no security is a deposit; a debit is a withdrawal if it is a transfer, otherwise fees. Account or transfer numbers are not copied.
+- **CSV or Excel exports**: a row whose type says « Versement », « Retrait », « Frais de garde », deposit, withdrawal…; a « transfer » row with no direction is a deposit if the amount is positive, a withdrawal if it is negative.
+- **Manual entry**: « Add transactions » page, types Deposit, Withdrawal, Fees (amount in « price »).
+
+A « deposit » that concerns a security (life insurance: payment invested in unit-linked funds, with an ISIN and a number of units) remains a purchase.
+
+### The cash balance
+
+`Cash balance = deposits − withdrawals − purchases (fees included) + sales (fees deducted) + net dividends − account fees`
+
+It is shown in the key figures (« Cash balance » card, with the account value = securities + cash) and in the « Positions » tab. It is known only if the deposits are in the file: with no deposit or withdrawal at all, the card shows « — » (« No deposit imported »). A negative balance means a deposit is missing.
+
+### Effect on performance
+
+Deposits and withdrawals do not change the performance of the securities. **Account fees** are an expense with nothing in return: they reduce the total gain (« Account fees and levies » card of the overview) and the return.
 
 ## Downloading and filling in the file template
 <!-- fiche: import-modele | questions: where do I find a file template ; example csv file to fill in ; what is modele_transactions.csv ; how do I create my transactions file in excel ; I dont have a broker export what do I do ; transactions file template ; the template opens in a single column in excel ; download an example file | mots: file template, template, example, modele_transactions.csv, Excel, data entry, CSV -->

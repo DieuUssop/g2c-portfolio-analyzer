@@ -23,7 +23,9 @@ import pandas as pd
 
 COLONNES = ["date", "type", "ticker", "nom", "quantite", "prix", "frais"]
 TOLERANCE_PRIX = 0.005
-ORDRE_TYPES = {"ACHAT": 0, "DIVIDENDE": 1, "VENTE": 2}       # le même jour : achat avant vente
+# le même jour : versement d'espèces, puis achat, dividende, vente, et enfin retrait et frais
+ORDRE_TYPES = {"VERSEMENT": -1, "ACHAT": 0, "DIVIDENDE": 1, "VENTE": 2, "RETRAIT": 3, "FRAIS": 3}
+SANS_QUANTITE = ("DIVIDENDE", "VERSEMENT", "RETRAIT", "FRAIS")    # montant dans « prix », quantité 0
 
 
 def lire(contenu):
@@ -95,7 +97,9 @@ def controler(fusion, aujourdhui=None):
                         "message": "Opération datée dans le futur : {titre}, le {date}.",
                         "valeurs": {"titre": ligne["nom"] or ligne["ticker"],
                                     "date": ligne["date"].strftime("%d/%m/%Y")}})
-    for _, ligne in fusion[(fusion["type"] != "DIVIDENDE") & ((fusion["quantite"] <= 0) | (fusion["prix"] <= 0))].iterrows():
+    sans_qte = fusion["type"].isin(SANS_QUANTITE)
+    for _, ligne in fusion[(~sans_qte & ((fusion["quantite"] <= 0) | (fusion["prix"] <= 0)))
+                           | (sans_qte & (fusion["type"] != "DIVIDENDE") & (fusion["prix"] <= 0))].iterrows():
         alertes.append({"bloquant": True, "ticker": ligne["ticker"], "date": ligne["date"],
                         "message": "Quantité ou prix nul pour {titre}, le {date}.",
                         "valeurs": {"titre": ligne["nom"] or ligne["ticker"],

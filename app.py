@@ -483,7 +483,7 @@ with st.sidebar:
     html(ui.infos([
         (t("Fichier"), nom_fichier),
         (t("Période"), f"{date_debut} → {date_fin}"),
-        (t("Opérations"), str(len(res["transactions"]))),
+        (t("Opérations"), str(len(res["transactions"]) + len(res.get("especes", [])))),
         (t("Cours"), t("Sources de secours : {sources}", sources=res["source_cours"].split("(")[1].split(")")[0])
          if en_direct and "secours" in res["source_cours"].lower()
          else t("Yahoo Finance (en direct)") if en_direct
@@ -540,9 +540,15 @@ html(ui.grille([
     ui.carte(t("Valeur actuelle"), euros(resume["valeur_actuelle"]),
              detail=t("Investi au PRU : {montant}", montant=euros(resume["montant_investi"])),
              aide=t("Quantité × dernier cours, pour chaque ligne détenue")),
+    ui.carte(t("Solde espèces"), euros(resume["solde_especes"]) if resume.get("solde_especes") is not None else "—",
+             detail=(t("Négatif : des versements manquent sans doute") if (resume.get("solde_especes") or 0) < -0.005
+                     else t("Valeur du compte : {montant}", montant=euros(resume["valeur_compte"]))
+                     if resume.get("solde_especes") is not None else t("Aucun versement importé")),
+             aide=t("Versements − retraits − achats + ventes + dividendes − frais. Connu seulement si les "
+                    "versements d'espèces sont dans le fichier (relevés ou avis d'opération du compte).")),
     ui.carte(t("Gain total"), euros(resume["gain_total"], signe=True),
              detail=ui.pastille(pct(rendement_investi), tendance(rendement_investi)) + t(" sur le capital investi"),
-             aide=t("Plus-values latentes + plus-values réalisées + dividendes")),
+             aide=t("Plus-values latentes + plus-values réalisées + dividendes − frais de compte")),
     ui.carte(t("Perf. annualisée"), pct(ind["twr_annualise"]),
              detail=ui.pastille(t("TWR total {valeur}", valeur=pct(ind["twr_total"])), tendance(ind["twr_total"])),
              aide=t("Rendement pondéré par le temps (TWR) : mesure la qualité des choix, hors effet des apports")),
@@ -659,16 +665,34 @@ with onglets[0]:
                  aide=t("Montant net = brut − retenue à la source et prélèvements (colonne « frais » d'une ligne "
                         "DIVIDENDE)")),
         ui.carte(t("Frais de courtage"), euros(resume["frais_totaux"]), detail=t("Depuis l'origine")),
-    ]))
+    ] + ([ui.carte(t("Frais de compte et prélèvements"), euros(resume["frais_compte"]),
+                   detail=t("Droits de garde, prélèvements sociaux…"),
+                   aide=t("Lignes FRAIS : débits d'espèces sans titre (relevés du compte)"))]
+         if resume.get("frais_compte") else [])))
 
 # ----------------------------------------------------------------------
 # 2. Positions
 # ----------------------------------------------------------------------
 with onglets[1]:
+    # Plus-values : latente (titres encore détenus, non encaissée) et réalisée (titres vendus, encaissée)
+    toutes = res.get("toutes_positions", positions)
+    html(ui.grille([
+        ui.carte(t("Plus-values latentes"), euros(resume["pv_latentes"], signe=True),
+                 detail=ui.pastille(t("titres détenus · non encaissées"), tendance(resume["pv_latentes"])),
+                 aide=t("Quantité détenue × (cours − PRU) : ce que rapporterait une vente aujourd'hui")),
+        ui.carte(t("Plus-values réalisées"), euros(resume["pv_realisees"], signe=True),
+                 detail=ui.pastille(t("titres vendus · encaissées"), tendance(resume["pv_realisees"])),
+                 aide=t("Pour chaque vente : quantité vendue × (prix de vente − PRU) − frais de vente")),
+        ui.carte(t("Total des plus-values"), euros(resume["pv_latentes"] + resume["pv_realisees"], signe=True),
+                 detail=t("Latentes + réalisées (hors dividendes)")),
+        ui.carte(t("Frais de transaction"), euros(resume["frais_totaux"]),
+                 detail=t("Courtage des achats et ventes")),
+    ]))
     with st.container(border=True):
         html(ui.titre_section(t("Positions détenues"), t("Cliquer sur un titre de colonne pour trier")))
         tableau = positions[["nom", "classe", "region", "secteur", "devise", "quantite", "pru", "cours", "valeur",
-                             "pv_latente", "pv_latente_pct", "poids_pct", "dividendes"]].reset_index()
+                             "pv_latente", "pv_latente_pct", "pv_realisee", "frais_totaux", "poids_pct",
+                             "dividendes"]].reset_index()
         for colonne in ["classe", "region", "secteur"]:          # données traduites à l'affichage
             tableau[colonne] = tableau[colonne].map(td)
         # Lignes colorées selon la plus-value latente : vert pastel (gain), rouge pastel (perte)
@@ -692,15 +716,48 @@ with onglets[1]:
                 "pru": st.column_config.NumberColumn(t("PRU"), format=langues.eur_colonne("%.2f")),
                 "cours": st.column_config.NumberColumn(t("Cours"), format=langues.eur_colonne("%.2f")),
                 "valeur": st.column_config.NumberColumn(t("Valeur"), format=langues.eur_colonne("%.0f")),
-                "pv_latente": st.column_config.NumberColumn(t("+/- value"), format=langues.eur_colonne("%+.0f")),
-                "pv_latente_pct": st.column_config.NumberColumn(t("+/- value %"),
+                "pv_latente": st.column_config.NumberColumn(
+                    t("+/- value latente"), format=langues.eur_colonne("%+.0f"),
+                    help=t("Non encaissée : quantité détenue × (cours − PRU)")),
+                "pv_latente_pct": st.column_config.NumberColumn(t("+/- value latente %"),
                                                                 format=langues.pct_colonne("%+.2f")),
+                "pv_realisee": st.column_config.NumberColumn(
+                    t("+/- value réalisée"), format=langues.eur_colonne("%+.0f"),
+                    help=t("Encaissée sur les ventes déjà faites de ce titre (frais de vente déduits)")),
+                "frais_totaux": st.column_config.NumberColumn(
+                    t("Frais de transaction"), format=langues.eur_colonne("%.2f"),
+                    help=t("Courtage et frais payés sur les achats et ventes de ce titre, depuis l'origine")),
                 "poids_pct": st.column_config.ProgressColumn(
                     t("Poids"), format=langues.pct_colonne("%.1f"), min_value=0,
                     max_value=float(tableau["poids_pct"].max())),
                 "dividendes": st.column_config.NumberColumn(t("Dividendes"), format=langues.eur_colonne("%.0f")),
             },
         )
+    vendus = toutes[(toutes["quantite"] <= 1e-9) & ((toutes["pv_realisee"].abs() > 1e-9) | (toutes["frais_totaux"] > 0))]
+    if len(vendus):
+        with st.container(border=True):
+            html(ui.titre_section(t("Titres vendus"), t("Plus-values réalisées sur les lignes entièrement vendues")))
+            st.dataframe(
+                vendus[["nom", "pv_realisee", "dividendes", "frais_totaux"]].reset_index(), hide_index=True,
+                width="stretch",
+                column_config={
+                    "ticker": st.column_config.TextColumn("Ticker", width="small"),
+                    "nom": st.column_config.TextColumn(t("Titre"), width="medium"),
+                    "pv_realisee": st.column_config.NumberColumn(t("+/- value réalisée"),
+                                                                 format=langues.eur_colonne("%+.0f")),
+                    "dividendes": st.column_config.NumberColumn(t("Dividendes"), format=langues.eur_colonne("%.0f")),
+                    "frais_totaux": st.column_config.NumberColumn(t("Frais de transaction"),
+                                                                  format=langues.eur_colonne("%.2f")),
+                })
+    if resume.get("solde_especes") is not None:
+        html(ui.note(t("Espèces : {solde} sur le compte (versements {v}, retraits {r}, frais de compte {f}).",
+                       solde=euros(resume["solde_especes"]), v=euros(resume["versements"]),
+                       r=euros(resume["retraits"]), f=euros(resume["frais_compte"])),
+                     attention=resume["solde_especes"] < -0.005))
+        if resume["solde_especes"] < -0.005:
+            html(ui.note(t("Un solde en espèces négatif signifie qu'il manque des versements : importez les relevés "
+                           "ou avis d'opération de vos versements (ou ajoutez-les dans « Ajouter des opérations »)."),
+                         attention=True))
     if not res["effet_change"].empty:
         vues_transactions.effet_change(res["effet_change"], positions)
     with st.container(border=True):

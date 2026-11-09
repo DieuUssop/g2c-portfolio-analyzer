@@ -101,13 +101,18 @@ Si votre relevé donne des prix déjà convertis en euros, ce n'est pas grave : 
 ## Achat, vente, dividende : que mettre dans le prix et les frais ?
 <!-- fiche: import-types-operations | questions: comment saisir un dividende ; que mettre dans prix pour un dividende ; quantité zéro pour un dividende c'est normal ; achat vente dividende quels types sont acceptés ; comment noter un coupon d'obligation ; les frais sont ils inclus dans le prix ; comment le pru est calculé avec les frais ; comment saisir une vente ; dividende en dollars | mots: ACHAT, VENTE, DIVIDENDE, coupon, distribution, PRU, frais de courtage, montant total, type d'opération -->
 
-Le format du projet ne connaît que trois types d'opération. Chacun utilise les colonnes de façon précise.
+Le format du projet connaît trois types d'opération sur titres et trois mouvements d'espèces. Chacun utilise les colonnes de façon précise.
 
 | Type | `quantite` | `prix` | `frais` |
 |---|---|---|---|
 | `ACHAT` | Nombre de titres achetés | Prix unitaire d'achat (devise de cotation) | Frais de courtage en euros |
 | `VENTE` | Nombre de titres vendus (positif) | Prix unitaire de vente (devise de cotation) | Frais de courtage en euros |
 | `DIVIDENDE` | 0 | **Montant brut total** de la ligne (devise de cotation) | Retenues : retenue à la source, prélèvements, frais (même devise que le montant) |
+| `VERSEMENT` | 0 | Montant versé sur le compte (euros) | 0 |
+| `RETRAIT` | 0 | Montant retiré du compte (euros) | 0 |
+| `FRAIS` | 0 | Montant des frais de compte ou prélèvements (euros) | 0 |
+
+Pour `VERSEMENT`, `RETRAIT` et `FRAIS`, la colonne `ticker` vaut `ESPECES` et `nom` reprend le libellé (« Droits de garde », « CSG »…). Exemple : `2025-04-11,VERSEMENT,ESPECES,Virement reçu,0,1000.00,0`.
 
 ### Le cas du dividende
 
@@ -125,7 +130,36 @@ Vendre plus de titres que vous n'en possédez à cette date provoque une erreur 
 
 ### Les autres opérations
 
-Frais de garde, virements, impôts ou opérations sur titres qui ne sont ni des achats, ni des ventes, ni des dividendes n'ont pas leur place dans le format du projet. Dans un export de courtier, ces lignes sont reconnues et ignorées (voir la fiche sur les types d'opération reconnus).
+Les versements, retraits et frais de compte (droits de garde, prélèvements sociaux…) sont des mouvements d'espèces : ils sont lus dans les exports et les relevés PDF et servent au solde en espèces (voir la fiche « Versements, retraits et frais : le solde en espèces »). Les opérations sur titres (fusion, échange…) qui ne sont ni des achats, ni des ventes, ni des dividendes restent ignorées.
+
+## Versements, retraits et frais : le solde en espèces
+<!-- fiche: import-especes | questions: comment importer un versement ; mes virements ne sont pas reconnus ; le logiciel ignore mes retraits ; ou voir le solde espèces ; comment saisir des droits de garde ; prélèvements sociaux csg sur mon pea ; avis d'opération bourse direct versement ; solde en espèces du compte ; frais de tenue de compte ; régularisation pea | mots: versement, retrait, virement, frais de compte, droits de garde, prélèvements sociaux, CSG, espèces, liquidités, solde espèces, VERSEMENT, RETRAIT, FRAIS -->
+
+Un compte-titres ou un PEA contient des titres **et des espèces**. Le logiciel lit trois mouvements d'espèces, qui ne portent sur aucun titre :
+
+| Mouvement | Exemples de libellés | Effet |
+|---|---|---|
+| `VERSEMENT` | Versement, Investissement espèces, Virement reçu, Dépôt | + solde espèces |
+| `RETRAIT` | Retrait, Virement émis, « VIRT » au débit | − solde espèces |
+| `FRAIS` | Droits de garde, Frais de tenue de compte, CSG, CRDS, prélèvements sociaux | − solde espèces, − gain |
+
+### Où ils sont lus
+
+- **Relevés et avis d'opération PDF** présentés en tableau « Date | Désignation | Débit | Crédit » (Bourse Direct et la plupart des courtiers) : le sens vient de la colonne (débit ou crédit), la nature des mots de la désignation. Un crédit sans titre est un versement ; un débit est un retrait s'il s'agit d'un virement, sinon des frais. Les numéros de compte ou de virement ne sont pas recopiés.
+- **Exports CSV ou Excel** : une ligne dont le type dit « Versement », « Retrait », « Frais de garde »… ; une ligne « Virement » sans sens est un versement si le montant est positif, un retrait s'il est négatif.
+- **Saisie à la main** : page « Ajouter des opérations », types Versement, Retrait, Frais (montant dans « prix »).
+
+Un « versement » qui porte sur un titre (assurance-vie : versement investi en unités de compte, avec un ISIN et un nombre de parts) reste un achat.
+
+### Le solde en espèces
+
+`Solde espèces = versements − retraits − achats (frais compris) + ventes (frais déduits) + dividendes nets − frais de compte`
+
+Il s'affiche dans les chiffres clés (carte « Solde espèces », avec la valeur du compte = titres + espèces) et dans l'onglet « Positions ». Il n'est connu que si les versements sont dans le fichier : sans aucun versement ni retrait, la carte affiche « — » (« Aucun versement importé »). Un solde négatif signale qu'un versement manque.
+
+### Effet sur la performance
+
+Les versements et retraits ne changent pas la performance des titres. Les **frais de compte** sont une dépense sans contrepartie : ils diminuent le gain total (carte « Frais de compte et prélèvements » de la vue d'ensemble) et le rendement.
 
 ## Télécharger et remplir le modèle de fichier
 <!-- fiche: import-modele | questions: ou trouver un modèle de fichier ; exemple de fichier csv à remplir ; modele_transactions.csv c'est quoi ; comment créer mon fichier de transactions dans excel ; je n'ai pas d'export de mon courtier comment faire ; template fichier transactions ; le modèle s'ouvre en une seule colonne dans excel ; télécharger un fichier exemple | mots: modèle de fichier, template, gabarit, exemple, modele_transactions.csv, Excel, saisie, CSV -->

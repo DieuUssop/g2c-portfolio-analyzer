@@ -401,12 +401,31 @@ def lot_de_fichiers(fichiers, importer):
     bruts = [(f.name, version_lisible(f.getvalue())) for f in fichiers]
     cle_lot = hashlib.md5("".join(_empreinte(b) for _, b in bruts).encode()).hexdigest()[:12]
     etat = st.session_state.setdefault("lots", {}).setdefault(cle_lot, {"operations": {}, "resumes": {}})
+    etat.setdefault("ignores", set())
     en_attente = []
+    # « Analyser les opérations déjà lues » : le choix est GARDÉ pour la session. Avant, il ne valait que le
+    # temps d'un affichage : au clic suivant (onglet, réglage…) la page revenait sur les fichiers non lus et
+    # l'analyse du portefeuille n'était plus accessible.
+    if etat.get("analyser"):
+        lus = [o for ops in etat["operations"].values() for o in ops]
+        ignores = [nom for nom, brut in bruts if _empreinte(brut) not in etat["operations"]]
+        if lus:
+            with st.sidebar:
+                if ignores:
+                    st.caption(t("Fichiers non lus, laissés de côté : {noms}.", noms=", ".join(ignores)))
+                if st.button(t("Revenir aux fichiers non lus"), type="tertiary", key=f"revenir_lot_{cle_lot}"):
+                    etat["analyser"] = False
+                    st.rerun()
+            return _reunir(etat, bruts)
+        etat["analyser"] = False
     with st.container(border=True):
         html(ui.titre_section(t("Fichiers envoyés"), t("{n} fichiers : chacun est lu, puis toutes les opérations "
                                                        "sont réunies dans un même portefeuille", n=len(bruts))))
         for nom, brut in bruts:
             empreinte = _empreinte(brut)
+            if empreinte in etat["ignores"]:
+                st.caption(t("{nom} : laissé de côté.", nom=nom))
+                continue
             if empreinte in etat["operations"]:
                 st.caption(t("{nom} : {n} opération(s) lue(s).", nom=nom, n=len(etat["operations"][empreinte])))
                 continue
@@ -423,6 +442,10 @@ def lot_de_fichiers(fichiers, importer):
                 etat["resumes"][empreinte] = resultat["resume"]
                 st.caption(t("{nom} : {n} opération(s) lue(s).", nom=nom, n=len(etat["operations"][empreinte])))
             elif import_fichier.nature_fichier(brut) == "pdf":
+                if st.button(t("Laisser ce fichier de côté"), key=f"ignorer_lot_{empreinte}", type="tertiary",
+                             icon=":material/close:", help=t("Analyser le portefeuille sans ce fichier")):
+                    etat["ignores"].add(empreinte)
+                    st.rerun()
                 operation = formulaire(brut, nom, empreinte, raison=resultat["raison"])
                 if operation is not None:
                     etat["operations"][empreinte] = [operation]
@@ -437,13 +460,39 @@ def lot_de_fichiers(fichiers, importer):
         lus = [o for ops in etat["operations"].values() for o in ops]
         if en_attente:
             st.caption(t("En attente : {noms}.", noms=", ".join(en_attente)))
-            if not lus or not st.button(t("Analyser les {n} opération(s) déjà lues", n=len(lus)), key=f"lot_{cle_lot}"):
+            if not lus:
                 return None
-    tableau = pd.DataFrame(lus)
+            if not st.button(t("Analyser les {n} opération(s) déjà lues", n=len(lus)), key=f"lot_{cle_lot}",
+                             type="primary", help=t("Les fichiers non lus sont laissés de côté ; vous pourrez y "
+                                                    "revenir depuis la barre latérale.")):
+                return None
+            etat["analyser"] = True
+    return _reunir(etat, bruts)
+
+
+def _reunir(etat, bruts):
+    """Toutes les opérations lues du lot, en un seul fichier. Une opération présente dans deux fichiers n'est
+    comptée qu'une fois ; deux opérations identiques d'un MÊME fichier (deux prélèvements de 0,11 € le même
+    jour…) sont bien deux opérations."""
+    from collections import Counter
+    cle = lambda o: (str(pd.Timestamp(o["date"]).date()), o["type"], o["ticker"], round(float(o["quantite"]), 6),
+                     round(float(o["prix"]), 6))
+    gardees, deja = [], Counter()
+    for ops in etat["operations"].values():
+        dans_ce_fichier = Counter()
+        for o in ops:
+            k = cle(o)
+            dans_ce_fichier[k] += 1
+            if dans_ce_fichier[k] > deja[k]:
+                gardees.append(o)
+        for k, n in dans_ce_fichier.items():
+            deja[k] = max(deja[k], n)
+    lus = [o for ops in etat["operations"].values() for o in ops]
+    tableau = pd.DataFrame(gardees)
     tableau["date"] = pd.to_datetime(tableau["date"])
-    avant = len(tableau)
-    tableau = tableau.drop_duplicates(subset=["date", "type", "ticker", "quantite", "prix"])
-    resume = {"operations": len(tableau), "titres": int(tableau["ticker"].nunique()), "controles_pdf": []}
+    avant = len(lus)
+    resume = {"operations": len(tableau), "titres": int(tableau.loc[tableau["ticker"] != "ESPECES", "ticker"].nunique()),
+              "controles_pdf": []}
     for r in etat["resumes"].values():
         resume["controles_pdf"] += r.get("controles_pdf", [])
     if len(tableau) < avant:

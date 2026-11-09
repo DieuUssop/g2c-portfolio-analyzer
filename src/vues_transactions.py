@@ -28,9 +28,36 @@ def html(morceau):
     st.markdown(morceau, unsafe_allow_html=True)
 
 
+TYPES_AFFICHES = ["ACHAT", "VENTE", "DIVIDENDE", "VERSEMENT", "RETRAIT", "FRAIS"]
+
+
+def montant_total(transactions):
+    """Montant total de chaque opération, en euros, signé comme sur le compte (+ encaissé, − payé) :
+    achat −(quantité × prix + frais) ; vente +(quantité × prix − frais) ; dividende +(montant − retenues) ;
+    versement +montant ; retrait et frais de compte −montant."""
+    q, p, f, ty = transactions["quantite"], transactions["prix"], transactions["frais"], transactions["type"]
+    montant = pd.Series(0.0, index=transactions.index)
+    montant[ty == "ACHAT"] = -(q * p + f)[ty == "ACHAT"]
+    montant[ty == "VENTE"] = (q * p - f)[ty == "VENTE"]
+    montant[ty == "DIVIDENDE"] = (p - f)[ty == "DIVIDENDE"]
+    montant[ty == "VERSEMENT"] = p[ty == "VERSEMENT"]
+    montant[ty.isin(["RETRAIT", "FRAIS"])] = -p[ty.isin(["RETRAIT", "FRAIS"])]
+    return montant
+
+
+def avec_especes(res):
+    """Opérations sur titres (en euros) + mouvements d'espèces (versements, retraits, frais de compte)."""
+    transactions = res["transactions"]
+    especes = res.get("especes")
+    if especes is not None and len(especes):
+        transactions = pd.concat([transactions, especes[[c for c in especes.columns if c in transactions.columns]]],
+                                 ignore_index=True)
+    return transactions
+
+
 def afficher(res, contenu, cible, session_compte):
     """cible : {"type": "perso", "id", "nom"} ou {"type": "session", "origine", "nom"}."""
-    transactions = res["transactions"]
+    transactions = avec_especes(res)
     if st.session_state.get("message_transactions"):
         st.success(st.session_state.pop("message_transactions"))
     with st.container(border=True):
@@ -45,8 +72,8 @@ def afficher(res, contenu, cible, session_compte):
             st.rerun()
 
         gauche, droite = st.columns(2)
-        choix_types = gauche.multiselect(t("Type"), ["ACHAT", "VENTE", "DIVIDENDE"],
-                                         default=["ACHAT", "VENTE", "DIVIDENDE"], format_func=td)
+        presents = [ty for ty in TYPES_AFFICHES if ty in set(transactions["type"]) or ty in ("ACHAT", "VENTE", "DIVIDENDE")]
+        choix_types = gauche.multiselect(t("Type"), presents, default=presents, format_func=td)
         choix_titres = droite.multiselect(t("Titres"), sorted(transactions["nom"].unique()),
                                           placeholder=t("Tous les titres"))
         if edition:
@@ -64,6 +91,10 @@ def _consultation(transactions, choix_types, choix_titres):
     if choix_titres:
         filtre &= transactions["nom"].isin(choix_titres)
     selection = transactions[filtre].sort_values("date", ascending=False)
+    selection = selection.assign(montant_total=montant_total(selection))
+    colonnes = [c for c in ["date", "type", "ticker", "nom", "quantite", "prix", "frais", "montant_total", "devise",
+                            "prix_devise", "taux_change"] if c in selection.columns]
+    selection = selection[colonnes + [c for c in selection.columns if c not in colonnes]]
     st.caption(t("{n} opération(s) affichée(s) sur {total}", n=len(selection), total=len(transactions)))
     st.dataframe(
         selection.assign(type=selection["type"].map(td)), hide_index=True, width="stretch",
@@ -73,8 +104,14 @@ def _consultation(transactions, choix_types, choix_titres):
             "ticker": st.column_config.TextColumn("Ticker"),
             "nom": st.column_config.TextColumn(t("Titre")),
             "quantite": st.column_config.NumberColumn(t("Quantité"), format="%d"),
-            "prix": st.column_config.NumberColumn(t("Prix / montant (€)"), format=langues.eur_colonne("%.2f")),
+            "prix": st.column_config.NumberColumn(t("Prix unitaire (€)"), format=langues.eur_colonne("%.2f"),
+                                                  help=t("Prix d'un titre ; pour un dividende, un versement, un "
+                                                         "retrait ou des frais : le montant de l'opération")),
             "frais": st.column_config.NumberColumn(t("Frais"), format=langues.eur_colonne("%.2f")),
+            "montant_total": st.column_config.NumberColumn(
+                t("Montant total (€)"), format=langues.eur_colonne("%+.2f"),
+                help=t("Achat : −(quantité × prix + frais) · vente : quantité × prix − frais · dividende : net reçu "
+                       "· versement + · retrait et frais −")),
             "devise": st.column_config.TextColumn(t("Devise")),
             "prix_devise": st.column_config.NumberColumn(t("Prix en devise"), format="%.2f",
                                                          help=t("Prix saisi, avant conversion en euros")),
@@ -111,7 +148,7 @@ def _edition(contenu, cible, session_compte, transactions, choix_types, choix_ti
     st.caption(t("Cochez « Supprimer » ou modifiez directement la date, la quantité, le prix ou les frais. "
                  "Le prix est celui de la devise de cotation du titre."))
 
-    tableau = vue.assign(supprimer=False, devise=[devise_par_suffixe(tk) for tk in vue["ticker"]],
+    tableau = vue.assign(supprimer=False, devise=["EUR" if tk == "ESPECES" else devise_par_suffixe(tk) for tk in vue["ticker"]],
                          type_affiche=vue["type"].map(td))
     tableau = tableau[["supprimer", "date", "type_affiche", "ticker", "nom", "quantite", "prix", "devise", "frais"]]
     edite = st.data_editor(

@@ -144,7 +144,9 @@ def page(session_compte, importer):
         with st.form("saisie_operation", clear_on_submit=True, border=False):
             a, b, c = st.columns(3)
             date = a.date_input(t("Date"), value=pd.Timestamp.today(), format="DD/MM/YYYY")
-            sens = b.selectbox(t("Type"), ["ACHAT", "VENTE", "DIVIDENDE"], format_func=td)
+            sens = b.selectbox(t("Type"), ["ACHAT", "VENTE", "DIVIDENDE", "VERSEMENT", "RETRAIT", "FRAIS"],
+                               format_func=td, help=t("Versement, retrait, frais : mouvements d'espèces du compte "
+                                                      "(sans titre : le montant va dans « prix »)"))
             titre = c.text_input(t("Titre"), placeholder=t("Ticker, ISIN, nom ou code Bloomberg"))
             a, b, c = st.columns(3)
             quantite = a.number_input(t("Quantité"), min_value=0.0, value=1.0, step=1.0)
@@ -153,13 +155,20 @@ def page(session_compte, importer):
             frais = c.number_input(t("Frais (€)"), min_value=0.0, value=0.0, step=0.5)
             if st.form_submit_button(t("Ajouter à la liste"), icon=":material/add:"):
                 try:
-                    if not titre.strip():
-                        raise ValueError(t("Indiquez le titre."))
-                    with st.spinner(t("Recherche du titre...")):
-                        ticker, nom = _resoudre_titre(titre)
-                    ajoutees.append({"date": pd.Timestamp(date), "type": sens, "ticker": ticker,
-                                     "nom": nom or titre.strip(), "quantite": quantite, "prix": prix,
-                                     "frais": frais, "source": "saisie"})
+                    if sens in ("VERSEMENT", "RETRAIT", "FRAIS"):
+                        if prix <= 0:
+                            raise ValueError(t("Indiquez le montant dans « prix »."))
+                        ajoutees.append({"date": pd.Timestamp(date), "type": sens, "ticker": "ESPECES",
+                                         "nom": titre.strip() or td(sens).capitalize(), "quantite": 0.0,
+                                         "prix": prix, "frais": 0.0, "source": "saisie"})
+                    else:
+                        if not titre.strip():
+                            raise ValueError(t("Indiquez le titre."))
+                        with st.spinner(t("Recherche du titre...")):
+                            ticker, nom = _resoudre_titre(titre)
+                        ajoutees.append({"date": pd.Timestamp(date), "type": sens, "ticker": ticker,
+                                         "nom": nom or titre.strip(), "quantite": quantite, "prix": prix,
+                                         "frais": frais, "source": "saisie"})
                 except Exception as erreur:
                     st.error(str(erreur))
                     vues_signalement.noter_erreur("ajout d'opérations", str(erreur))
@@ -180,7 +189,8 @@ def page(session_compte, importer):
                 "inclure": st.column_config.CheckboxColumn(t("Ajouter")),
                 "statut": st.column_config.TextColumn(t("Statut")),
                 "date": st.column_config.DateColumn("Date", format="DD/MM/YYYY"),
-                "type": st.column_config.SelectboxColumn(t("Type"), options=["ACHAT", "VENTE", "DIVIDENDE"]),
+                "type": st.column_config.SelectboxColumn(t("Type"), options=["ACHAT", "VENTE", "DIVIDENDE", "VERSEMENT",
+                                                                             "RETRAIT", "FRAIS"]),
                 "ticker": st.column_config.TextColumn("Ticker"),
                 "nom": st.column_config.TextColumn(t("Titre")),
                 "quantite": st.column_config.NumberColumn(t("Quantité")),

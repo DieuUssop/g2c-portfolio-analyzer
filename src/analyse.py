@@ -62,6 +62,52 @@ def _date_du_cache(source):
     return pd.Timestamp(f"{m.group(1)}-{m.group(2)}-{m.group(3)}") if m and "direct" not in source.lower() else None
 
 
+MOTIF_ISIN = __import__("re").compile(r"^[A-Z]{2}[A-Z0-9]{9}\d$")
+
+
+def nom_du_titre(ticker, nom, fiches=None):
+    """Nom à afficher pour un titre : le libellé saisi, sauf s'il n'est qu'un code (ISIN, ticker) ou vide ;
+    dans ce cas, le nom de la fiche du titre (référentiel, base locale) ou de la table des ISIN connus."""
+    nom = "" if nom is None or str(nom).strip().lower() in ("", "nan", "none") else str(nom).strip()
+    code = nom.upper()
+    if nom and not MOTIF_ISIN.match(code) and code != str(ticker).upper():
+        return nom
+    try:
+        fiches = charger_fiches() if fiches is None else fiches
+        if ticker in fiches.index and "nom" in fiches.columns:
+            trouve = fiches.loc[ticker, "nom"]
+            trouve = trouve.iloc[0] if isinstance(trouve, pd.Series) else trouve
+            if isinstance(trouve, str) and trouve.strip() and not MOTIF_ISIN.match(trouve.strip().upper()):
+                return trouve.strip()
+    except Exception:
+        pass
+    try:
+        from . import base_titres
+        tables = {**base_titres.ISIN_ETF, **base_titres.ISIN_ACTIONS}
+        for isin, (tk, libelle) in tables.items():
+            if tk == ticker or isin == code:
+                return libelle
+    except Exception:
+        pass
+    return nom or str(ticker)
+
+
+def _noms_lisibles(portefeuille):
+    """Remplace, dans les transactions et les positions, les noms qui ne sont qu'un code ISIN ou le ticker."""
+    t = portefeuille.transactions
+    a_revoir = {tk for tk, n in zip(t["ticker"], t["nom"].astype(str))
+                if not n.strip() or n.strip().lower() == "nan" or MOTIF_ISIN.match(n.strip().upper())
+                or n.strip().upper() == str(tk).upper()}
+    if not a_revoir:
+        return
+    fiches = charger_fiches()
+    noms = {tk: nom_du_titre(tk, "", fiches) for tk in a_revoir}
+    t["nom"] = [noms.get(tk, n) if tk in noms else n for tk, n in zip(t["ticker"], t["nom"])]
+    if "nom" in portefeuille.positions.columns:
+        portefeuille.positions["nom"] = [noms.get(tk, n) for tk, n in
+                                         zip(portefeuille.positions.index, portefeuille.positions["nom"])]
+
+
 def analyse_complete(source_csv,
                      indice=config.INDICE_REFERENCE,
                      taux_sans_risque=config.TAUX_SANS_RISQUE,
@@ -73,6 +119,15 @@ def analyse_complete(source_csv,
     """
     # Étape 1 : les transactions, telles que saisies (vérification du fichier)
     brut = Portfolio(source_csv)
+    especes = brut.especes                       # versements, retraits, frais de compte (pas des titres)
+    # Titres saisis par leur code ISIN (« FR0011550185 ») : remplacés par leur ticker Yahoo (« ESE.PA »), pour
+    # que le nom, la région et l'indice suivi soient reconnus (quel que soit le chemin d'import)
+    if brut.transactions["ticker"].astype(str).str.match(MOTIF_ISIN.pattern).any():
+        from .import_fichier import tickers_depuis_isin
+        convertis = tickers_depuis_isin(brut.transactions)
+        if not convertis["ticker"].equals(brut.transactions["ticker"]):
+            brut = Portfolio(convertis)
+            brut.especes = especes
     titres = brut.tous_les_tickers()
     # L'indice de référence peut être un ETF, un indice ou un composite (src/indices.py) :
     # on télécharge tous ses tickers possibles, puis on construit sa série.
@@ -123,6 +178,10 @@ def analyse_complete(source_csv,
         prix_hist = convertir_prix_historiques(prix_hist, info_devises, taux_hist)
     else:
         portefeuille = brut
+    portefeuille.especes = especes
+    # Noms lisibles : un libellé resté sous la forme d'un code ISIN (« FR0011550185 ») ou du ticker est
+    # remplacé par le nom du titre (référentiel, base locale, tables d'ISIN intégrées)
+    _noms_lisibles(portefeuille)
     # Série de l'indice de référence (en euros), ajoutée comme une colonne de plus
     serie_indice, tickers_indice = indices.construire(prix_hist, indice)
     prix_hist = prix_hist.drop(columns=[c for c in candidats_indice if c in prix_hist.columns])
@@ -170,7 +229,10 @@ def analyse_complete(source_csv,
 
     return {
         "transactions": portefeuille.transactions,
+        "especes": portefeuille.especes,
+        "mouvements_especes": portefeuille.mouvements_especes() if portefeuille.a_des_especes() else None,
         "positions": positions,
+        "toutes_positions": portefeuille.positions,      # y compris les titres entièrement vendus
         "resume": resume,
         "historique": histo,
         "indicateurs": indicateurs,

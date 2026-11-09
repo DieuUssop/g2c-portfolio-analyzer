@@ -38,7 +38,7 @@ améliorée par les promotions suivantes.
    ne pas la remplacer par une base de test.
 4. **Jamais de valeur fausse en silence.** En cas de doute à l'import, ouvrir le formulaire
    « Compléter l'opération » ou afficher un avertissement plutôt que deviner.
-5. **Tout doit passer les tests** : `python -m pytest` (292 tests au 21/10/2026). Toute
+5. **Tout doit passer les tests** : `python -m pytest` (309 tests au 09/11/2026). Toute
    correction ou fonctionnalité ajoute au moins un test.
 6. **Pas de code en double** : une amélioration de lecture doit profiter à tous les chemins
    (PDF texte, PDF image, photo, CSV, Excel).
@@ -169,3 +169,10 @@ python diagnostic_pdf.py relevé.pdf --anonyme    # ce que l'application lit dan
 - **ETF PEA par swap** : l'exposition est celle de l'indice suivi (ex. S&P 500), pas celle du
   panier d'actions européennes détenu ; ne jamais alerter « hors Europe » pour ces ETF.
 - Le pays d'un ETF n'est jamais déduit de sa place de cotation.
+- **Espèces** : les types `VERSEMENT`, `RETRAIT`, `FRAIS` (ticker `ESPECES`, montant dans `prix`, quantité 0)
+  ne sont pas des titres : `Portfolio` les range dans `self.especes`, à part de `self.transactions`.
+  Tout code qui parcourt les tickers d'un fichier brut doit ignorer `ESPECES`. Les frais de compte
+  diminuent le gain (flux d'apport sans valeur dans `historique`) ; le solde espèces n'est connu que
+  si le fichier contient des versements (`Portfolio.solde_especes()` renvoie sinon `None`).
+- **Titres saisis par leur ISIN** : `import_fichier.tickers_depuis_isin` les convertit en tickers Yahoo
+  (sinon nom = ISIN et classement deviné) ; `analyse.analyse_complete` le refait par sécurité.

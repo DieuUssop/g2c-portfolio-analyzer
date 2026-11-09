@@ -252,7 +252,11 @@ def generer_rapport(res, destination, nom_indice, taux_sans_risque, niveau_var,
         ("Frais de courtage", euros(resume["frais_totaux"])),
         ("Source des cours", res["source_cours"].split(" (")[0]),
     ] + ([("Dont effet change (titres en devise)", euros(resume["effet_change"], signe=True),
-           _couleur(resume["effet_change"]))] if resume.get("effet_change") else [])))
+           _couleur(resume["effet_change"]))] if resume.get("effet_change") else [])
+      + ([("Frais de compte et prélèvements", euros(resume["frais_compte"]))] if resume.get("frais_compte") else [])
+      + ([("Solde espèces", euros(resume["solde_especes"])),
+          ("Valeur du compte (titres + espèces)", euros(resume["valeur_compte"]))]
+         if resume.get("solde_especes") is not None else [])))
     story.append(PageBreak())
 
     # ---------------- Page 2 : positions ----------------

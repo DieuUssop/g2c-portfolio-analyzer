@@ -257,11 +257,11 @@ Vous détenez 20 titres au PRU de 110,50 € et en vendez 5 à 130 €, avec 4 �
 
 ### Où la voir
 
-La carte **Plus-values réalisées** (« encaissées ») de l'onglet [[Vue d'ensemble]] additionne les plus et moins-values de toutes les ventes, depuis l'origine.
+La carte **Plus-values réalisées** (« encaissées ») de l'onglet [[Vue d'ensemble]] additionne les plus et moins-values de toutes les ventes, depuis l'origine. L'onglet [[Positions]] les sépare clairement des plus-values latentes : quatre cartes en haut (latentes · titres détenus, réalisées · titres vendus, total, frais de transaction), puis, dans le tableau des positions, une colonne « +/- value latente » et une colonne « +/- value réalisée » (ventes partielles déjà faites sur la ligne), ainsi qu'une colonne « Frais de transaction » (courtage des achats et ventes de la ligne).
 
 ### Une ligne entièrement vendue
 
-Une ligne vendue en totalité disparaît du tableau de l'onglet [[Positions]], qui ne montre que les titres encore détenus. Elle n'est pas oubliée pour autant :
+Une ligne vendue en totalité disparaît du tableau des positions détenues, qui ne montre que les titres encore détenus ; elle apparaît dans l'encadré « Titres vendus » juste en dessous, avec sa plus-value réalisée, ses dividendes et ses frais. Elle reste aussi comptée ailleurs :
 
 - sa plus-value réalisée et ses dividendes restent comptés dans le gain total ;
 - son historique reste utilisé pour la courbe d'évolution et les indicateurs de performance ;

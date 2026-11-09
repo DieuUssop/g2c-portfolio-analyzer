@@ -10,7 +10,10 @@ from src import market_data, sources_secours
 BCE = ("KEY,FREQ,CURRENCY,CURRENCY_DENOM,EXR_TYPE,EXR_SUFFIX,TIME_PERIOD,OBS_VALUE\n"
        "EXR.D.USD.EUR.SP00.A,D,USD,EUR,SP00,A,2026-10-12,1.0912\n"
        "EXR.D.USD.EUR.SP00.A,D,USD,EUR,SP00,A,2026-10-13,1.0950\n")
-STOOQ = "Date,Open,High,Low,Close,Volume\n2026-10-12,250,252,249,251.5,1000\n2026-10-13,251,255,250,254.0,1200\n"
+# dates proches d'aujourd'hui : derniers_cours ne regarde que les 15 derniers jours
+_J1, _J2 = (pd.Timestamp.today().normalize() - pd.Timedelta(days=n) for n in (3, 2))
+STOOQ = (f"Date,Open,High,Low,Close,Volume\n{_J1:%Y-%m-%d},250,252,249,251.5,1000\n"
+         f"{_J2:%Y-%m-%d},251,255,250,254.0,1200\n")
 
 
 def _faux_internet(url):

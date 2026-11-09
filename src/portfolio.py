@@ -11,10 +11,15 @@ Rôle de ce fichier :
          - les dividendes perçus.
 
 Convention du fichier CSV :
-    - type = ACHAT, VENTE ou DIVIDENDE
+    - type = ACHAT, VENTE, DIVIDENDE, ou mouvement d'espèces VERSEMENT, RETRAIT, FRAIS
     - pour un ACHAT / une VENTE : "prix" = prix unitaire d'une action
     - pour un DIVIDENDE : "quantite" = 0 et "prix" = montant TOTAL reçu
+    - pour un VERSEMENT (d’espèces sur le compte), un RETRAIT (retrait d'espèces) ou des FRAIS
+      (droits de garde, frais de tenue de compte…) : ticker = ESPECES, "quantite" = 0, "prix" = montant
     - "frais" = frais de courtage en euros
+
+Les mouvements d'espèces ne sont pas des titres : ils sont gardés à part (self.especes) et servent au
+solde en espèces du compte ; les FRAIS de compte diminuent aussi le gain du portefeuille.
 """
 
 # On importe pandas, la bibliothèque de référence pour manipuler des tableaux
@@ -23,7 +28,16 @@ import pandas as pd
 
 
 # Les seuls types de transaction que l'on accepte.
-TYPES_VALIDES = {"ACHAT", "VENTE", "DIVIDENDE"}
+TYPES_TITRES = {"ACHAT", "VENTE", "DIVIDENDE"}
+TYPES_ESPECES = {"VERSEMENT", "RETRAIT", "FRAIS"}          # mouvements d'espèces du compte (pas des titres)
+TYPES_VALIDES = TYPES_TITRES | TYPES_ESPECES
+TICKER_ESPECES = "ESPECES"
+
+
+def separer_especes(transactions):
+    """(opérations sur titres, mouvements d'espèces) d'un tableau de transactions."""
+    especes = transactions["type"].isin(TYPES_ESPECES)
+    return transactions[~especes].reset_index(drop=True), transactions[especes].reset_index(drop=True)
 
 
 def lire_fichier_transactions(source):
@@ -60,7 +74,12 @@ class Portfolio:
             mon_portefeuille = Portfolio("data/transactions.csv")
         "self" désigne le portefeuille lui-même.
         """
-        self.transactions = self._charger_transactions(chemin_csv)
+        toutes = self._charger_transactions(chemin_csv)
+        # Mouvements d'espèces (versements, retraits, frais de compte) : gardés à part, ce ne sont pas des titres
+        self.transactions, self.especes = separer_especes(toutes)
+        if self.transactions.empty:
+            raise ValueError("Aucune opération sur titres (achat, vente, dividende) : seulement des mouvements "
+                             "d'espèces. Ajoutez au moins un achat.")
         # Points d'attention relevés pendant le calcul (titres reçus sans prix d'achat…)
         self.alertes = []
         # On calcule les positions dès la création du portefeuille.
@@ -87,7 +106,8 @@ class Portfolio:
 
         # Mise en forme : "achat " devient "ACHAT" (majuscules, sans espaces).
         df["type"] = df["type"].str.strip().str.upper()
-        df["ticker"] = df["ticker"].str.strip().str.upper()
+        df["ticker"] = df["ticker"].astype(str).str.strip().str.upper()
+        df.loc[df["type"].isin(TYPES_ESPECES), "ticker"] = TICKER_ESPECES
 
         # Contrôles de cohérence : mieux vaut une erreur claire qu'un
         # résultat faux sans s'en rendre compte.
@@ -212,7 +232,59 @@ class Portfolio:
             "dividendes_bruts": self.positions["dividendes_bruts"].sum(),
             "retenues": self.positions["retenues"].sum(),
             "frais_totaux": self.positions["frais_totaux"].sum(),
+            "frais_compte": self.frais_de_compte(),
+            "solde_especes": self.solde_especes(),
+            "versements": self._total_especes("VERSEMENT"),
+            "retraits": self._total_especes("RETRAIT"),
         }
+
+    # ------------------------------------------------------------------
+    # 3 bis. Espèces : versements, retraits, frais de compte, solde
+    # ------------------------------------------------------------------
+    def _total_especes(self, type_):
+        especes = getattr(self, "especes", None)
+        if especes is None or especes.empty:
+            return 0.0
+        return float((especes.loc[especes["type"] == type_, "prix"]).sum())
+
+    def frais_de_compte(self):
+        """Droits de garde, frais de tenue de compte… (lignes FRAIS) : payés en espèces, sans titre."""
+        return self._total_especes("FRAIS")
+
+    def a_des_especes(self):
+        """Vrai si le fichier contient des versements ou des retraits d'espèces."""
+        especes = getattr(self, "especes", None)
+        return especes is not None and especes["type"].isin(["VERSEMENT", "RETRAIT"]).any()
+
+    def mouvements_especes(self):
+        """Toutes les entrées (+) et sorties (−) d'espèces du compte, par date : versements, retraits,
+        frais de compte, et l'argent des opérations sur titres (achat −, vente +, dividende net +)."""
+        lignes = []
+        for _, o in self.transactions.iterrows():
+            if o["type"] == "ACHAT":
+                montant = -(o["quantite"] * o["prix"] + o["frais"])
+            elif o["type"] == "VENTE":
+                montant = o["quantite"] * o["prix"] - o["frais"]
+            else:
+                montant = o["prix"] - o["frais"]
+            lignes.append((o["date"], o["type"], o["ticker"], montant))
+        for _, o in getattr(self, "especes", pd.DataFrame(columns=["date", "type", "ticker", "prix"])).iterrows():
+            signe = 1 if o["type"] == "VERSEMENT" else -1
+            lignes.append((o["date"], o["type"], TICKER_ESPECES, signe * float(o["prix"])))
+        tableau = pd.DataFrame(lignes, columns=["date", "type", "ticker", "montant"])
+        # le même jour, le versement passe avant l'achat qu'il finance
+        tableau["_ordre"] = (tableau["type"] != "VERSEMENT").astype(int)
+        tableau = tableau.sort_values(["date", "_ordre"], kind="stable").drop(columns="_ordre")
+        tableau["solde"] = tableau["montant"].cumsum()
+        return tableau.reset_index(drop=True)
+
+    def solde_especes(self):
+        """Solde en espèces du compte = versements − retraits − achats (frais compris) + ventes (nettes de
+        frais) + dividendes nets − frais de compte. None si le fichier ne contient aucun versement ni
+        retrait : le solde n'est alors pas connu (seules les opérations sur titres ont été importées)."""
+        if not self.a_des_especes():
+            return None
+        return float(self.mouvements_especes()["montant"].sum())
 
     # ------------------------------------------------------------------
     # 4. Valorisation aux cours du marché (étape 2)
@@ -263,7 +335,10 @@ class Portfolio:
         r = self.resume()
         r["valeur_actuelle"] = tableau["valeur"].sum()
         r["pv_latentes"] = tableau["pv_latente"].sum()
-        r["gain_total"] = r["pv_latentes"] + r["pv_realisees"] + r["dividendes"]
+        # frais de compte (droits de garde…) : de l'argent dépensé sans contrepartie en titres
+        r["gain_total"] = r["pv_latentes"] + r["pv_realisees"] + r["dividendes"] - r["frais_compte"]
+        # Valeur du compte = titres + espèces (si le solde en espèces est connu)
+        r["valeur_compte"] = r["valeur_actuelle"] + (r["solde_especes"] or 0.0)
         return r
 
     # ------------------------------------------------------------------
@@ -359,6 +434,13 @@ class Portfolio:
 
         # --- g) Flux, apports nets et gain ---
         flux = t.groupby("jour")["flux"].sum().reindex(calendrier).fillna(0)
+        # frais de compte (droits de garde…) : un apport qui ne crée aucune valeur -> le gain baisse d'autant
+        # (les versements et retraits d'espèces ne changent rien à la poche titres : ils ne sont pas des flux ici)
+        frais = getattr(self, "especes", None)
+        frais = frais[frais["type"] == "FRAIS"] if frais is not None and not frais.empty else None
+        if frais is not None and not frais.empty:
+            jours = calendrier[calendrier.searchsorted(frais["date"]).clip(max=len(calendrier) - 1)]
+            flux = flux.add(pd.Series(frais["prix"].values, index=jours).groupby(level=0).sum(), fill_value=0.0)
 
         resultat = pd.DataFrame({
             "valeur": valeur,
