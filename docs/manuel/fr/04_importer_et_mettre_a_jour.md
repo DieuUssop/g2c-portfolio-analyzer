@@ -151,6 +151,10 @@ Un compte-titres ou un PEA contient des titres **et des espèces**. Le logiciel 
 
 Un « versement » qui porte sur un titre (assurance-vie : versement investi en unités de compte, avec un ISIN et un nombre de parts) reste un achat.
 
+### Envoyer seulement des relevés d'espèces
+
+Des avis d'opération qui ne contiennent que des versements, retraits ou frais (aucun achat ni vente) ne forment pas un portefeuille à analyser. Le logiciel affiche alors ces mouvements et propose le bouton [[Ajouter à « {nom} »]] : ils sont ajoutés au portefeuille choisi dans la liste de la barre latérale (enregistré dans votre espace, ou pour la session pour un portefeuille d'exemple), sans doublon. Vous pouvez aussi les envoyer en même temps que le fichier de vos achats et ventes, ou les ajouter par la page « Ajouter des opérations ».
+
 ### Le solde en espèces
 
 `Solde espèces = versements − retraits − achats (frais compris) + ventes (frais déduits) + dividendes nets − frais de compte`

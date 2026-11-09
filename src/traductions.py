@@ -11,6 +11,15 @@ accolades doivent être conservés à l'identique.
 """
 
 TEXTES = {
+    "Ajouté(s) au portefeuille : {noms}. Vous pouvez les retirer de la zone d'envoi.": 'Added to the portfolio: {noms}. You can remove them from the upload area.',
+    'Ajouter à « {nom} »': 'Add to « {nom} »',
+    "{n} mouvement(s) d'espèces ajouté(s) à « {nom} ».": '{n} cash movement(s) added to « {nom} ».',
+    "Mouvements d'espèces": 'Cash movements',
+    '{n} opération(s) : versements, retraits ou frais, sans achat ni vente de titres': '{n} transaction(s): deposits, withdrawals or fees, with no purchase or sale of securities',
+    "Ces documents ne contiennent aucun achat ni vente : il n'y a pas de portefeuille de titres à analyser. Ajoutez-les au portefeuille qui contient vos achats et ventes : ils compteront dans son solde en espèces et ses frais.": 'These documents contain no purchase or sale: there is no portfolio of securities to analyze. Add them to the portfolio that holds your purchases and sales: they will count in its cash balance and fees.',
+    '{n} mouvement(s) déjà dans ce portefeuille : non ajouté(s) une deuxième fois.': '{n} movement(s) already in this portfolio: not added a second time.',
+    "Choisissez d'abord votre portefeuille dans la liste de la barre latérale (ou envoyez-le en même temps que ces documents).": 'First choose your portfolio in the sidebar list (or upload it together with these documents).',
+    'Libellé': 'Label',
     'Négatif : des versements manquent sans doute': 'Negative: some deposits are probably missing',
     "Un solde en espèces négatif signifie qu'il manque des versements : importez les relevés ou avis d'opération de vos versements (ou ajoutez-les dans « Ajouter des opérations »).": 'A negative cash balance means some deposits are missing: import the statements or transaction notices of your deposits (or add them in « Add transactions »).',
     # Espèces, plus-values réalisées / latentes, frais, montant total (retours du 09/11/2026)

@@ -271,7 +271,14 @@ with st.sidebar:
     ) or []
     # fichiers dont l'utilisateur a annulé la lecture (« Annuler ») : mis de côté
     annules = [f for f in fichiers_envoyes if vues_pdf.est_annule(f.getvalue())]
-    fichiers_envoyes = [f for f in fichiers_envoyes if f not in annules]
+    # relevés d'espèces déjà ajoutés au portefeuille choisi (src/vues_mouvements.especes_seules)
+    ajoutes_set = st.session_state.get("imports_ajoutes", set())
+    ajoutes = [f for f in fichiers_envoyes if f not in annules
+               and hashlib.md5(f.getvalue()).hexdigest()[:12] in ajoutes_set]
+    fichiers_envoyes = [f for f in fichiers_envoyes if f not in annules and f not in ajoutes]
+    if ajoutes:
+        st.caption(t("Ajouté(s) au portefeuille : {noms}. Vous pouvez les retirer de la zone d'envoi.",
+                     noms=", ".join(f.name for f in ajoutes)))
     for f in annules:
         colonne_texte, colonne_bouton = st.columns([3, 2], vertical_alignment="center")
         colonne_texte.caption(t("Lecture annulée : {nom}", nom=f.name))
@@ -417,6 +424,15 @@ elif fichier_choisi is not None:
 else:
     st.error(t("Aucun fichier de transactions : envoyez un fichier CSV depuis la barre latérale."))
     st.stop()
+
+# Documents qui ne contiennent QUE des versements, retraits ou frais (relevés d'espèces sans ordre) :
+# pas de portefeuille de titres à analyser ; on propose de les ajouter au portefeuille choisi
+if fichiers_envoyes and vues_mouvements.seulement_especes(contenu):
+    vues_mouvements.especes_seules(contenu, fichiers_envoyes, fichier_choisi, session_compte,
+                                   st.session_state.get("fusion_session"))
+    st.stop()
+if st.session_state.get("especes_ajoutees"):
+    st.success(st.session_state.pop("especes_ajoutees"))
 
 # Opérations ajoutées pendant cette session à un portefeuille d'exemple ou à un fichier envoyé
 # (sans compte : rien n'est enregistré, le fichier mis à jour est proposé au téléchargement)

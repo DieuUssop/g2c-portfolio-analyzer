@@ -38,7 +38,7 @@ améliorée par les promotions suivantes.
    ne pas la remplacer par une base de test.
 4. **Jamais de valeur fausse en silence.** En cas de doute à l'import, ouvrir le formulaire
    « Compléter l'opération » ou afficher un avertissement plutôt que deviner.
-5. **Tout doit passer les tests** : `python -m pytest` (309 tests au 09/11/2026). Toute
+5. **Tout doit passer les tests** : `python -m pytest` (310 tests au 09/11/2026). Toute
    correction ou fonctionnalité ajoute au moins un test.
 6. **Pas de code en double** : une amélioration de lecture doit profiter à tous les chemins
    (PDF texte, PDF image, photo, CSV, Excel).

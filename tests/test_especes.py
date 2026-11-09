@@ -195,3 +195,17 @@ def test_fichier_du_projet_avec_especes_relu_sans_assistant():
     r = imp.importer_automatiquement(TRANSACTIONS.encode(), chercher=lambda q: [], marche=lambda t: ({}, None))
     assert r["sur"], r["raison"]
     assert list(r["transactions"]["type"]) == ["VERSEMENT", "ACHAT", "VENTE", "RETRAIT", "FRAIS"]
+
+
+def test_releves_d_especes_seuls_ajoutes_au_portefeuille():
+    from src import mouvements
+    from src.vues_mouvements import seulement_especes
+    especes = ("date,type,ticker,nom,quantite,prix,frais\n"
+               "2024-11-15,RETRAIT,ESPECES,Virement,0,200,0\n2024-11-15,FRAIS,ESPECES,CSG,0,2.11,0\n").encode()
+    assert seulement_especes(especes) and not seulement_especes(TRANSACTIONS.encode())
+    base = ("date,type,ticker,nom,quantite,prix,frais\n2024-01-02,ACHAT,ESE.PA,ESE,10,30,1\n"
+            "2024-11-15,FRAIS,ESPECES,CSG,0,2.11,0\n").encode()
+    preparees, alertes = mouvements.preparer(base, especes)
+    assert list(preparees["inclure"]) == [True, False]          # les frais déjà présents ne sont pas doublés
+    fusion = mouvements.fusionner(base, preparees)
+    assert sorted(fusion["type"]) == ["ACHAT", "FRAIS", "RETRAIT"] and not alertes

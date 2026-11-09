@@ -227,3 +227,73 @@ def page(session_compte, importer):
         if b.button(t("Tout effacer"), key="effacer_ops", width="stretch"):
             st.session_state["ops_ajoutees"] = []
             st.rerun()
+
+
+# ----------------------------------------------------------------------
+# Fichiers qui ne contiennent QUE des mouvements d'espèces
+# ----------------------------------------------------------------------
+TYPES_ESPECES = ("VERSEMENT", "RETRAIT", "FRAIS")
+
+
+def seulement_especes(contenu):
+    """Vrai si le fichier lu ne contient que des versements, retraits ou frais (aucun achat ni vente) :
+    relevés d'espèces envoyés seuls, à AJOUTER à un portefeuille plutôt qu'à analyser à sa place."""
+    try:
+        tableau = mouvements.lire(contenu)
+    except Exception:
+        return False
+    return not tableau.empty and tableau["type"].isin(TYPES_ESPECES).all()
+
+
+def especes_seules(contenu, fichiers, fichier_choisi, session_compte, fusion_session=None):
+    """Page affichée quand les fichiers envoyés ne contiennent que des mouvements d'espèces : leur
+    contenu, puis un bouton pour les ajouter au portefeuille choisi dans la liste (espace personnel :
+    enregistré ; portefeuille d'exemple : pour la session). Les fichiers sont ensuite mis de côté et le
+    portefeuille, complété, s'affiche."""
+    from pathlib import Path
+    especes = mouvements.lire(contenu)
+    with st.container(border=True):
+        html(ui.titre_section(t("Mouvements d'espèces"),
+                              t("{n} opération(s) : versements, retraits ou frais, sans achat ni vente de titres",
+                                n=len(especes))))
+        signe = especes["type"].map({"VERSEMENT": 1}).fillna(-1)
+        st.dataframe(especes.assign(type=especes["type"].map(td), montant=signe * especes["prix"])[
+            ["date", "type", "nom", "montant"]], hide_index=True, width="stretch",
+            column_config={"date": st.column_config.DateColumn("Date", format="DD/MM/YYYY"),
+                           "type": st.column_config.TextColumn(t("Type")),
+                           "nom": st.column_config.TextColumn(t("Libellé")),
+                           "montant": st.column_config.NumberColumn(t("Montant total (€)"), format="%+.2f")})
+        html(ui.note(t("Ces documents ne contiennent aucun achat ni vente : il n'y a pas de portefeuille de titres à "
+                       "analyser. Ajoutez-les au portefeuille qui contient vos achats et ventes : ils compteront "
+                       "dans son solde en espèces et ses frais.")))
+        # le portefeuille cible : celui choisi dans la liste de la barre latérale
+        if isinstance(fichier_choisi, tuple) and session_compte is not None:
+            base, nom, perso = session_compte.lire(fichier_choisi[1]), fichier_choisi[2], True
+        elif fichier_choisi is not None and not isinstance(fichier_choisi, tuple):
+            base, nom, perso = fichier_choisi.read_bytes(), fichier_choisi.name, False
+        else:
+            st.info(t("Choisissez d'abord votre portefeuille dans la liste de la barre latérale (ou envoyez-le en "
+                      "même temps que ces documents)."))
+            return
+        origine = hashlib.md5(base).hexdigest()[:12]
+        if fusion_session and fusion_session.get("origine") == origine:
+            base = fusion_session["contenu"]
+        preparees, _ = mouvements.preparer(base, especes)
+        deja = int((~preparees["inclure"]).sum())
+        if deja:
+            st.caption(t("{n} mouvement(s) déjà dans ce portefeuille : non ajouté(s) une deuxième fois.", n=deja))
+        if st.button(t("Ajouter à « {nom} »", nom=Path(str(nom)).stem), type="primary", icon=":material/add:",
+                     key="ajouter_especes", disabled=deja == len(preparees)):
+            nouveau = mouvements.en_csv(mouvements.fusionner(base, preparees))
+            if perso:
+                session_compte.enregistrer(nom, nouveau, identifiant=fichier_choisi[1], garder_precedente=True)
+            else:
+                st.session_state["fusion_session"] = {"origine": origine, "contenu": nouveau, "nom": nom}
+            # fichiers mis de côté (comme « Annuler ») : le portefeuille complété s'affiche
+            annules = st.session_state.setdefault("imports_ajoutes", set())
+            for f in fichiers:
+                annules.add(hashlib.md5(f.getvalue()).hexdigest()[:12])
+                annules.add(hashlib.md5(vues_pdf.version_lisible(f.getvalue())).hexdigest()[:12])
+            st.session_state["especes_ajoutees"] = t("{n} mouvement(s) d'espèces ajouté(s) à « {nom} ».",
+                                                     n=len(preparees) - deja, nom=Path(str(nom)).stem)
+            st.rerun()

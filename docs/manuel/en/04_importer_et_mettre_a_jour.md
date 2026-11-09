@@ -151,6 +151,10 @@ A securities account or a PEA holds securities **and cash**. The software reads 
 
 A « deposit » that concerns a security (life insurance: payment invested in unit-linked funds, with an ISIN and a number of units) remains a purchase.
 
+### Uploading only cash statements
+
+Transaction notices that contain only deposits, withdrawals or fees (no purchase or sale) do not make up a portfolio to analyze. The software then shows these movements and offers the [[Add to « {nom} »]] button: they are added to the portfolio chosen in the sidebar list (saved in your space, or for the session for a sample portfolio), without duplicates. You can also upload them together with the file of your purchases and sales, or add them through the « Add transactions » page.
+
 ### The cash balance
 
 `Cash balance = deposits − withdrawals − purchases (fees included) + sales (fees deducted) + net dividends − account fees`
