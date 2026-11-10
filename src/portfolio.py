@@ -29,9 +29,55 @@ import pandas as pd
 
 # Les seuls types de transaction que l'on accepte.
 TYPES_TITRES = {"ACHAT", "VENTE", "DIVIDENDE"}
-TYPES_ESPECES = {"VERSEMENT", "RETRAIT", "FRAIS"}          # mouvements d'espèces du compte (pas des titres)
+# Mouvements d'espèces du compte (pas des titres). SOLDE : solde disponible saisi à la main à une date
+# (crayon de la carte « Solde espèces ») ; c'est un point de départ, pas un mouvement.
+TYPES_ESPECES = {"VERSEMENT", "RETRAIT", "FRAIS", "SOLDE"}
 TYPES_VALIDES = TYPES_TITRES | TYPES_ESPECES
 TICKER_ESPECES = "ESPECES"
+
+
+# Ordre des opérations d'une même journée pour le solde : le versement d'abord (il finance l'achat),
+# puis les opérations sur titres, retraits et frais ; le solde saisi vaut en FIN de journée.
+ORDRE_JOUR = {"VERSEMENT": 0, "ACHAT": 1, "DIVIDENDE": 1, "VENTE": 1, "RETRAIT": 2, "FRAIS": 2, "SOLDE": 3}
+
+
+def montant_especes(type_, quantite, prix, frais):
+    """Effet d'une opération sur les espèces du compte (+ entrée, − sortie), en euros."""
+    if type_ == "ACHAT":
+        return -(quantite * prix + frais)
+    if type_ == "VENTE":
+        return quantite * prix - frais
+    if type_ == "DIVIDENDE":
+        return prix - frais
+    if type_ == "VERSEMENT":
+        return float(prix)
+    if type_ in ("RETRAIT", "FRAIS"):
+        return -float(prix)
+    return 0.0
+
+
+def cumul_especes(operations):
+    """Solde des espèces opération par opération.
+    operations : tableau date, type, ticker, quantite, prix, frais (en euros), titres et espèces mêlés.
+    Une ligne SOLDE (saisie à la main) remet le solde à son montant : les opérations antérieures n'y
+    comptent plus (elles sont dans le montant saisi), les suivantes le font varier.
+    Renvoie date, type, ticker, montant, solde (dans l'ordre chronologique)."""
+    t = operations.copy()
+    t["date"] = pd.to_datetime(t["date"])
+    t["_ordre"] = t["type"].map(ORDRE_JOUR).fillna(1)
+    t = t.sort_values(["date", "_ordre"], kind="stable").reset_index(drop=True)
+    soldes, montants, solde = [], [], 0.0
+    for _, o in t.iterrows():
+        if o["type"] == "SOLDE":
+            montant = float(o["prix"]) - solde
+            solde = float(o["prix"])
+        else:
+            montant = montant_especes(o["type"], float(o["quantite"]), float(o["prix"]), float(o["frais"]))
+            solde += montant
+        montants.append(montant)
+        soldes.append(solde)
+    t["montant"], t["solde"] = montants, soldes
+    return t[["date", "type", "ticker", "montant", "solde"]]
 
 
 def separer_especes(transactions):
@@ -252,31 +298,26 @@ class Portfolio:
         return self._total_especes("FRAIS")
 
     def a_des_especes(self):
-        """Vrai si le fichier contient des versements ou des retraits d'espèces."""
+        """Vrai si le solde des espèces est connu : versements ou retraits importés, ou solde saisi."""
         especes = getattr(self, "especes", None)
-        return especes is not None and especes["type"].isin(["VERSEMENT", "RETRAIT"]).any()
+        return especes is not None and especes["type"].isin(["VERSEMENT", "RETRAIT", "SOLDE"]).any()
+
+    def solde_saisi(self):
+        """(date, montant) du solde saisi à la main (le plus récent), ou None."""
+        especes = getattr(self, "especes", None)
+        if especes is None or not (especes["type"] == "SOLDE").any():
+            return None
+        ligne = especes[especes["type"] == "SOLDE"].sort_values("date").iloc[-1]
+        return pd.Timestamp(ligne["date"]), float(ligne["prix"])
 
     def mouvements_especes(self):
         """Toutes les entrées (+) et sorties (−) d'espèces du compte, par date : versements, retraits,
-        frais de compte, et l'argent des opérations sur titres (achat −, vente +, dividende net +)."""
-        lignes = []
-        for _, o in self.transactions.iterrows():
-            if o["type"] == "ACHAT":
-                montant = -(o["quantite"] * o["prix"] + o["frais"])
-            elif o["type"] == "VENTE":
-                montant = o["quantite"] * o["prix"] - o["frais"]
-            else:
-                montant = o["prix"] - o["frais"]
-            lignes.append((o["date"], o["type"], o["ticker"], montant))
-        for _, o in getattr(self, "especes", pd.DataFrame(columns=["date", "type", "ticker", "prix"])).iterrows():
-            signe = 1 if o["type"] == "VERSEMENT" else -1
-            lignes.append((o["date"], o["type"], TICKER_ESPECES, signe * float(o["prix"])))
-        tableau = pd.DataFrame(lignes, columns=["date", "type", "ticker", "montant"])
-        # le même jour, le versement passe avant l'achat qu'il finance
-        tableau["_ordre"] = (tableau["type"] != "VERSEMENT").astype(int)
-        tableau = tableau.sort_values(["date", "_ordre"], kind="stable").drop(columns="_ordre")
-        tableau["solde"] = tableau["montant"].cumsum()
-        return tableau.reset_index(drop=True)
+        frais de compte, l'argent des opérations sur titres (achat −, vente +, dividende net +), et le
+        solde saisi à la main (point de départ). Colonnes date, type, ticker, montant, solde."""
+        colonnes = ["date", "type", "ticker", "quantite", "prix", "frais"]
+        especes = getattr(self, "especes", None)
+        morceaux = [self.transactions[colonnes]] + ([especes[colonnes]] if especes is not None and len(especes) else [])
+        return cumul_especes(pd.concat(morceaux, ignore_index=True))
 
     def solde_especes(self):
         """Solde en espèces du compte = versements − retraits − achats (frais compris) + ventes (nettes de
@@ -284,7 +325,7 @@ class Portfolio:
         retrait : le solde n'est alors pas connu (seules les opérations sur titres ont été importées)."""
         if not self.a_des_especes():
             return None
-        return float(self.mouvements_especes()["montant"].sum())
+        return float(self.mouvements_especes()["solde"].iloc[-1])
 
     # ------------------------------------------------------------------
     # 4. Valorisation aux cours du marché (étape 2)

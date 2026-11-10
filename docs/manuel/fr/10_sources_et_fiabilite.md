@@ -376,7 +376,7 @@ La région de l'ETF est déduite de son indice (« Asie-Pacifique » pour un ind
 L'attribution de performance utilise les poids régionaux du MSCI ACWI IMI au 30/06/2026, également inscrits dans le logiciel.
 
 ## Comment chaque titre est classé (pays, secteur, classe d'actifs)
-<!-- fiche: sources-classification | questions: d'où viennent le pays et le secteur de mes titres ; mon action est non classé ; c'est quoi referentiel.csv ; mon titre est classé dans le mauvais pays ; pourquoi mon obligation est comptée comme action ; où est la duration des fonds obligataires ; ajouter un titre au référentiel ; classe d'actifs par défaut ; pourquoi mon pea est exposé aux états-unis ; mon pea a plus d'actions américaines qu'européennes ; c'est quoi un etf synthétique swap ; etf pea swap ; mon pea est surtout en asie est-ce normal | mots: classification, référentiel, referentiel.csv, pays, région, secteur, classe d'actifs, duration, Non classé, GICS -->
+<!-- fiche: sources-classification | questions: titres à vérifier ; corriger le nom d un titre ; mon etf cac 40 est classé monde ; région à préciser ; d'où viennent le pays et le secteur de mes titres ; mon action est non classé ; c'est quoi referentiel.csv ; mon titre est classé dans le mauvais pays ; pourquoi mon obligation est comptée comme action ; où est la duration des fonds obligataires ; ajouter un titre au référentiel ; classe d'actifs par défaut ; pourquoi mon pea est exposé aux états-unis ; mon pea a plus d'actions américaines qu'européennes ; c'est quoi un etf synthétique swap ; etf pea swap ; mon pea est surtout en asie est-ce normal | mots: classification, référentiel, referentiel.csv, pays, région, secteur, classe d'actifs, duration, Non classé, GICS -->
 
 ### Deux sources, dans cet ordre
 
@@ -395,9 +395,15 @@ L'attribution de performance utilise les poids régionaux du MSCI ACWI IMI au 30
 - Un titre sans classe d'actifs connue est considéré comme une **action** : c'est l'hypothèse prudente pour mesurer le risque.
 - La **duration** n'est connue que pour les fonds obligataires du référentiel ; ailleurs, elle est absente.
 
-### Corriger un classement
+### Corriger un classement : « Titres à vérifier »
 
-Le logiciel ne propose pas d'écran pour modifier le classement d'un titre. Depuis le code source, vous pouvez ajouter ou corriger une ligne de `data/referentiel.csv`, en respectant ses colonnes : elle primera sur la base locale. Dans la version installée, ce fichier se trouve dans le dossier `data` du programme et serait remplacé par une nouvelle installation.
+Dans l'onglet [[Positions]], l'encadré « Titres à vérifier » liste les titres mal reconnus : titre écrit par son code ISIN, nom inconnu, ETF dont l'indice suivi n'est pas reconnu (région « À préciser (ETF) »), titre non classé. Le bouton [[Corriger]] (crayon) permet d'indiquer le **nom**, le **ticker Yahoo Finance** et, pour un ETF, l'**indice suivi** (liste) : la région et la composition en découlent. Le nom et le ticker sont corrigés dans le fichier du portefeuille ; le nom et l'indice sont retenus sur cet ordinateur pour les imports suivants (`data/base/corrections.csv`).
+
+Un ETF dont l'indice n'est pas reconnu n'est plus rangé « Monde » par défaut : une région devinée faussait la diversification (un ETF CAC 40 compté « Monde », par exemple). Un nom qui dit l'indice (« CAC 40 », « S&P 500 », « MSCI World »…) l'emporte sur une catégorie contraire donnée par Yahoo Finance.
+
+Un titre écrit par son **code ISIN** (« FR0011550185 ») est remplacé par son ticker Yahoo (« ESE.PA ») et son vrai nom, et le fichier du portefeuille est corrigé une fois pour toutes à son ouverture. Pour un ISIN français (ou d'un ETF irlandais ou luxembourgeois), la cotation de **Paris** est préférée.
+
+Depuis le code source, vous pouvez aussi ajouter ou corriger une ligne de `data/referentiel.csv`, en respectant ses colonnes : elle primera sur la base locale.
 
 ### Le classement automatique (depuis la version d'octobre 2026)
 

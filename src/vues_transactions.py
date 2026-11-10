@@ -28,7 +28,7 @@ def html(morceau):
     st.markdown(morceau, unsafe_allow_html=True)
 
 
-TYPES_AFFICHES = ["ACHAT", "VENTE", "DIVIDENDE", "VERSEMENT", "RETRAIT", "FRAIS"]
+TYPES_AFFICHES = ["ACHAT", "VENTE", "DIVIDENDE", "VERSEMENT", "RETRAIT", "FRAIS", "SOLDE"]
 
 
 def montant_total(transactions):
@@ -198,6 +198,13 @@ def _edition(contenu, cible, session_compte, transactions, choix_types, choix_ti
     if any("Vente de" in a["message"] for a in bloquantes):
         st.caption(t("Si vous supprimez un achat, supprimez aussi la ou les ventes qui en dépendent (même titre, "
                      "date postérieure)."))
+    # Solde des espèces : une correction ne doit pas le faire passer sous 0 €
+    info, taux = st.session_state.get("devises_taux", ({}, {}))
+    probleme = mouvements.controler_solde(nouveau, info, taux)
+    if probleme is not None and mouvements.controler_solde(source, info, taux) is None:
+        st.error(message_solde_insuffisant(probleme) + " " + t("Annulez cette modification ou indiquez d'abord le "
+                                                               "solde disponible avec le crayon ✏️ « Solde espèces »."))
+        bloquantes = bloquantes + [{"message": "solde"}]
     disparus = mouvements.titres_disparus(source, nouveau)
     if disparus and not bloquantes:
         st.warning(t("Après cette modification, ces titres ne sont plus détenus : {titres}.",
@@ -407,3 +414,113 @@ def valeurs_incoherentes(lignes):
                        nom=v["nom"], ticker=v["ticker"], multiple=v["multiple"],
                        valeur=f"{v['valeur']:,.0f}".replace(",", " "),
                        investi=f"{v['investi']:,.0f}".replace(",", " ")), attention=True))
+
+
+
+# ----------------------------------------------------------------------
+# Crayon du solde espèces (point de départ saisi à la main)
+# ----------------------------------------------------------------------
+def crayon_solde(res, contenu, cible, session_compte):
+    """Petit bouton ✏️ « Solde espèces » sous les chiffres clés : saisir le solde disponible à une date.
+    Il est enregistré dans le fichier du portefeuille (ligne SOLDE) ; les opérations postérieures le font
+    ensuite varier automatiquement. « Revenir au calcul automatique » retire la saisie."""
+    saisi = res.get("solde_saisi")
+    with st.popover(t("Solde espèces"), icon=":material/edit:",
+                    help=t("Indiquer vous-même le solde disponible sur le compte")):
+        st.caption(t("Recopiez le solde disponible de votre relevé. Les achats, ventes, versements, retraits, "
+                     "dividendes et frais POSTÉRIEURS à cette date le feront varier automatiquement."))
+        actuel = res["resume"].get("solde_especes")
+        with st.form("form_solde_especes", border=False):
+            montant = st.number_input(t("Solde disponible (€)"), min_value=0.0, step=10.0, format="%.2f",
+                                      value=float(saisi[1]) if saisi else max(0.0, float(actuel or 0.0)))
+            date = st.date_input(t("à la date du"), value=saisi[0] if saisi else pd.Timestamp.today(),
+                                 format="DD/MM/YYYY")
+            enregistrer = st.form_submit_button(t("Enregistrer le solde"), type="primary")
+        if enregistrer:
+            nouveau = mouvements.avec_solde_saisi(contenu, montant, date)
+            _sauver(nouveau, contenu, cible, session_compte,
+                    t("Solde espèces enregistré : {montant} au {date}.", montant=ui.euros_cents(montant),
+                      date=pd.Timestamp(date).strftime("%d/%m/%Y")))
+        if saisi and st.button(t("Revenir au calcul automatique"), key="retirer_solde_saisi", type="tertiary"):
+            _sauver(mouvements.sans_solde_saisi(contenu), contenu, cible, session_compte,
+                    t("Solde saisi retiré : calcul d'après les versements et retraits."))
+
+
+def message_solde_insuffisant(probleme):
+    """Phrase « Solde insuffisant : … » (traduite)."""
+    nature = {"ACHAT": t("l'achat de"), "RETRAIT": t("le retrait"), "FRAIS": t("les frais")}.get(
+        probleme["type"], t("l'opération"))
+    return t("Solde insuffisant : {nature} {titre} le {date} ({montant}) laisserait {solde} sur le compte.",
+             nature=nature, titre=probleme["nom"] if probleme["type"] == "ACHAT" else "",
+             date=probleme["date"].strftime("%d/%m/%Y"), montant=ui.euros_cents(probleme["montant"]),
+             solde=ui.euros_cents(probleme["solde"]))
+
+
+
+# ----------------------------------------------------------------------
+# Titres à vérifier (mal reconnus) : correction au crayon
+# ----------------------------------------------------------------------
+def titres_a_verifier(positions, contenu, cible, session_compte):
+    """Encadré « Titres à vérifier » de l'onglet Positions : chaque titre mal reconnu (code ISIN, nom
+    inconnu, région d'ETF à préciser) avec un crayon pour indiquer son nom, son ticker Yahoo et, pour un
+    ETF, l'indice suivi. Le nom et le ticker sont corrigés dans le fichier du portefeuille ; l'indice et le
+    nom sont retenus sur cet ordinateur pour les imports suivants (base_titres.corriger)."""
+    from . import base_titres, classement, composition_etf
+    lignes = classement.titres_a_verifier(positions)
+    if not lignes:
+        return
+    with st.container(border=True):
+        html(ui.titre_section(t("Titres à vérifier ({n})", n=len(lignes)),
+                              t("Mal reconnus : la région, le nom ou la diversification peuvent être faux")))
+        indices = [""] + sorted(composition_etf.PAYS_PAR_INDICE)
+        for ticker, nom, raison in lignes:
+            gauche, droite = st.columns([4, 1], vertical_alignment="center")
+            gauche.markdown(f"**{nom}** · `{ticker}` — {t(raison)}")
+            with droite.popover(t("Corriger"), icon=":material/edit:"):
+                with st.form(f"corriger_{ticker}", border=False):
+                    nouveau_nom = st.text_input(t("Nom du titre"), value="" if nom == ticker else nom)
+                    nouveau_ticker = st.text_input(t("Ticker Yahoo Finance (facultatif)"), value=ticker,
+                                                   help=t("Ex. ESE.PA, CACC.PA, AAPL : le code du titre sur Yahoo "
+                                                          "Finance (finance.yahoo.com)"))
+                    indice = st.selectbox(t("Indice suivi (ETF)"), indices, format_func=lambda i: i or t("— (action, "
+                                          "ou inconnu)"), help=t("Il donne la région et la composition de l'ETF"))
+                    if st.form_submit_button(t("Enregistrer"), type="primary"):
+                        nouveau_ticker = (nouveau_ticker or ticker).strip().upper()
+                        base_titres.corriger(nouveau_ticker, nouveau_nom.strip(), indice)
+                        if nouveau_ticker != ticker:
+                            base_titres.memoriser(ticker, nouveau_ticker, nouveau_nom.strip(), source="correction")
+                        tableau = mouvements.lire(contenu)
+                        concerne = tableau["ticker"].str.upper() == ticker.upper()
+                        tableau.loc[concerne, "ticker"] = nouveau_ticker
+                        if nouveau_nom.strip():
+                            tableau.loc[concerne, "nom"] = nouveau_nom.strip()
+                        st.cache_data.clear()                # le classement est recalculé
+                        _sauver(tableau, contenu, cible, session_compte,
+                                t("{titre} corrigé.", titre=nouveau_nom.strip() or nouveau_ticker))
+
+
+
+@st.cache_data(show_spinner=False, max_entries=20)
+def _isin_convertis(contenu):
+    from .import_fichier import tickers_depuis_isin
+    tableau = mouvements.lire(contenu)
+    return tableau, tickers_depuis_isin(tableau)
+
+
+def reparer_isin(contenu, cible, session_compte):
+    """Titres écrits par leur ISIN dans le fichier : remplacés par leur ticker Yahoo et leur nom, et le fichier
+    est réenregistré (espace personnel) ou mis à jour pour la session. Rien si aucun ISIN n'est convertible."""
+    from .import_fichier import MOTIF_ISIN
+    try:
+        brut = mouvements.lire(contenu)
+        if not brut["ticker"].astype(str).str.upper().str.match(MOTIF_ISIN.pattern).any():
+            return
+        avant, apres = _isin_convertis(contenu)
+    except Exception:
+        return
+    if apres["ticker"].equals(avant["ticker"]) and apres["nom"].equals(avant["nom"]):
+        return
+    n = int((apres["ticker"] != avant["ticker"]).sum())
+    _sauver(apres, contenu, cible, session_compte,
+            t("{n} opération(s) écrites avec un code ISIN : ticker et nom du titre corrigés dans le portefeuille.",
+              n=n))

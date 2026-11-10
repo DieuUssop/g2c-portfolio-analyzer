@@ -41,6 +41,7 @@ PROXIES_REGIONS = {
     "États-Unis": "^GSPC", "Europe": "^STOXX50E", "Royaume-Uni": "^FTSE", "Suisse": "^SSMI",
     "Japon": "^N225", "Asie-Pacifique": "^AXJO", "Canada": "^GSPTSE", "Émergents": "EEM",
     "Monde (ETF)": "^GSPC",
+    "À préciser (ETF)": "^GSPC",
 }
 PROXY_PAR_DEFAUT = "^GSPC"
 

@@ -2,8 +2,8 @@
 diagnostic « Signaler un problème ». À mettre à jour à chaque nouvelle version."""
 import datetime
 
-VERSION = "2026.11.09"
-DATE_VERSION = datetime.date(2026, 11, 9)
+VERSION = "2026.11.10"
+DATE_VERSION = datetime.date(2026, 11, 10)
 
 
 def age_en_jours(aujourd_hui=None):

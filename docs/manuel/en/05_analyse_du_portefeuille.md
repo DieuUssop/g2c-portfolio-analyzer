@@ -51,16 +51,15 @@ The three rings are calculated **on a look-through basis**: an ETF is split betw
 
 Shares below 3% are grouped into "Other (n)", n being the number of groups combined; a single small share keeps its own name (there is never "Other (1)"). Each ring shows at most eight named shares. Asset classes always have the same colours throughout the software: equities in blue, bonds in green, gold in golden yellow, money market in light blue, as in the "Allocations compared" chart of the [[Optimisation]] tab. A ring that would contain only one group (for example a 100% equity portfolio for asset classes) is not displayed.
 
-### 4. Four cards
+### 4. The cards at the bottom
 
 | Card | Content |
 |---|---|
-| Unrealised gains | Gain or loss not yet cashed in on the holdings still held ("unrealised") |
-| Realised gains | Gain or loss cashed in on sales ("realised") |
 | Dividends and coupons | Total dividends and coupons entered, since inception |
-| Brokerage fees | Total fees entered, since inception |
+| Brokerage fees | Total fees on purchases and sales, since inception |
+| Account fees and levies | Custody fees, social levies… (shown if there are any) |
 
-The sum of the first three cards gives the **total gain** shown at the top of the page.
+**Unrealised gains** (securities held, not cashed in) and **realised gains** (securities sold, cashed in) are shown at the top of the page, **under the total gain**, in its card: "of which unrealized", "of which realized", then dividends and account fees. Their sum gives the total gain.
 
 ## Reading the "Portfolio value over time" chart
 <!-- fiche: analyse-evolution-valeur | questions: what does the orange line mean ; what are net contributions ; why is the orange line going down ; difference between value and money invested ; the blue area between the two lines ; my value is below the money invested am i losing ; why does the line move in steps ; negative money invested | mots: change in value, market value, net contributions, invested capital, money invested, curve, history, unrealised gain, chart | aller: Analyse du portefeuille/Vue d'ensemble | chiffres: valeur_actuelle, gain_total -->

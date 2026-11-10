@@ -119,3 +119,42 @@ def consigne():
     if CONTACT:
         return CONTACT
     return ""
+
+
+
+# ----------------------------------------------------------------------
+# Message libre envoyé par e-mail (lien « mailto » ou Gmail : rien ne part sans l'utilisateur)
+# ----------------------------------------------------------------------
+SUJETS = ["Problème d'import (PDF, Excel, CSV)", "Erreur de calcul ou d'affichage", "Question",
+          "Suggestion d'amélioration", "Autre"]
+LONGUEUR_LIEN = 1800          # au-delà, certains navigateurs / messageries coupent le lien mailto
+
+
+def objet(sujet):
+    from .version import VERSION
+    return f"Portfolio Tracker – {sujet} – version {VERSION}"
+
+
+def corps(message, diagnostic_texte=None, limite=LONGUEUR_LIEN):
+    """Texte de l'e-mail : le message de l'utilisateur, puis le diagnostic anonymisé (raccourci pour tenir
+    dans le lien ; le diagnostic complet reste téléchargeable)."""
+    texte = (message or "").strip() or "(pas de message)"
+    if diagnostic_texte:
+        place = max(0, limite - len(texte) - 120)
+        extrait = diagnostic_texte if len(diagnostic_texte) <= place else (
+            diagnostic_texte[:place] + "\n… (diagnostic raccourci : le fichier complet peut être joint)")
+        texte += "\n\n----- Diagnostic anonymisé -----\n" + extrait
+    return texte
+
+
+def lien_mailto(destinataire, objet_mail, corps_mail):
+    """Lien qui ouvre la messagerie de l'ordinateur (Outlook, Mail…) avec l'e-mail déjà rempli."""
+    from urllib.parse import quote
+    return f"mailto:{destinataire}?subject={quote(objet_mail)}&body={quote(corps_mail)}"
+
+
+def lien_gmail(destinataire, objet_mail, corps_mail):
+    """Lien qui ouvre un nouveau message Gmail (navigateur) déjà rempli."""
+    from urllib.parse import urlencode
+    return "https://mail.google.com/mail/?" + urlencode({"view": "cm", "fs": "1", "to": destinataire,
+                                                          "su": objet_mail, "body": corps_mail})

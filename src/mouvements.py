@@ -24,8 +24,8 @@ import pandas as pd
 COLONNES = ["date", "type", "ticker", "nom", "quantite", "prix", "frais"]
 TOLERANCE_PRIX = 0.005
 # le même jour : versement d'espèces, puis achat, dividende, vente, et enfin retrait et frais
-ORDRE_TYPES = {"VERSEMENT": -1, "ACHAT": 0, "DIVIDENDE": 1, "VENTE": 2, "RETRAIT": 3, "FRAIS": 3}
-SANS_QUANTITE = ("DIVIDENDE", "VERSEMENT", "RETRAIT", "FRAIS")    # montant dans « prix », quantité 0
+ORDRE_TYPES = {"VERSEMENT": -1, "ACHAT": 0, "DIVIDENDE": 1, "VENTE": 2, "RETRAIT": 3, "FRAIS": 3, "SOLDE": 4}
+SANS_QUANTITE = ("DIVIDENDE", "VERSEMENT", "RETRAIT", "FRAIS", "SOLDE")    # montant dans « prix », quantité 0
 
 
 def lire(contenu):
@@ -99,7 +99,7 @@ def controler(fusion, aujourdhui=None):
                                     "date": ligne["date"].strftime("%d/%m/%Y")}})
     sans_qte = fusion["type"].isin(SANS_QUANTITE)
     for _, ligne in fusion[(~sans_qte & ((fusion["quantite"] <= 0) | (fusion["prix"] <= 0)))
-                           | (sans_qte & (fusion["type"] != "DIVIDENDE") & (fusion["prix"] <= 0))].iterrows():
+                           | (sans_qte & ~fusion["type"].isin(["DIVIDENDE", "SOLDE"]) & (fusion["prix"] <= 0))].iterrows():
         alertes.append({"bloquant": True, "ticker": ligne["ticker"], "date": ligne["date"],
                         "message": "Quantité ou prix nul pour {titre}, le {date}.",
                         "valeurs": {"titre": ligne["nom"] or ligne["ticker"],
@@ -442,3 +442,87 @@ def corriger_sauts_de_cours(prix_hist, colonnes):
             corriges.loc[avant, ticker] = corriges.loc[avant, ticker] * facteur
             notes.append({"ticker": ticker, "date": pd.Timestamp(date), "facteur": facteur})
     return corriges, notes
+
+
+# ----------------------------------------------------------------------
+# Solde des espèces : solde saisi à la main et contrôle du solde insuffisant
+# ----------------------------------------------------------------------
+def _en_euros(tableau, info_devises=None, taux=None):
+    """Prix des opérations sur titres ramenés en euros (fichier du projet : prix dans la devise de
+    cotation, frais en euros). info_devises : {ticker: (devise, facteur)} ; taux : {devise: 1 € = x}.
+    Renvoie (tableau en euros, tickers dont la devise n'a pas de taux connu)."""
+    from .devises import devise_par_suffixe, normaliser
+    t = tableau.copy()
+    inconnus = set()
+    for i, o in t.iterrows():
+        if o["type"] not in ("ACHAT", "VENTE", "DIVIDENDE") or o["ticker"] == "ESPECES":
+            continue
+        devise, facteur = (info_devises or {}).get(o["ticker"]) or normaliser(devise_par_suffixe(o["ticker"]))
+        if devise == "EUR":
+            t.at[i, "prix"] = o["prix"] * facteur
+        elif taux and devise in taux and taux[devise]:
+            t.at[i, "prix"] = o["prix"] * facteur / taux[devise]
+        else:
+            inconnus.add(o["ticker"])
+    return t, inconnus
+
+
+def solde_connu(tableau):
+    """Vrai si le solde des espèces est connu : versements / retraits importés, ou solde saisi."""
+    return bool(lire(tableau)["type"].isin(["VERSEMENT", "RETRAIT", "SOLDE"]).any())
+
+
+def controler_solde(tableau, info_devises=None, taux=None, tolerance=0.005):
+    """Premier moment où le solde des espèces passerait SOUS 0 € (0 € pile reste permis).
+    Renvoie None si le solde reste positif (ou n'est pas connu), sinon un dict :
+    date, type, ticker, nom, montant (de l'opération), solde (après), minimum (pire solde atteint),
+    solde_veille (solde la veille de l'opération), approx (montants convertis au taux du jour)."""
+    from .portfolio import cumul_especes
+    t = lire(tableau)
+    if not solde_connu(t):
+        return None
+    t, inconnus = _en_euros(t, info_devises, taux)
+    t = t[~t["ticker"].isin(inconnus)]
+    cumul = cumul_especes(t.assign(ticker=t["ticker"]))
+    # ne contrôler qu'APRÈS le premier point connu (premier versement ou solde saisi)
+    # (un retrait en premier ne dit rien du solde d'avant : le contrôle part d'un versement ou d'un solde saisi)
+    points = cumul.index[cumul["type"].isin(["VERSEMENT", "SOLDE"])]
+    if not len(points):
+        return None
+    depart = points[0]
+    dernier_solde = cumul.index[cumul["type"] == "SOLDE"]
+    if len(dernier_solde):
+        depart = max(depart, dernier_solde[-1])
+    suite = cumul.loc[depart:]
+    negatifs = suite[suite["solde"] < -tolerance]
+    if negatifs.empty:
+        return None
+    i = negatifs.index[0]
+    ligne = cumul.loc[i]
+    veille = pd.Timestamp(ligne["date"]) - pd.Timedelta(days=1)
+    avant = cumul[cumul["date"] <= veille]
+    noms = dict(zip(t["ticker"], t["nom"]))
+    return {"date": pd.Timestamp(ligne["date"]), "type": ligne["type"], "ticker": ligne["ticker"],
+            "nom": noms.get(ligne["ticker"], ligne["ticker"]), "montant": float(-ligne["montant"]),
+            "solde": float(ligne["solde"]), "minimum": float(suite["solde"].min()),
+            "solde_veille": float(avant["solde"].iloc[-1]) if len(avant) else 0.0, "veille": veille,
+            "approx": bool(inconnus) or any(d != "EUR" for d, _ in (info_devises or {}).values())}
+
+
+def solde_minimum_necessaire(probleme):
+    """Solde à saisir la veille pour que le solde ne passe jamais sous 0 € ensuite."""
+    return round(max(0.0, probleme["solde_veille"] - probleme["minimum"]), 2)
+
+
+def avec_solde_saisi(tableau, montant, date):
+    """Le fichier avec UN solde saisi (les anciens sont remplacés) : ligne SOLDE, ticker ESPECES."""
+    t = lire(tableau)
+    t = t[t["type"] != "SOLDE"]
+    ligne = pd.DataFrame([{"date": pd.Timestamp(date), "type": "SOLDE", "ticker": "ESPECES",
+                           "nom": "Solde saisi", "quantite": 0.0, "prix": float(montant), "frais": 0.0}])
+    return _trier(pd.concat([t, ligne], ignore_index=True))
+
+
+def sans_solde_saisi(tableau):
+    t = lire(tableau)
+    return _trier(t[t["type"] != "SOLDE"].reset_index(drop=True))

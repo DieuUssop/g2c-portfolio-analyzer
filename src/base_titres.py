@@ -319,6 +319,34 @@ def lire_memoire():
     return pd.read_csv(chemin, dtype=str, keep_default_na=False)
 
 
+# Corrections faites par l'utilisateur (crayon « Titres à vérifier » de l'onglet Positions) : nom et
+# indice suivi d'un titre mal reconnu. Elles l'emportent sur toute autre source, sur cet ordinateur.
+COLONNES_CORRECTIONS = ["ticker", "nom", "indice_suivi", "date"]
+
+
+def lire_corrections():
+    """Tableau indexé par ticker : nom, indice_suivi (vides si non précisés)."""
+    chemin = _dossier() / "corrections.csv"
+    if not chemin.exists():
+        return pd.DataFrame(columns=COLONNES_CORRECTIONS).set_index("ticker")
+    return pd.read_csv(chemin, dtype=str, keep_default_na=False).drop_duplicates("ticker", keep="last") \
+        .set_index("ticker")
+
+
+def corriger(ticker, nom="", indice_suivi=""):
+    """Retient la correction d'un titre (nom et / ou indice suivi d'un ETF)."""
+    if not ticker:
+        return
+    corrections = lire_corrections().reset_index()
+    corrections = corrections[corrections["ticker"] != ticker]
+    corrections.loc[len(corrections)] = [ticker, nom or "", indice_suivi or "", pd.Timestamp.now().strftime("%Y-%m-%d")]
+    try:
+        _ecrire_atomique(_dossier() / "corrections.csv",
+                         lambda chemin: corrections.to_csv(chemin, index=False, encoding="utf-8"))
+    except OSError:
+        pass
+
+
 def memoriser(identifiant, ticker, nom="", source="recherche"):
     """Retient qu'un identifiant (ISIN, nom, code Bloomberg...) correspond à un ticker."""
     if not identifiant or not ticker:
@@ -342,10 +370,10 @@ def chercher_localement(identifiant):
     cle = _cle(identifiant)
     if cle in ISIN_ETF:
         ticker, nom = ISIN_ETF[cle]
-        return [{"symbol": ticker, "longname": nom, "quoteType": "ETF", "local": True}]
+        return [{"symbol": ticker, "longname": nom, "quoteType": "ETF", "local": True, "table": True}]
     if cle in ISIN_ACTIONS:
         ticker, nom = ISIN_ACTIONS[cle]
-        return [{"symbol": ticker, "longname": nom, "quoteType": "EQUITY", "local": True}]
+        return [{"symbol": ticker, "longname": nom, "quoteType": "EQUITY", "local": True, "table": True}]
     memoire = lire_memoire()
     trouve = memoire[memoire["identifiant"] == cle]
     if not trouve.empty:

@@ -133,7 +133,7 @@ Selling more securities than you own at that date causes an error during analysi
 Deposits, withdrawals and account fees (custody fees, social levies…) are cash movements: they are read in exports and PDF statements and make up the cash balance (see the fiche « Deposits, withdrawals and fees: the cash balance »). Corporate actions (merger, exchange…) that are neither purchases, nor sales, nor dividends are still ignored.
 
 ## Deposits, withdrawals and fees: the cash balance
-<!-- fiche: import-especes | questions: how do I import a deposit ; my transfers are not recognised ; the software ignores my withdrawals ; where do I see the cash balance ; how do I enter custody fees ; social levies on my pea ; bourse direct cash statement ; account cash balance ; account maintenance fees ; pea adjustment | mots: deposit, withdrawal, transfer, account fees, custody fees, social levies, CSG, cash, cash balance, VERSEMENT, RETRAIT, FRAIS -->
+<!-- fiche: import-especes | questions: edit the balance by hand ; cash balance pencil ; insufficient balance ; document already imported ; how do I import a deposit ; my transfers are not recognised ; the software ignores my withdrawals ; where do I see the cash balance ; how do I enter custody fees ; social levies on my pea ; bourse direct cash statement ; account cash balance ; account maintenance fees ; pea adjustment | mots: deposit, withdrawal, transfer, account fees, custody fees, social levies, CSG, cash, cash balance, VERSEMENT, RETRAIT, FRAIS -->
 
 A securities account or a PEA holds securities **and cash**. The software reads three cash movements, which concern no security:
 
@@ -160,6 +160,23 @@ Transaction notices that contain only deposits, withdrawals or fees (no purchase
 `Cash balance = deposits − withdrawals − purchases (fees included) + sales (fees deducted) + net dividends − account fees`
 
 It is shown in the key figures (« Cash balance » card, with the account value = securities + cash) and in the « Positions » tab. It is known only if the deposits are in the file: with no deposit or withdrawal at all, the card shows « — » (« No deposit imported »). A negative balance means a deposit is missing.
+
+### Entering the balance by hand (pencil ✏️)
+
+Under the key figures, the [[Cash balance]] button (pencil) lets you copy the available balance from your statement, as of a date (today by default). This amount becomes the **starting point**: purchases, sales, deposits, withdrawals, dividends and fees **after** that date update it automatically; earlier transactions no longer change it (they are already in the amount entered). It is saved with the portfolio (`SOLDE` line of the file); a new entry replaces the previous one, and [[Back to automatic calculation]] removes it. The card then shows « Entered on … ».
+
+### Insufficient balance
+
+The cash balance cannot go **below €0** (exactly €0 is allowed). When an added transaction (« Add transactions » page, cash statements, change in the Transactions tab) would make it negative, a message says so, for example « Insufficient balance: the purchase of BNP Paribas Easy S&P 500 on 12/11/2026 (€305.00) would leave −€120.00 in the account. », and offers:
+
+- [[Cancel this transaction]]: it is removed from the list;
+- [[Enter the available balance before the transaction]]: the balance entry, on the day before, pre-filled with the minimum needed.
+
+Saving stays blocked while the balance is negative. The check only applies when the balance is known (deposit imported or balance entered); for a portfolio whose history is already negative (incomplete statements), a warning invites you to enter the balance, without blocking. Purchases in foreign currency are converted at today's rate.
+
+### Document already imported
+
+If the statements sent are all already in the portfolio, the message « This document is already in your portfolio: nothing to add » is shown with the [[Close]] button, which sets the files aside and returns to the portfolio.
 
 ### Effect on performance
 

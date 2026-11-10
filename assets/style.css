@@ -397,3 +397,10 @@ table.tableau-simple tr:last-child td { border-bottom: none; }
 }
 .bulle-fiche { font-weight: 600; font-size: 0.92rem; color: var(--primaire-fonce); margin-top: 0.2rem; }
 @media print { .st-key-bulle_aide { display: none !important; } }
+
+/* Gain total : décomposition (latentes, réalisées, dividendes, frais de compte) */
+.kpi-decomp-bloc { margin: 0.1rem 0 0.45rem 0; }
+.kpi-decomp { display: flex; justify-content: space-between; gap: 0.5rem; font-size: 0.8rem; line-height: 1.45; }
+.kpi-decomp .positive { color: var(--positif); font-weight: 600; }
+.kpi-decomp .negative { color: var(--negatif); font-weight: 600; }
+.kpi-decomp .neutre { color: var(--texte-2); }

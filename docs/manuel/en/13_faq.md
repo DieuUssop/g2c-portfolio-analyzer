@@ -661,9 +661,11 @@ Each method relies on a different assumption; comparing them is part of the anal
 The software's VaRs cover the loss over **one trading day**, calculated on daily returns. For longer horizons, see the max drawdown, the stress tests and the projection.
 
 ## An import does not work: how do I report the problem?
-<!-- fiche: faq-signaler-probleme | questions: how do I report a bug ; my file does not go through what do I do ; send an error report ; report a problem ; who do I send the diagnostic to ; does the diagnostic contain my personal data ; the software crashes how do I tell the creator ; software version | mots: report a problem, diagnostic, bug, error, anonymised report, personal data, version, support -->
+<!-- fiche: faq-signaler-probleme | questions: write to the creator of the software ; send a message by email ; how do I report a bug ; my file does not go through what do I do ; send an error report ; report a problem ; who do I send the diagnostic to ; does the diagnostic contain my personal data ; the software crashes how do I tell the creator ; software version | mots: report a problem, diagnostic, bug, error, anonymised report, personal data, version, support -->
 
-At the bottom of the sidebar (and under an analysis error message), the **"Report a problem"** section prepares a small text file that says what went wrong:
+At the bottom of the sidebar (and under an analysis error message), the **"Report a problem"** section lets you write to the software's creator: choose a **subject** (import problem, calculation or display error, question, suggestion, other), write **your message**, then click [[Open in my mail app]] (Outlook, Mail…) or [[Open in Gmail]]: the e-mail opens already filled in (recipient kevin.brule@etu.unicaen.fr, subject, message); you only need to click « Send ». If nothing opens, copy the message shown below and send it yourself.
+
+The « Attach the anonymized diagnostic » box (ticked automatically after an error) adds a short text to the message that says what went wrong:
 
 - the application version (also shown at the bottom of the sidebar), the system and the reading modules installed (character recognition, Excel, photos);
 - the last errors displayed;
@@ -673,4 +675,4 @@ At the bottom of the sidebar (and under an analysis error message), the **"Repor
 
 Name, address, e-mail, phone, IBAN and account or reference numbers are masked; so is the file name, except for common words ("avis", "opéré", the broker's name…). ISIN codes, dates, labels and amounts remain: what is needed to fix the reading. A photo is not copied.
 
-Click "Prepare the diagnostic": the text is shown **before** the download, so you can read it. Nothing is sent automatically: you send the downloaded file to the address shown under the button (kevin.brule@etu.unicaen.fr).
+« See the attached diagnostic » shows it **before** sending, so you can read it; it is shortened in the e-mail (limited length of a link) and can be downloaded in full to attach. Nothing is sent automatically: you click « Send » in your mail app.

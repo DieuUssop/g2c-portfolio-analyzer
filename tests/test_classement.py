@@ -119,7 +119,7 @@ def test_etf_asie_pacifique_de_kevin():
 
 def test_categorie_yahoo_quand_le_nom_ne_dit_rien():
     inconnu = c.classer("XYZ.PA", "AMUNDI ETF XYZ")
-    assert inconnu["region"] == "Monde (ETF)" and not inconnu["indice"]
+    assert inconnu["region"] == "À préciser (ETF)" and not inconnu["indice"]   # plus de « Monde » deviné
     avec_yahoo = c.classer("XYZ.PA", "AMUNDI ETF XYZ",
                            yahoo={"type": "ETF", "nom": "Amundi Index Fund", "categorie": "Japan Large-Cap Equity"})
     assert (avec_yahoo["region"], avec_yahoo["indice"]) == ("Japon", "MSCI Japan")

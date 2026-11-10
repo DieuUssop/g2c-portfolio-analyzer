@@ -378,7 +378,7 @@ The ETF's region is derived from its index ("Asia-Pacific" for a multi-country A
 Performance attribution uses the regional weights of the MSCI ACWI IMI as of 30/06/2026, also written into the software.
 
 ## How each security is classified (country, sector, asset class)
-<!-- fiche: sources-classification | questions: where do the country and sector of my securities come from ; my share is unclassified ; what is referentiel.csv ; my security is classed in the wrong country ; why is my bond counted as an equity ; where is the duration of bond funds ; add a security to the reference file ; default asset class ; why is my PEA exposed to the united states ; my PEA has more US than European shares ; what is a synthetic swap ETF ; PEA swap ETF ; my PEA is mostly in asia is that normal | mots: classification, reference file, referentiel.csv, country, region, sector, asset class, duration, Unclassified, GICS -->
+<!-- fiche: sources-classification | questions: securities to check ; correct the name of a security ; my cac 40 etf is classed as world ; region to be specified ; where do the country and sector of my securities come from ; my share is unclassified ; what is referentiel.csv ; my security is classed in the wrong country ; why is my bond counted as an equity ; where is the duration of bond funds ; add a security to the reference file ; default asset class ; why is my PEA exposed to the united states ; my PEA has more US than European shares ; what is a synthetic swap ETF ; PEA swap ETF ; my PEA is mostly in asia is that normal | mots: classification, reference file, referentiel.csv, country, region, sector, asset class, duration, Unclassified, GICS -->
 
 ### Two sources, in this order
 
@@ -397,9 +397,15 @@ Performance attribution uses the regional weights of the MSCI ACWI IMI as of 30/
 - A security with no known asset class is considered to be an **equity**: this is the cautious assumption for measuring risk.
 - **Duration** is known only for the bond funds in the reference file; elsewhere, it is absent.
 
-### Correcting a classification
+### Correcting a classification: « Securities to check »
 
-The software does not provide a screen for changing the classification of a security. From the source code, you can add or correct a line of `data/referentiel.csv`, respecting its columns: it will take priority over the local database. In the installed version, this file is in the program's `data` folder and would be replaced by a new installation.
+In the [[Holdings]] tab, the « Securities to check » box lists poorly recognized securities: security written as its ISIN code, unknown name, ETF whose tracked index is not recognized (region « To be specified (ETF) »), unclassified security. The [[Correct]] button (pencil) lets you enter the **name**, the **Yahoo Finance ticker** and, for an ETF, the **tracked index** (list): the region and composition follow from it. The name and ticker are corrected in the portfolio file; the name and index are remembered on this computer for later imports (`data/base/corrections.csv`).
+
+An ETF whose index is not recognized is no longer filed as « World » by default: a guessed region distorted diversification (a CAC 40 ETF counted as « World », for example). A name that states the index (« CAC 40 », « S&P 500 », « MSCI World »…) takes precedence over a contradictory Yahoo Finance category.
+
+A security written as its **ISIN code** (« FR0011550185 ») is replaced by its Yahoo ticker (« ESE.PA ») and its real name, and the portfolio file is corrected once and for all when it is opened. For a French ISIN (or an Irish or Luxembourg ETF), the **Paris** listing is preferred.
+
+From the source code, you can also add or correct a line of `data/referentiel.csv`, respecting its columns: it will take priority over the local database.
 
 ### Automatic classification (since the October 2026 version)
 

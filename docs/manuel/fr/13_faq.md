@@ -661,9 +661,11 @@ Chaque méthode repose sur une hypothèse différente ; les comparer fait partie
 Les VaR du logiciel portent sur la perte d'**un jour de bourse**, calculée sur les rendements quotidiens. Pour des horizons plus longs, voyez le max drawdown, les stress tests et la projection.
 
 ## Un import ne marche pas : comment signaler le problème ?
-<!-- fiche: faq-signaler-probleme | questions: comment signaler un bug ; mon fichier ne passe pas que faire ; envoyer un rapport d'erreur ; signaler un problème ; à qui envoyer le diagnostic ; est-ce que le diagnostic contient mes données personnelles ; le logiciel plante comment le dire au créateur ; version du logiciel | mots: signaler un problème, diagnostic, bug, erreur, rapport anonymisé, données personnelles, version, assistance -->
+<!-- fiche: faq-signaler-probleme | questions: écrire au créateur du logiciel ; envoyer un message par mail ; comment signaler un bug ; mon fichier ne passe pas que faire ; envoyer un rapport d'erreur ; signaler un problème ; à qui envoyer le diagnostic ; est-ce que le diagnostic contient mes données personnelles ; le logiciel plante comment le dire au créateur ; version du logiciel | mots: signaler un problème, diagnostic, bug, erreur, rapport anonymisé, données personnelles, version, assistance -->
 
-En bas de la barre latérale (et sous un message d'erreur d'analyse), le repli **« Signaler un problème »** prépare un petit fichier texte qui dit ce qui a coincé :
+En bas de la barre latérale (et sous un message d'erreur d'analyse), le repli **« Signaler un problème »** permet d'écrire au créateur du logiciel : choisissez un **sujet** (problème d'import, erreur de calcul ou d'affichage, question, suggestion, autre), écrivez **votre message**, puis cliquez sur [[Ouvrir dans ma messagerie]] (Outlook, Mail…) ou [[Ouvrir dans Gmail]] : l'e-mail s'ouvre déjà rempli (destinataire kevin.brule@etu.unicaen.fr, objet, message) ; il ne reste qu'à cliquer « Envoyer ». Si rien ne s'ouvre, copiez le message affiché en dessous et envoyez-le vous-même.
+
+La case « Joindre le diagnostic anonymisé » (cochée d'office après une erreur) ajoute au message un petit texte qui dit ce qui a coincé :
 
 - la version de l'application (affichée aussi en bas de la barre latérale), le système et les modules de lecture installés (reconnaissance de caractères, Excel, photos) ;
 - les dernières erreurs affichées ;
@@ -673,4 +675,4 @@ En bas de la barre latérale (et sous un message d'erreur d'analyse), le repli *
 
 Le nom, l'adresse, l'e-mail, le téléphone, l'IBAN et les numéros de compte ou de référence sont masqués ; le nom du fichier aussi, sauf les mots courants (« avis », « opéré », le nom du courtier…). Restent les codes ISIN, les dates, les intitulés et les montants : ce qu'il faut pour corriger la lecture. Une photo n'est pas recopiée.
 
-Cliquez sur « Préparer le diagnostic » : le texte s'affiche **avant** le téléchargement, pour que vous le relisiez. Rien n'est envoyé automatiquement : c'est vous qui envoyez le fichier téléchargé à l'adresse indiquée sous le bouton (kevin.brule@etu.unicaen.fr).
+« Voir le diagnostic joint » l'affiche **avant** l'envoi, pour que vous le relisiez ; il est raccourci dans l'e-mail (taille limitée d'un lien) et peut être téléchargé en entier pour être joint. Rien n'est envoyé automatiquement : c'est vous qui cliquez « Envoyer » dans votre messagerie.

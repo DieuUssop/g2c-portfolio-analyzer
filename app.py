@@ -277,7 +277,7 @@ with st.sidebar:
                and hashlib.md5(f.getvalue()).hexdigest()[:12] in ajoutes_set]
     fichiers_envoyes = [f for f in fichiers_envoyes if f not in annules and f not in ajoutes]
     if ajoutes:
-        st.caption(t("Ajouté(s) au portefeuille : {noms}. Vous pouvez les retirer de la zone d'envoi.",
+        st.caption(t("Déjà dans le portefeuille (mis de côté) : {noms}. Vous pouvez les retirer de la zone d'envoi.",
                      noms=", ".join(f.name for f in ajoutes)))
     for f in annules:
         colonne_texte, colonne_bouton = st.columns([3, 2], vertical_alignment="center")
@@ -464,6 +464,10 @@ with zone_operations:
                            file_name=f"{Path(str(fusion_session['nom'])).stem}_mis_a_jour.csv", mime="text/csv",
                            key="telecharger_fusion")
 
+# Portefeuille dont des titres sont écrits par leur code ISIN : le FICHIER est corrigé une fois pour toutes
+# (ticker Yahoo et vrai nom), pas seulement l'affichage
+vues_transactions.reparer_isin(contenu, cible_portefeuille, session_compte)
+
 try:
     with st.spinner(t("Récupération des cours et calcul des indicateurs...")):
         res = charger(contenu, code_indice, taux_sans_risque, niveau_var)
@@ -484,6 +488,8 @@ if fichiers_envoyes and session_compte is not None:     # enregistrer le ou les 
     with zone_enregistrement:
         vues_compte.bouton_enregistrer(session_compte, contenu, Path(nom_fichier).stem)
 
+# devises et taux du jour : pour convertir les achats en devise au contrôle du solde des espèces
+st.session_state["devises_taux"] = (res.get("devises", {}), res.get("taux_actuels", {}))
 resume = res["resume"]
 positions = res["positions"]
 histo = res["historique"]
@@ -557,14 +563,24 @@ html(ui.grille([
              detail=t("Investi au PRU : {montant}", montant=euros(resume["montant_investi"])),
              aide=t("Quantité × dernier cours, pour chaque ligne détenue")),
     ui.carte(t("Solde espèces"), euros(resume["solde_especes"]) if resume.get("solde_especes") is not None else "—",
-             detail=(t("Négatif : des versements manquent sans doute") if (resume.get("solde_especes") or 0) < -0.005
+             detail=(t("Négatif : des versements manquent sans doute — corrigez-le avec le crayon ✏️ ci-dessous")
+                     if (resume.get("solde_especes") or 0) < -0.005
+                     else t("Saisi le {date} · compte : {montant}", date=langues.date(res["solde_saisi"][0]),
+                            montant=euros(resume["valeur_compte"])) if res.get("solde_saisi")
                      else t("Valeur du compte : {montant}", montant=euros(resume["valeur_compte"]))
-                     if resume.get("solde_especes") is not None else t("Aucun versement importé")),
+                     if resume.get("solde_especes") is not None else t("Inconnu : saisissez-le avec le crayon ✏️")),
              aide=t("Versements − retraits − achats + ventes + dividendes − frais. Connu seulement si les "
                     "versements d'espèces sont dans le fichier (relevés ou avis d'opération du compte).")),
     ui.carte(t("Gain total"), euros(resume["gain_total"], signe=True),
-             detail=ui.pastille(pct(rendement_investi), tendance(rendement_investi)) + t(" sur le capital investi"),
-             aide=t("Plus-values latentes + plus-values réalisées + dividendes − frais de compte")),
+             detail=ui.decomposition_gain([
+                 (t("dont latentes"), resume["pv_latentes"], True),
+                 (t("  · effet change"), resume.get("effet_change", 0.0), not res["effet_change"].empty),
+                 (t("dont réalisées"), resume["pv_realisees"], True),
+                 (t("dividendes"), resume["dividendes"], bool(resume["dividendes"])),
+                 (t("frais de compte"), -resume.get("frais_compte", 0.0), bool(resume.get("frais_compte"))),
+             ], euros) + ui.pastille(pct(rendement_investi), tendance(rendement_investi)) + t(" sur le capital investi"),
+             aide=t("Plus-values latentes (titres détenus, non encaissées) + plus-values réalisées (titres vendus) "
+                    "+ dividendes − frais de compte")),
     ui.carte(t("Perf. annualisée"), pct(ind["twr_annualise"]),
              detail=ui.pastille(t("TWR total {valeur}", valeur=pct(ind["twr_total"])), tendance(ind["twr_total"])),
              aide=t("Rendement pondéré par le temps (TWR) : mesure la qualité des choix, hors effet des apports")),
@@ -578,6 +594,8 @@ html(ui.grille([
              detail=t("Le {date}", date=langues.date(ind["date_creux"])),
              aide=t("Pire baisse depuis un plus haut")),
 ]))
+# Crayon du solde espèces : saisir soi-même le solde disponible (point de départ des calculs suivants)
+vues_transactions.crayon_solde(res, contenu, cible_portefeuille, session_compte)
 
 # ======================================================================
 # ONGLETS
@@ -666,15 +684,7 @@ with onglets[0]:
                 html(ui.legende_parts(parts))
 
     html(ui.grille([
-        ui.carte(t("Plus-values latentes"), euros(resume["pv_latentes"], signe=True),
-                 detail=(ui.pastille(t("non réalisées"), tendance(resume["pv_latentes"]))
-                         + ((" " + t("dont effet change {montant}", montant=euros(resume["effet_change"], signe=True)))
-                            if not res["effet_change"].empty else "")),
-                 aide=t("Effet change : ce que la variation des devises a fait gagner ou perdre sur les titres "
-                        "cotés hors de la zone euro (détail dans l'onglet « Positions »)")
-                 if not res["effet_change"].empty else ""),
-        ui.carte(t("Plus-values réalisées"), euros(resume["pv_realisees"], signe=True),
-                 detail=ui.pastille(t("encaissées"), tendance(resume["pv_realisees"]))),
+        # (plus-values latentes et réalisées : dans la carte « Gain total », en haut de la page)
         ui.carte(t("Dividendes et coupons"), euros(resume["dividendes"]),
                  detail=(t("Nets · brut {brut} · retenues {retenues}", brut=euros(resume["dividendes_bruts"]),
                            retenues=euros(resume["retenues"])) if resume["retenues"] else t("Montants perçus")),
@@ -749,6 +759,8 @@ with onglets[1]:
                 "dividendes": st.column_config.NumberColumn(t("Dividendes"), format=langues.eur_colonne("%.0f")),
             },
         )
+    # Titres mal reconnus (code ISIN, nom inconnu, région d'ETF à préciser) : à corriger au crayon
+    vues_transactions.titres_a_verifier(positions, contenu, cible_portefeuille, session_compte)
     vendus = toutes[(toutes["quantite"] <= 1e-9) & ((toutes["pv_realisee"].abs() > 1e-9) | (toutes["frais_totaux"] > 0))]
     if len(vendus):
         with st.container(border=True):

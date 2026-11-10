@@ -190,7 +190,7 @@ def page(session_compte, importer):
                 "statut": st.column_config.TextColumn(t("Statut")),
                 "date": st.column_config.DateColumn("Date", format="DD/MM/YYYY"),
                 "type": st.column_config.SelectboxColumn(t("Type"), options=["ACHAT", "VENTE", "DIVIDENDE", "VERSEMENT",
-                                                                             "RETRAIT", "FRAIS"]),
+                                                                             "RETRAIT", "FRAIS", "SOLDE"]),
                 "ticker": st.column_config.TextColumn("Ticker"),
                 "nom": st.column_config.TextColumn(t("Titre")),
                 "quantite": st.column_config.NumberColumn(t("Quantité")),
@@ -204,6 +204,9 @@ def page(session_compte, importer):
         for a in bloquantes:
             st.error(t(a["message"], **a["valeurs"]))
             vues_signalement.noter_erreur("ajout d'opérations", t(a["message"], **a["valeurs"]))
+        # Solde des espèces : jamais sous 0 € (0 € pile reste permis)
+        if controle_du_solde(fusion, ajoutees, "ajout", cible["contenu"]):
+            bloquantes = bloquantes + [{"message": "solde"}]
         avant = mouvements.lire(cible["contenu"])
         st.caption(t("{n} opération(s) ajoutée(s) · {total} au total ({avant} avant)", n=len(retenues),
                      total=len(fusion), avant=len(avant)))
@@ -232,7 +235,7 @@ def page(session_compte, importer):
 # ----------------------------------------------------------------------
 # Fichiers qui ne contiennent QUE des mouvements d'espèces
 # ----------------------------------------------------------------------
-TYPES_ESPECES = ("VERSEMENT", "RETRAIT", "FRAIS")
+TYPES_ESPECES = ("VERSEMENT", "RETRAIT", "FRAIS", "SOLDE")
 
 
 def seulement_especes(contenu):
@@ -257,12 +260,14 @@ def especes_seules(contenu, fichiers, fichier_choisi, session_compte, fusion_ses
                               t("{n} opération(s) : versements, retraits ou frais, sans achat ni vente de titres",
                                 n=len(especes))))
         signe = especes["type"].map({"VERSEMENT": 1}).fillna(-1)
-        st.dataframe(especes.assign(type=especes["type"].map(td), montant=signe * especes["prix"])[
+        # montants au format de la langue (« −200,00 € » ; « −€200.00 » en anglais)
+        st.dataframe(especes.assign(type=especes["type"].map(td),
+                                    montant=[ui.euros_cents(s * p, signe=True) for s, p in zip(signe, especes["prix"])])[
             ["date", "type", "nom", "montant"]], hide_index=True, width="stretch",
             column_config={"date": st.column_config.DateColumn("Date", format="DD/MM/YYYY"),
                            "type": st.column_config.TextColumn(t("Type")),
                            "nom": st.column_config.TextColumn(t("Libellé")),
-                           "montant": st.column_config.NumberColumn(t("Montant total (€)"), format="%+.2f")})
+                           "montant": st.column_config.TextColumn(t("Montant total (€)"))})
         html(ui.note(t("Ces documents ne contiennent aucun achat ni vente : il n'y a pas de portefeuille de titres à "
                        "analyser. Ajoutez-les au portefeuille qui contient vos achats et ventes : ils compteront "
                        "dans son solde en espèces et ses frais.")))
@@ -274,17 +279,53 @@ def especes_seules(contenu, fichiers, fichier_choisi, session_compte, fusion_ses
         else:
             st.info(t("Choisissez d'abord votre portefeuille dans la liste de la barre latérale (ou envoyez-le en "
                       "même temps que ces documents)."))
+            _bouton_fermer(fichiers)
             return
         origine = hashlib.md5(base).hexdigest()[:12]
         if fusion_session and fusion_session.get("origine") == origine:
             base = fusion_session["contenu"]
         preparees, _ = mouvements.preparer(base, especes)
         deja = int((~preparees["inclure"]).sum())
+        if deja == len(preparees):
+            # tout est déjà là : rien à ajouter, et surtout un moyen de sortir de cette page
+            st.success(t("Ce document est déjà dans votre portefeuille « {nom} » : rien à ajouter.",
+                         nom=Path(str(nom)).stem))
+            _bouton_fermer(fichiers, principal=True)
+            return
         if deja:
             st.caption(t("{n} mouvement(s) déjà dans ce portefeuille : non ajouté(s) une deuxième fois.", n=deja))
-        if st.button(t("Ajouter à « {nom} »", nom=Path(str(nom)).stem), type="primary", icon=":material/add:",
-                     key="ajouter_especes", disabled=deja == len(preparees)):
-            nouveau = mouvements.en_csv(mouvements.fusionner(base, preparees))
+        solde_choisi = st.session_state.get("solde_especes_seules")
+        if solde_choisi:                         # solde disponible indiqué avant ces relevés
+            preparees = pd.concat([preparees, pd.DataFrame([{
+                "date": pd.Timestamp(solde_choisi[0]), "type": "SOLDE", "ticker": "ESPECES", "nom": "Solde saisi",
+                "quantite": 0.0, "prix": float(solde_choisi[1]), "frais": 0.0, "inclure": True,
+                "statut": "nouvelle"}])], ignore_index=True)
+        fusion = mouvements.fusionner(base, preparees)
+        info, taux = st.session_state.get("devises_taux", ({}, {}))
+        probleme = mouvements.controler_solde(fusion, info, taux)
+        if probleme is not None and mouvements.controler_solde(base, info, taux) is not None:
+            probleme = None                     # déjà négatif avant ces relevés : pas de blocage
+        if probleme is not None:
+            from .vues_transactions import message_solde_insuffisant
+            st.error(message_solde_insuffisant(probleme))
+            with st.popover(t("Indiquer le solde disponible avant l'opération"), icon=":material/edit:"):
+                with st.form("solde_especes_seules_form", border=False):
+                    minimum = mouvements.solde_minimum_necessaire(probleme)
+                    st.caption(t("Il faut au moins {montant} sur le compte le {date} pour couvrir les opérations "
+                                 "suivantes.", montant=ui.euros_cents(minimum),
+                                 date=probleme["veille"].strftime("%d/%m/%Y")))
+                    montant = st.number_input(t("Solde disponible (€)"), min_value=0.0, value=float(minimum),
+                                              step=10.0, format="%.2f")
+                    date = st.date_input(t("à la date du"), value=probleme["veille"], format="DD/MM/YYYY")
+                    if st.form_submit_button(t("Enregistrer le solde"), type="primary"):
+                        st.session_state["solde_especes_seules"] = (pd.Timestamp(date), float(montant))
+                        st.rerun()
+        gauche, droite = st.columns([3, 1])
+        with droite:
+            _bouton_fermer(fichiers)
+        if gauche.button(t("Ajouter à « {nom} »", nom=Path(str(nom)).stem), type="primary", icon=":material/add:",
+                         key="ajouter_especes", disabled=probleme is not None):
+            nouveau = mouvements.en_csv(fusion)
             if perso:
                 session_compte.enregistrer(nom, nouveau, identifiant=fichier_choisi[1], garder_precedente=True)
             else:
@@ -294,6 +335,74 @@ def especes_seules(contenu, fichiers, fichier_choisi, session_compte, fusion_ses
             for f in fichiers:
                 annules.add(hashlib.md5(f.getvalue()).hexdigest()[:12])
                 annules.add(hashlib.md5(vues_pdf.version_lisible(f.getvalue())).hexdigest()[:12])
+            st.session_state.pop("solde_especes_seules", None)
             st.session_state["especes_ajoutees"] = t("{n} mouvement(s) d'espèces ajouté(s) à « {nom} ».",
                                                      n=len(preparees) - deja, nom=Path(str(nom)).stem)
             st.rerun()
+
+
+
+# ----------------------------------------------------------------------
+# Solde insuffisant (le solde des espèces ne doit jamais passer sous 0 €)
+# ----------------------------------------------------------------------
+def controle_du_solde(fusion, ajoutees, cle, base=None):
+    """Affiche le message « Solde insuffisant » si une opération fait passer les espèces sous 0 €, avec
+    « Annuler cette opération » (si elle fait partie des opérations ajoutées) et « Indiquer le solde
+    disponible avant l'opération » (ligne SOLDE pré-remplie avec le minimum nécessaire, la veille).
+    Renvoie True si l'enregistrement doit être bloqué. Sans solde connu : simple proposition."""
+    from .vues_transactions import message_solde_insuffisant
+    info, taux = st.session_state.get("devises_taux", ({}, {}))
+    probleme = mouvements.controler_solde(fusion, info, taux)
+    if probleme is not None and base is not None and mouvements.controler_solde(base, info, taux) is not None:
+        # historique DÉJÀ négatif avant cet ajout (relevés incomplets) : on prévient sans bloquer
+        st.warning(t("Le solde des espèces est déjà négatif dans ce portefeuille (des versements manquent sans "
+                     "doute) : indiquez le solde disponible pour que le contrôle reprenne."))
+        with st.popover(t("Indiquer le solde disponible avant l'opération"), icon=":material/edit:"):
+            _formulaire_solde(ajoutees, probleme, f"{cle}_historique")
+        return False
+    if probleme is None:
+        if ajoutees and not mouvements.solde_connu(fusion):
+            with st.popover(t("Indiquer le solde disponible (facultatif)"), icon=":material/edit:"):
+                _formulaire_solde(ajoutees, None, f"{cle}_facultatif")
+        return False
+    st.error(message_solde_insuffisant(probleme) + (" " + t("(montants en devise convertis au taux du jour)")
+                                                    if probleme["approx"] else ""))
+    gauche, droite = st.columns(2)
+    correspond = [i for i, a in enumerate(ajoutees) if pd.Timestamp(a["date"]) == probleme["date"]
+                  and a["type"] == probleme["type"] and a["ticker"] == probleme["ticker"]]
+    if correspond and gauche.button(t("Annuler cette opération"), icon=":material/close:", key=f"annuler_op_{cle}"):
+        ajoutees.pop(correspond[0])
+        st.rerun()
+    with droite.popover(t("Indiquer le solde disponible avant l'opération"), icon=":material/edit:"):
+        _formulaire_solde(ajoutees, probleme, cle)
+    return True
+
+
+def _formulaire_solde(ajoutees, probleme, cle):
+    """Saisie du solde disponible : ajoutée comme une ligne SOLDE aux opérations à enregistrer."""
+    minimum = mouvements.solde_minimum_necessaire(probleme) if probleme else 0.0
+    with st.form(f"solde_{cle}", border=False):
+        if probleme:
+            st.caption(t("Il faut au moins {montant} sur le compte le {date} pour couvrir les opérations suivantes.",
+                         montant=ui.euros_cents(minimum), date=probleme["veille"].strftime("%d/%m/%Y")))
+        montant = st.number_input(t("Solde disponible (€)"), min_value=0.0, value=float(minimum), step=10.0,
+                                  format="%.2f")
+        date = st.date_input(t("à la date du"), value=probleme["veille"] if probleme else pd.Timestamp.today(),
+                             format="DD/MM/YYYY")
+        if st.form_submit_button(t("Enregistrer le solde"), type="primary"):
+            ajoutees[:] = [a for a in ajoutees if a["type"] != "SOLDE"]
+            ajoutees.append({"date": pd.Timestamp(date), "type": "SOLDE", "ticker": "ESPECES", "nom": "Solde saisi",
+                             "quantite": 0.0, "prix": float(montant), "frais": 0.0, "source": "solde"})
+            st.rerun()
+
+
+
+def _bouton_fermer(fichiers, principal=False):
+    """« Fermer » : met les fichiers envoyés de côté et revient au portefeuille (jamais de page sans issue)."""
+    if st.button(t("Fermer"), icon=":material/close:", key="fermer_especes", type="primary" if principal else "secondary",
+                 help=t("Mettre ces fichiers de côté et revenir au portefeuille")):
+        mis_de_cote = st.session_state.setdefault("imports_ajoutes", set())
+        for f in fichiers:
+            mis_de_cote.add(hashlib.md5(f.getvalue()).hexdigest()[:12])
+            mis_de_cote.add(hashlib.md5(vues_pdf.version_lisible(f.getvalue())).hexdigest()[:12])
+        st.rerun()

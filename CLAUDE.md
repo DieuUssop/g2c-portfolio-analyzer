@@ -38,7 +38,7 @@ améliorée par les promotions suivantes.
    ne pas la remplacer par une base de test.
 4. **Jamais de valeur fausse en silence.** En cas de doute à l'import, ouvrir le formulaire
    « Compléter l'opération » ou afficher un avertissement plutôt que deviner.
-5. **Tout doit passer les tests** : `python -m pytest` (310 tests au 09/11/2026). Toute
+5. **Tout doit passer les tests** : `python -m pytest` (330 tests au 10/11/2026). Toute
    correction ou fonctionnalité ajoute au moins un test.
 6. **Pas de code en double** : une amélioration de lecture doit profiter à tous les chemins
    (PDF texte, PDF image, photo, CSV, Excel).
@@ -175,4 +175,15 @@ python diagnostic_pdf.py relevé.pdf --anonyme    # ce que l'application lit dan
   diminuent le gain (flux d'apport sans valeur dans `historique`) ; le solde espèces n'est connu que
   si le fichier contient des versements (`Portfolio.solde_especes()` renvoie sinon `None`).
 - **Titres saisis par leur ISIN** : `import_fichier.tickers_depuis_isin` les convertit en tickers Yahoo
-  (sinon nom = ISIN et classement deviné) ; `analyse.analyse_complete` le refait par sécurité.
+  (sinon nom = ISIN et classement deviné) ; `analyse.analyse_complete` le refait par sécurité et
+  `vues_transactions.reparer_isin` réécrit le fichier du portefeuille. Pour un ISIN français (ou un ETF
+  IE / LU), la cotation de Paris est préférée (`import_fichier._place_preferee`).
+- **Solde saisi** : type `SOLDE` (ticker `ESPECES`, montant dans `prix`) = solde disponible saisi au
+  crayon, point de départ du calcul (`portfolio.cumul_especes`) ; une seule ligne (`mouvements.avec_solde_saisi`).
+  `mouvements.controler_solde` bloque un ajout qui ferait passer les espèces sous 0 € (0 € permis), sauf si
+  l'historique était déjà négatif.
+- **ETF dont l'indice est inconnu** : région `classement.A_PRECISER` (« À préciser (ETF) »), jamais « Monde »
+  deviné ; l'utilisateur corrige au crayon (« Titres à vérifier », `base_titres.corriger` →
+  `data/base/corrections.csv`, prioritaire via `analyse.charger_fiches`).
+- **Mac** : `installateur/compatibilite_mac.py` (lancé par `fabriquer_mac.sh`) remplace les bibliothèques
+  compilées pour un macOS > 12 ; l'application doit s'ouvrir sur macOS 12 et plus (puces Apple).

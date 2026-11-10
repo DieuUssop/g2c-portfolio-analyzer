@@ -36,13 +36,36 @@ def charger_fiches():
         from . import base_titres
         fiches = base_titres.lire_titres()
     except Exception:
-        return referentiel
+        return _avec_corrections(referentiel)
     if fiches.empty:
-        return referentiel
+        return _avec_corrections(referentiel)
     fiches = fiches.replace("", float("nan"))
     supplement = fiches.loc[~fiches.index.isin(referentiel.index)]
     colonnes = [c for c in referentiel.columns if c in supplement.columns]
-    return pd.concat([referentiel, supplement[colonnes]])
+    return _avec_corrections(pd.concat([referentiel, supplement[colonnes]]))
+
+
+def _avec_corrections(fiches):
+    """Corrections de l'utilisateur (nom, indice suivi : base_titres.corriger) : elles l'emportent."""
+    try:
+        from . import base_titres
+        corrections = base_titres.lire_corrections()
+    except Exception:
+        return fiches
+    if corrections.empty:
+        return fiches
+    fiches = fiches.astype(object)                  # textes et nombres mêlés (pandas 3 refuse sinon)
+    if "indice_suivi" not in fiches.columns:
+        fiches["indice_suivi"] = None
+    for ticker, c in corrections.iterrows():
+        if ticker not in fiches.index:
+            fiches.loc[ticker] = float("nan")
+        if c["nom"]:
+            fiches.loc[ticker, "nom"] = c["nom"]
+        if c["indice_suivi"]:
+            fiches.loc[ticker, "indice_suivi"] = c["indice_suivi"]
+            fiches.loc[ticker, ["region", "pays"]] = float("nan")       # déduits de l'indice
+    return fiches
 
 
 def charger_referentiel():
@@ -230,6 +253,7 @@ def analyse_complete(source_csv,
     return {
         "transactions": portefeuille.transactions,
         "especes": portefeuille.especes,
+        "solde_saisi": portefeuille.solde_saisi(),
         "mouvements_especes": portefeuille.mouvements_especes() if portefeuille.a_des_especes() else None,
         "positions": positions,
         "toutes_positions": portefeuille.positions,      # y compris les titres entièrement vendus

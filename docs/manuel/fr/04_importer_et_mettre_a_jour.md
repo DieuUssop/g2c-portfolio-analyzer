@@ -133,7 +133,7 @@ Vendre plus de titres que vous n'en possédez à cette date provoque une erreur 
 Les versements, retraits et frais de compte (droits de garde, prélèvements sociaux…) sont des mouvements d'espèces : ils sont lus dans les exports et les relevés PDF et servent au solde en espèces (voir la fiche « Versements, retraits et frais : le solde en espèces »). Les opérations sur titres (fusion, échange…) qui ne sont ni des achats, ni des ventes, ni des dividendes restent ignorées.
 
 ## Versements, retraits et frais : le solde en espèces
-<!-- fiche: import-especes | questions: comment importer un versement ; mes virements ne sont pas reconnus ; le logiciel ignore mes retraits ; ou voir le solde espèces ; comment saisir des droits de garde ; prélèvements sociaux csg sur mon pea ; avis d'opération bourse direct versement ; solde en espèces du compte ; frais de tenue de compte ; régularisation pea | mots: versement, retrait, virement, frais de compte, droits de garde, prélèvements sociaux, CSG, espèces, liquidités, solde espèces, VERSEMENT, RETRAIT, FRAIS -->
+<!-- fiche: import-especes | questions: modifier le solde à la main ; crayon solde espèces ; solde insuffisant ; document déjà importé ; comment importer un versement ; mes virements ne sont pas reconnus ; le logiciel ignore mes retraits ; ou voir le solde espèces ; comment saisir des droits de garde ; prélèvements sociaux csg sur mon pea ; avis d'opération bourse direct versement ; solde en espèces du compte ; frais de tenue de compte ; régularisation pea | mots: versement, retrait, virement, frais de compte, droits de garde, prélèvements sociaux, CSG, espèces, liquidités, solde espèces, VERSEMENT, RETRAIT, FRAIS -->
 
 Un compte-titres ou un PEA contient des titres **et des espèces**. Le logiciel lit trois mouvements d'espèces, qui ne portent sur aucun titre :
 
@@ -160,6 +160,23 @@ Des avis d'opération qui ne contiennent que des versements, retraits ou frais (
 `Solde espèces = versements − retraits − achats (frais compris) + ventes (frais déduits) + dividendes nets − frais de compte`
 
 Il s'affiche dans les chiffres clés (carte « Solde espèces », avec la valeur du compte = titres + espèces) et dans l'onglet « Positions ». Il n'est connu que si les versements sont dans le fichier : sans aucun versement ni retrait, la carte affiche « — » (« Aucun versement importé »). Un solde négatif signale qu'un versement manque.
+
+### Saisir le solde à la main (crayon ✏️)
+
+Sous les chiffres clés, le bouton [[Solde espèces]] (crayon) permet de recopier le solde disponible de votre relevé, à une date (aujourd'hui par défaut). Ce montant devient le **point de départ** : les achats, ventes, versements, retraits, dividendes et frais **postérieurs** à cette date le font varier automatiquement ; les opérations antérieures n'y changent plus rien (elles sont déjà dans le montant saisi). Il est enregistré avec le portefeuille (ligne `SOLDE` du fichier) ; une nouvelle saisie remplace la précédente, et [[Revenir au calcul automatique]] la retire. La carte indique alors « Saisi le … ».
+
+### Solde insuffisant
+
+Le solde des espèces ne peut pas passer **sous 0 €** (0 € pile reste possible). Quand une opération ajoutée (page « Ajouter des opérations », relevés d'espèces, modification dans l'onglet Transactions) le rendrait négatif, un message l'indique, par exemple « Solde insuffisant : l'achat de BNP Paribas Easy S&P 500 le 12/11/2026 (305,00 €) laisserait −120,00 € sur le compte. », et propose :
+
+- [[Annuler cette opération]] : elle est retirée de la liste ;
+- [[Indiquer le solde disponible avant l'opération]] : la saisie du solde, la veille, pré-remplie avec le minimum nécessaire.
+
+L'enregistrement reste bloqué tant que le solde est négatif. Le contrôle ne joue que si le solde est connu (versement importé ou solde saisi) ; pour un portefeuille dont l'historique est déjà négatif (relevés incomplets), un avertissement invite à saisir le solde, sans bloquer. Les achats en devise sont convertis au taux du jour.
+
+### Document déjà importé
+
+Si les relevés envoyés sont déjà tous dans le portefeuille, le message « Ce document est déjà dans votre portefeuille : rien à ajouter » s'affiche avec le bouton [[Fermer]], qui met les fichiers de côté et revient au portefeuille.
 
 ### Effet sur la performance
 

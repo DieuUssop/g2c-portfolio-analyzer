@@ -109,7 +109,7 @@ MOTS_TYPES = {
                  "transferencia", "bonifico"],
 }
 IGNORER = "IGNORER"
-TYPES_ESPECES = ["VERSEMENT", "RETRAIT", "FRAIS"]
+TYPES_ESPECES = ["VERSEMENT", "RETRAIT", "FRAIS", "SOLDE"]       # SOLDE : solde saisi à la main
 TICKER_ESPECES = "ESPECES"
 TYPES_POSSIBLES = ["ACHAT", "VENTE", "DIVIDENDE"] + TYPES_ESPECES + [IGNORER]
 
@@ -1268,6 +1268,8 @@ def confiance(tableau, correspondance):
 def classer_type(valeur):
     """'Achat Comptant' -> ACHAT, 'Coupons/Dividende' -> DIVIDENDE, 'Versement' -> VERSEMENT,
     'Frais de garde' -> FRAIS, 'Virement' -> VIREMENT (sens d'après le signe du montant), sinon IGNORER."""
+    if str(valeur).strip().upper() == "SOLDE":       # code exact du format du projet (pas « Ancien solde »)
+        return "SOLDE"
     texte = normaliser(valeur)
     for type_, mots in MOTS_TYPES.items():
         if any(re.search(rf"\b{mot}", texte) for mot in mots):
@@ -1388,6 +1390,8 @@ def appliquer_correspondance(tableau, correspondance, types=None, identifiants=N
         total_esp = (m if m is not None else pd.Series(float("nan"), index=df.index))
         total_esp = total_esp.where(total_esp.notna() & (total_esp > 0), p * q.where(q > 0, 1))
         total_esp = total_esp.where(total_esp.notna() & (total_esp > 0), f_brut.where(f_brut > 0))
+        solde = df["type"] == "SOLDE"                 # solde saisi : le montant tel quel, 0 € compris
+        total_esp = total_esp.where(~solde, (m if m is not None else p).fillna(p).fillna(0.0))
         p = p.where(~est_especes, total_esp)
         q = q.where(~est_especes, 0.0)
         f = f.where(~est_especes, 0.0)
@@ -1498,6 +1502,16 @@ def _meilleur_resultat(resultats, isin=None):
     return min(utiles, key=rang)
 
 
+def _place_preferee(symbole, isin):
+    """Vrai si le ticker est coté sur la place préférée pour cet ISIN (Paris pour un ISIN français, ou pour
+    un ETF irlandais / luxembourgeois)."""
+    places = SUFFIXE_PAR_PAYS.get(isin[:2], [])
+    if not places:
+        return True
+    suffixe = symbole[symbole.rfind("."):] if "." in symbole else ""
+    return suffixe == places[0]
+
+
 def resoudre_identifiants(valeurs, noms=None, tickers_connus=(), chercher=None, memoire=True):
     """Pour chaque identifiant du fichier, propose un ticker Yahoo Finance.
 
@@ -1537,6 +1551,17 @@ def resoudre_identifiants(valeurs, noms=None, tickers_connus=(), chercher=None, 
                                                   valeur.upper() if nature == "isin" else None)
                 except Exception:
                     resultat = None
+            # 1 bis. Trouvé localement, mais sur une autre place que celle du pays de l'ISIN (ETF français
+            #        connu seulement par la liste de Xetra : ESEE.DE au lieu de ESE.PA) : on demande aussi à
+            #        Yahoo (avec Internet) la cotation de Paris ; hors connexion, la fiche locale est gardée
+            if resultat and nature == "isin" and not resultat.get("table") and not _place_preferee(
+                    resultat["symbol"], valeur.upper()):
+                try:
+                    en_ligne = _meilleur_resultat(chercher(valeur), valeur.upper())
+                except Exception:
+                    en_ligne = None
+                if en_ligne and _place_preferee(en_ligne["symbol"], valeur.upper()):
+                    resultat = {**en_ligne, "longname": en_ligne.get("longname") or resultat.get("longname")}
             # 2. Sinon, le moteur de recherche de Yahoo Finance
             for requete in ([] if resultat else requetes):
                 try:

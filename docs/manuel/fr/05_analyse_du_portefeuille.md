@@ -51,16 +51,15 @@ Les trois anneaux sont calculés **en transparence** : un ETF est réparti entre
 
 Les parts inférieures à 3 % sont regroupées dans « Autres (n) », n étant le nombre de groupes réunis ; une seule petite part garde son nom (il n'y a jamais « Autres (1) »). Chaque anneau montre au plus huit parts nommées. Les classes d'actifs ont toujours les mêmes couleurs dans le logiciel : actions en bleu, obligations en vert, or en doré, monétaire en bleu clair, comme dans les « Répartitions comparées » de l'onglet [[Optimisation]]. Un anneau qui ne compterait qu'un seul groupe (par exemple un portefeuille 100 % actions pour les classes d'actifs) n'est pas affiché.
 
-### 4. Quatre cartes
+### 4. Les cartes du bas
 
 | Carte | Contenu |
 |---|---|
-| Plus-values latentes | Gain ou perte non encaissé sur les lignes détenues (« non réalisées ») |
-| Plus-values réalisées | Gain ou perte encaissé lors des ventes (« encaissées ») |
 | Dividendes et coupons | Total des dividendes et coupons saisis, depuis l'origine |
-| Frais de courtage | Total des frais saisis, depuis l'origine |
+| Frais de courtage | Total des frais des achats et ventes, depuis l'origine |
+| Frais de compte et prélèvements | Droits de garde, prélèvements sociaux… (affichée s'il y en a) |
 
-La somme des trois premières cartes donne le **gain total** affiché en haut de page.
+Les **plus-values latentes** (titres détenus, non encaissées) et **réalisées** (titres vendus, encaissées) sont affichées en haut de page, **sous le gain total**, dans sa carte : « dont latentes », « dont réalisées », puis les dividendes et les frais de compte. Leur somme donne le gain total.
 
 ## Lire le graphique « Évolution du portefeuille »
 <!-- fiche: analyse-evolution-valeur | questions: que veut dire la courbe orange ; c'est quoi les apports nets ; pourquoi la courbe orange descend ; différence entre valeur et argent investi ; la zone bleue entre les deux courbes ; ma valeur est sous l'argent investi est ce que je perds ; pourquoi la courbe fait des marches ; argent investi négatif | mots: évolution, valeur de marché, apports nets, capital investi, argent investi, courbe, historique, gain latent, graphique | aller: Analyse du portefeuille/Vue d'ensemble | chiffres: valeur_actuelle, gain_total -->

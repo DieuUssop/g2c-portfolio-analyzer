@@ -45,6 +45,9 @@ echo "==> 3/6 Bibliothèques"
   || echo "    Reconnaissance de caractères non installée : les PDF image seront refusés."
 "$PY" -m pip install --no-warn-script-location -r "$RACINE/requirements-photos.txt" \
   || echo "    Options photos non installées : coins réglés par curseurs, photos HEIC refusées."
+# Compatibilité macOS 12 et plus : la machine de GitHub est récente (macOS 15) ; les bibliothèques compilées
+# pour un macOS plus récent que 12 sont remplacées par leur version compatible (installateur/compatibilite_mac.py)
+"$PY" "$RACINE/installateur/compatibilite_mac.py" 12.0 || echo "    Vérification de compatibilité macOS impossible."
 "$PY" -c "import streamlit, pandas, scipy, plotly, matplotlib, reportlab, openpyxl, cryptography, yfinance, pdfplumber; print('    bibliothèques OK')"
 
 echo "==> 4/6 Copie du projet"

@@ -28,6 +28,9 @@ from . import composition_etf
 
 CHEMIN_CACHE = Path(__file__).resolve().parent.parent / "data" / "cache_classement.csv"
 NON_CLASSE = "Non classé"
+# ETF dont l'indice suivi n'a pas été reconnu : sa région n'est plus devinée (« Monde » par défaut faussait
+# la diversification, ex. un ETF CAC 40 mal identifié) ; l'utilisateur la précise (crayon de l'onglet Positions)
+A_PRECISER = "À préciser (ETF)"
 
 # ----------------------------------------------------------------------
 # 1. Secteurs : tous les noms rencontrés -> les 11 secteurs du projet
@@ -182,7 +185,7 @@ def est_un_etf(ticker, nom, fiche=None):
     fiche = fiche or {}
     if ticker in composition_etf.ETF_INDICE or ticker in ETF_PEA_SYNTHETIQUES:
         return True
-    if str(fiche.get("secteur", "")) in SECTEURS_FONDS:
+    if str(fiche.get("secteur", "")) in SECTEURS_FONDS or fiche.get("indice_suivi"):
         return True
     return bool(MOTIF_ETF.search(str(nom or "")))
 
@@ -192,7 +195,10 @@ def classer_etf(ticker, nom, fiche=None, categorie="", autre_nom=""):
     catégorie Morningstar et nom long donnés par Yahoo Finance (quand le nom de l'avis est trop abrégé)."""
     nom = str(nom or "")
     fiche = fiche or {}
-    indice = composition_etf.indice_suivi(ticker, nom) or composition_etf.indice_suivi(ticker, autre_nom, categorie)
+    # indice précisé par l'utilisateur (crayon « Titres à vérifier »), sinon d'après le nom, puis le nom long et
+    # la catégorie de Yahoo : un nom qui dit « CAC 40 » l'emporte sur une catégorie contradictoire
+    indice = (fiche.get("indice_suivi") if fiche.get("indice_suivi") in composition_etf.PAYS_PAR_INDICE else None) \
+        or composition_etf.indice_suivi(ticker, nom) or composition_etf.indice_suivi(ticker, autre_nom, categorie)
     nom = nom + " " + str(autre_nom or "")
     if MOTIF_OR.search(nom):
         return {"classe": "Or", "region": "Monde", "secteur": "Or", "indice": None}
@@ -209,7 +215,7 @@ def classer_etf(ticker, nom, fiche=None, categorie="", autre_nom=""):
                 "secteur": secteur, "indice": indice}
     secteur = next((s for m, s in _MOTIFS_ETF_SECTEUR if m.search(nom)), "ETF diversifié")
     region = REGION_PAR_INDICE.get(indice) or composition_etf.region_de_l_indice(indice) or fiche.get("region") \
-        or "Monde (ETF)"
+        or A_PRECISER
     return {"classe": "Actions", "region": region, "secteur": secteur, "indice": indice}
 
 
@@ -295,7 +301,8 @@ def classer(ticker, nom="", fiche=None, yahoo=None):
         # pays : celui de la fiche ; jamais celui de la place de cotation (un ETF Asie coté à Paris
         # n'est pas français : son exposition est celle de son indice)
         return {"classe": resultat["classe"], "region": resultat["region"],
-                "pays": fiche.get("pays") or ("" if resultat.get("indice") else pays_place) or "",
+                "pays": fiche.get("pays") or ("" if resultat.get("indice") or resultat["region"] == A_PRECISER
+                                              else pays_place) or "",
                 "secteur": resultat["secteur"], "pea_synthetique": eligible_pea_synthetique(ticker, nom),
                 "indice": resultat.get("indice") or ""}
 
@@ -316,7 +323,7 @@ def classer_tous(tickers, noms, fiches, en_ligne=False):
     # à compléter avec Yahoo : les titres non classés, et les ETF dont l'indice n'a pas été reconnu
     # (nom trop abrégé) : le nom long et la catégorie Morningstar de Yahoo le donnent souvent
     a_completer = [t for t, c in resultat.items() if NON_CLASSE in (c["secteur"], c["region"])
-                   or (c["region"] == "Monde (ETF)" and not c.get("indice"))]
+                   or (c["region"] in ("Monde (ETF)", A_PRECISER) and not c.get("indice"))]
     if a_completer:
         infos = infos_yahoo(a_completer, en_ligne=en_ligne)
         for t in a_completer:
@@ -325,3 +332,27 @@ def classer_tous(tickers, noms, fiches, en_ligne=False):
     tableau = pd.DataFrame.from_dict(resultat, orient="index")
     tableau.index.name = "ticker"
     return tableau
+
+
+
+MOTIF_CODE_ISIN = re.compile(r"^[A-Z]{2}[A-Z0-9]{9}\d$")
+
+
+def titres_a_verifier(positions):
+    """Lignes dont le titre est mal reconnu : [(ticker, nom, raison)]. Raisons : ticker resté sous forme
+    d'ISIN, nom qui n'est qu'un code, ETF dont l'indice (donc la région) n'est pas connu, titre non classé."""
+    lignes = []
+    for ticker, p in positions.iterrows():
+        nom = str(p.get("nom", "") or "").strip()
+        if MOTIF_CODE_ISIN.match(str(ticker)):
+            raison = "Titre non reconnu : code ISIN au lieu du ticker"
+        elif not nom or MOTIF_CODE_ISIN.match(nom.upper()) or nom.upper() == str(ticker).upper():
+            raison = "Nom du titre inconnu"
+        elif p.get("region") == A_PRECISER:
+            raison = "Indice suivi inconnu : région à préciser"
+        elif NON_CLASSE in (p.get("region"), p.get("secteur")):
+            raison = "Titre non classé"
+        else:
+            continue
+        lignes.append((ticker, nom or ticker, raison))
+    return lignes

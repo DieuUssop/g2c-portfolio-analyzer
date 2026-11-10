@@ -32,6 +32,15 @@ def euros(x, signe=False):
     return texte.replace(",", "\u202f") + " €"      # espace fine insécable
 
 
+def euros_cents(x, signe=False):
+    """1234.5 -> '1 234,50 €' (montants d'espèces, frais : au centime) ; en anglais '€1,234.50'."""
+    if anglais():
+        prefixe = "-" if x < 0 else ("+" if signe else "")
+        return f"{prefixe}€{abs(x):,.2f}"
+    texte = f"{x:+,.2f}" if signe else f"{x:,.2f}"
+    return texte.replace(",", "\u202f").replace(".", ",") + " €"
+
+
 def pct(x, signe=True, decimales=2):
     """0.1234 -> '+12,34 %' ; en anglais '+12.34%'."""
     texte = f"{x * 100:+.{decimales}f}" if signe else f"{x * 100:.{decimales}f}"
@@ -59,6 +68,15 @@ def tendance(x):
 def pastille(texte, sens="neutre"):
     """Petite étiquette colorée : verte (positive), rouge (negative), orange (attention) ou grise."""
     return f'<span class="pastille {sens}">{escape(texte)}</span>'
+
+
+def decomposition_gain(lignes, format_euros):
+    """Lignes sous le gain total : « dont latentes +1 234 € », « dont réalisées −56 € »…
+    lignes : [(libellé, montant, afficher)] ; format_euros : fonction de mise en forme (signe compris)."""
+    morceaux = [f'<div class="kpi-decomp"><span>{escape(libelle)}</span>'
+                f'<span class="{tendance(montant)}">{escape(format_euros(montant, signe=True))}</span></div>'
+                for libelle, montant, afficher in lignes if afficher]
+    return f'<div class="kpi-decomp-bloc">{"".join(morceaux)}</div>' if morceaux else ""
 
 
 def entete(titre, surtitre, sous_titre, source, date_donnees, date_cours=None):

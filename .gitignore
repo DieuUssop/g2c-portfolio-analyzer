@@ -25,3 +25,7 @@ diagnostic_pdf.txt
 data/questions_sans_reponse.csv
 diagnostic_pdf_anonyme.txt
 data/base/modeles_pdf.json
+
+# Données propres à l'utilisateur (mémoire des titres, corrections au crayon)
+data/base/memoire.csv
+data/base/corrections.csv
