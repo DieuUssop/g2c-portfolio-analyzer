@@ -71,12 +71,12 @@ def pastille(texte, sens="neutre"):
 
 
 def decomposition_gain(lignes, format_euros):
-    """Lignes sous le gain total : « dont latentes +1 234 € », « dont réalisées −56 € »…
-    lignes : [(libellé, montant, afficher)] ; format_euros : fonction de mise en forme (signe compris)."""
-    morceaux = [f'<div class="kpi-decomp"><span>{escape(libelle)}</span>'
-                f'<span class="{tendance(montant)}">{escape(format_euros(montant, signe=True))}</span></div>'
-                for libelle, montant, afficher in lignes if afficher]
-    return f'<div class="kpi-decomp-bloc">{"".join(morceaux)}</div>' if morceaux else ""
+    """Sous le gain total : petites cases « LATENTES +1 234 € », « RÉALISÉES −56 € »… sur deux colonnes
+    (libellé discret au-dessus, montant en couleur, jamais coupé). lignes : [(libellé, montant, afficher)]."""
+    cases = [f'<div class="kpi-decomp"><span class="kpi-decomp-libelle">{escape(libelle)}</span>'
+             f'<span class="kpi-decomp-montant {tendance(montant)}">{escape(format_euros(montant, signe=True))}</span></div>'
+             for libelle, montant, afficher in lignes if afficher]
+    return f'<div class="kpi-decomp-grille">{"".join(cases)}</div>' if cases else ""
 
 
 def entete(titre, surtitre, sous_titre, source, date_donnees, date_cours=None):

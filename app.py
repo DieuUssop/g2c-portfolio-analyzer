@@ -563,21 +563,20 @@ html(ui.grille([
              detail=t("Investi au PRU : {montant}", montant=euros(resume["montant_investi"])),
              aide=t("Quantité × dernier cours, pour chaque ligne détenue")),
     ui.carte(t("Solde espèces"), euros(resume["solde_especes"]) if resume.get("solde_especes") is not None else "—",
-             detail=(t("Négatif : des versements manquent sans doute — corrigez-le avec le crayon ✏️ ci-dessous")
+             detail=(t("Négatif : versements manquants ? ✏️ ci-dessous")
                      if (resume.get("solde_especes") or 0) < -0.005
                      else t("Saisi le {date} · compte : {montant}", date=langues.date(res["solde_saisi"][0]),
                             montant=euros(resume["valeur_compte"])) if res.get("solde_saisi")
                      else t("Valeur du compte : {montant}", montant=euros(resume["valeur_compte"]))
-                     if resume.get("solde_especes") is not None else t("Inconnu : saisissez-le avec le crayon ✏️")),
+                     if resume.get("solde_especes") is not None else t("À saisir ✏️ ci-dessous")),
              aide=t("Versements − retraits − achats + ventes + dividendes − frais. Connu seulement si les "
                     "versements d'espèces sont dans le fichier (relevés ou avis d'opération du compte).")),
     ui.carte(t("Gain total"), euros(resume["gain_total"], signe=True),
              detail=ui.decomposition_gain([
-                 (t("dont latentes"), resume["pv_latentes"], True),
-                 (t("  · effet change"), resume.get("effet_change", 0.0), not res["effet_change"].empty),
-                 (t("dont réalisées"), resume["pv_realisees"], True),
-                 (t("dividendes"), resume["dividendes"], bool(resume["dividendes"])),
-                 (t("frais de compte"), -resume.get("frais_compte", 0.0), bool(resume.get("frais_compte"))),
+                 (t("Latentes"), resume["pv_latentes"], True),
+                 (t("Réalisées"), resume["pv_realisees"], True),
+                 (t("Dividendes"), resume["dividendes"], bool(resume["dividendes"])),
+                 (t("Frais compte"), -resume.get("frais_compte", 0.0), bool(resume.get("frais_compte"))),
              ], euros) + ui.pastille(pct(rendement_investi), tendance(rendement_investi)) + t(" sur le capital investi"),
              aide=t("Plus-values latentes (titres détenus, non encaissées) + plus-values réalisées (titres vendus) "
                     "+ dividendes − frais de compte")),
@@ -595,7 +594,9 @@ html(ui.grille([
              aide=t("Pire baisse depuis un plus haut")),
 ]))
 # Crayon du solde espèces : saisir soi-même le solde disponible (point de départ des calculs suivants)
-vues_transactions.crayon_solde(res, contenu, cible_portefeuille, session_compte)
+_, colonne_crayon, _ = st.columns([1, 1, 5])        # sous la carte « Solde espèces » (2e carte)
+with colonne_crayon:
+    vues_transactions.crayon_solde(res, contenu, cible_portefeuille, session_compte)
 
 # ======================================================================
 # ONGLETS

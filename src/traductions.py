@@ -11,6 +11,12 @@ accolades doivent être conservés à l'identique.
 """
 
 TEXTES = {
+    'Latentes': 'Unrealized',
+    'Réalisées': 'Realized',
+    'Frais compte': 'Account fees',
+    'Modifier': 'Edit',
+    'À saisir ✏️ ci-dessous': 'To enter ✏️ below',
+    'Négatif : versements manquants ? ✏️ ci-dessous': 'Negative: missing deposits? ✏️ below',
     # Retours du 10/11/2026 : gain total, solde saisi, solde insuffisant, titres à vérifier, signalement
     "Déjà dans le portefeuille (mis de côté) : {noms}. Vous pouvez les retirer de la zone d'envoi.": 'Already in the portfolio (set aside): {noms}. You can remove them from the upload area.',
     'Plus-values latentes (titres détenus, non encaissées) + plus-values réalisées (titres vendus) + dividendes − frais de compte': 'Unrealized gains (securities held, not cashed in) + realized gains (securities sold) + dividends − account fees',

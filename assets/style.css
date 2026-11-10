@@ -398,9 +398,14 @@ table.tableau-simple tr:last-child td { border-bottom: none; }
 .bulle-fiche { font-weight: 600; font-size: 0.92rem; color: var(--primaire-fonce); margin-top: 0.2rem; }
 @media print { .st-key-bulle_aide { display: none !important; } }
 
-/* Gain total : décomposition (latentes, réalisées, dividendes, frais de compte) */
-.kpi-decomp-bloc { margin: 0.1rem 0 0.45rem 0; }
-.kpi-decomp { display: flex; justify-content: space-between; gap: 0.5rem; font-size: 0.8rem; line-height: 1.45; }
-.kpi-decomp .positive { color: var(--positif); font-weight: 600; }
-.kpi-decomp .negative { color: var(--negatif); font-weight: 600; }
-.kpi-decomp .neutre { color: var(--texte-2); }
+/* Gain total : décomposition (latentes, réalisées, dividendes, frais de compte), en petites cases */
+.kpi-decomp-grille { display: grid; grid-template-columns: 1fr 1fr; gap: 0.3rem 0.6rem; margin: 0.15rem 0 0.5rem 0; }
+.kpi-decomp { display: flex; flex-direction: column; min-width: 0; }
+.kpi-decomp-libelle { font-size: 0.62rem; letter-spacing: 0.04em; text-transform: uppercase; color: var(--texte-2);
+                      white-space: nowrap; }
+.kpi-decomp-montant { font-size: 0.8rem; font-weight: 600; white-space: nowrap; }
+.kpi-decomp-montant.positive { color: var(--positif); }
+.kpi-decomp-montant.negative { color: var(--negatif); }
+.kpi-decomp-montant.neutre { color: var(--texte-2); }
+/* Crayon du solde espèces : petit lien discret sous la carte */
+.st-key-crayon_solde button { padding: 0.1rem 0.5rem; min-height: 0; font-size: 0.8rem; }

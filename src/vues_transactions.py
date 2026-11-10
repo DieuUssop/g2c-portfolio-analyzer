@@ -425,8 +425,8 @@ def crayon_solde(res, contenu, cible, session_compte):
     Il est enregistré dans le fichier du portefeuille (ligne SOLDE) ; les opérations postérieures le font
     ensuite varier automatiquement. « Revenir au calcul automatique » retire la saisie."""
     saisi = res.get("solde_saisi")
-    with st.popover(t("Solde espèces"), icon=":material/edit:",
-                    help=t("Indiquer vous-même le solde disponible sur le compte")):
+    with st.container(key="crayon_solde"), st.popover(t("Modifier"), icon=":material/edit:", type="tertiary",
+                                                       help=t("Indiquer vous-même le solde disponible sur le compte")):
         st.caption(t("Recopiez le solde disponible de votre relevé. Les achats, ventes, versements, retraits, "
                      "dividendes et frais POSTÉRIEURS à cette date le feront varier automatiquement."))
         actuel = res["resume"].get("solde_especes")
