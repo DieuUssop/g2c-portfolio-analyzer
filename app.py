@@ -117,13 +117,12 @@ def graphique(figure):
 # ----------------------------------------------------------------------
 # Calculs (mis en cache)
 # ----------------------------------------------------------------------
-# @st.cache_data : Streamlit garde le résultat en mémoire. Tant que les
-# paramètres ne changent pas, la fonction n'est pas relancée : la page
-# reste rapide. ttl=3600 : le résultat expire au bout d'une heure.
-# Les messages d'attente sont affichés à l'appel (st.spinner), dans la langue choisie.
-@st.cache_data(ttl=3600, show_spinner=False)
+# L'analyse est gardée en mémoire une heure par src/analyse.py (analyse_memorisee) : tant que le fichier et
+# les paramètres ne changent pas, elle n'est pas refaite et la page reste rapide. (Pas de @st.cache_data ici :
+# Streamlit y interdit la barre de progression affichée pendant le calcul.)
+# Les autres calculs (optimisation, rapport...) gardent @st.cache_data.
 def charger(contenu_csv, indice, taux_sans_risque, niveau_var):
-    return analyse_complete(io.BytesIO(contenu_csv), indice, taux_sans_risque, niveau_var)
+    return module_analyse.analyse_memorisee(contenu_csv, indice, taux_sans_risque, niveau_var)
 
 
 @st.cache_data(show_spinner=False, ttl=86400)
@@ -393,7 +392,7 @@ def analyser_avec_avancement(contenu_csv):
         barre.progress(min(max(part, 0.0), 1.0), text=t(texte) + "…")
 
     module_analyse.suivre_avancement(avancer)
-    try:
+    try:                     # (la barre n'apparaît que si l'analyse n'est pas déjà en mémoire)
         return charger(contenu_csv, code_indice, taux_sans_risque, niveau_var)
     finally:
         module_analyse.suivre_avancement(None)
@@ -628,6 +627,7 @@ with zone_cours:
     if st.button(t("Actualiser les cours"), type="secondary", key="actualiser_cours", width="stretch",
                  icon=":material/refresh:", help=t("Télécharge à nouveau les cours (Internet nécessaire)")):
         st.cache_data.clear()   # on oublie les résultats en mémoire...
+        module_analyse.oublier_resultats()
         st.rerun()              # ... et on relance la page
 
 rendement_investi = resume["gain_total"] / resume["montant_investi"]

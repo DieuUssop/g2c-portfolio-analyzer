@@ -32,6 +32,39 @@ CHEMIN_REFERENTIEL = Path(__file__).resolve().parent.parent / "data" / "referent
 _avancement = threading.local()
 
 
+# Résultats déjà calculés (pour toute l'application) : clé -> (heure du calcul, résultat). Ce n'est PAS
+# st.cache_data : Streamlit interdit d'afficher quoi que ce soit (la barre de progression) pendant une
+# fonction mise en cache par st.cache_data. Durée de vie : DUREE_MEMOIRE secondes, MEMOIRE_MAX résultats.
+DUREE_MEMOIRE = 3600
+MEMOIRE_MAX = 12
+_memoire = {}
+_verrou = threading.Lock()
+
+
+def analyse_memorisee(contenu_csv, indice=config.INDICE_REFERENCE, taux_sans_risque=config.TAUX_SANS_RISQUE,
+                      niveau_var=config.NIVEAU_CONFIANCE_VAR):
+    """analyse_complete d'un fichier (octets), gardée en mémoire une heure pour les mêmes réglages."""
+    import io
+    import time
+    cle = (hash(contenu_csv), len(contenu_csv), indice, float(taux_sans_risque), float(niveau_var))
+    with _verrou:
+        trouve = _memoire.get(cle)
+        if trouve and time.time() - trouve[0] < DUREE_MEMOIRE:
+            return trouve[1]
+    resultat = analyse_complete(io.BytesIO(contenu_csv), indice, taux_sans_risque, niveau_var)
+    with _verrou:
+        _memoire[cle] = (time.time(), resultat)
+        while len(_memoire) > MEMOIRE_MAX:                       # on oublie le plus ancien
+            _memoire.pop(min(_memoire, key=lambda k: _memoire[k][0]))
+    return resultat
+
+
+def oublier_resultats():
+    """Vide la mémoire des analyses (« Actualiser les cours », correction d'un titre, restauration)."""
+    with _verrou:
+        _memoire.clear()
+
+
 def suivre_avancement(fonction):
     """Indique la fonction à appeler à chaque étape (None pour arrêter)."""
     _avancement.fonction = fonction

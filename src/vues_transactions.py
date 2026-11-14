@@ -523,6 +523,8 @@ def titres_a_verifier(positions, contenu, cible, session_compte):
                         if nouveau_nom.strip():
                             tableau.loc[concerne, "nom"] = nouveau_nom.strip()
                         st.cache_data.clear()                # le classement est recalculé
+                        from .analyse import oublier_resultats
+                        oublier_resultats()
                         _sauver(tableau, contenu, cible, session_compte,
                                 t("{titre} corrigé.", titre=nouveau_nom.strip() or nouveau_ticker))
 

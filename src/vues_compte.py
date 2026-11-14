@@ -258,6 +258,8 @@ def page_compte(s, importer=None):
                     s.restaurer(sv["id"])
                     st.session_state["message_compte"] = t("Sauvegarde du {date} restaurée.", date=sv["date"])
                     st.cache_data.clear()
+                    from .analyse import oublier_resultats
+                    oublier_resultats()
                     st.rerun()
                 except comptes.ErreurCompte as erreur:
                     st.error(message(erreur))

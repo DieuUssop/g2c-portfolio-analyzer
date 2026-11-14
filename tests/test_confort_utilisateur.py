@@ -267,3 +267,20 @@ def test_avancement_du_calcul():
         analyse.suivre_avancement(None)
     analyse._etape(0.7, "sans suivi")
     assert etapes == [0.5]
+
+
+def test_analyse_gardee_en_memoire_sans_st_cache(monkeypatch):
+    """L'analyse est gardée en mémoire par src/analyse.py (et non @st.cache_data, qui interdit la barre
+    de progression pendant le calcul)."""
+    from src import analyse
+    appels = []
+    monkeypatch.setattr(analyse, "analyse_complete", lambda source, *a: appels.append(1) or {"n": len(appels)})
+    analyse.oublier_resultats()
+    try:
+        assert analyse.analyse_memorisee(b"date,type\n") == {"n": 1}
+        assert analyse.analyse_memorisee(b"date,type\n") == {"n": 1}            # déjà en mémoire
+        assert analyse.analyse_memorisee(b"date,type\n", "CW8.PA", 0.01) == {"n": 2}   # autres réglages
+        analyse.oublier_resultats()
+        assert analyse.analyse_memorisee(b"date,type\n") == {"n": 3}            # « Actualiser les cours »
+    finally:
+        analyse.oublier_resultats()

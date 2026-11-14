@@ -38,7 +38,7 @@ améliorée par les promotions suivantes.
    ne pas la remplacer par une base de test.
 4. **Jamais de valeur fausse en silence.** En cas de doute à l'import, ouvrir le formulaire
    « Compléter l'opération » ou afficher un avertissement plutôt que deviner.
-5. **Tout doit passer les tests** : `python -m pytest` (361 tests au 14/11/2026). Toute
+5. **Tout doit passer les tests** : `python -m pytest` (362 tests au 14/11/2026). Toute
    correction ou fonctionnalité ajoute au moins un test.
 6. **Pas de code en double** : une amélioration de lecture doit profiter à tous les chemins
    (PDF texte, PDF image, photo, CSV, Excel).
@@ -208,6 +208,10 @@ python diagnostic_pdf.py relevé.pdf --anonyme    # ce que l'application lit dan
   sauvegardes comprises. Les sauvegardes ne contiennent pas les versions d'annulation.
 - **Mode Essentiel / Expert** : `vues_bienvenue.ONGLETS_ESSENTIELS` ; un nouvel onglet s'ajoute à
   `TOUS_LES_ONGLETS` dans `app.py` (bloc `if "Nom" in onglets:`).
+- **Pas d'affichage dans une fonction `@st.cache_data`** (Streamlit refuse : « a streamlit element is called on some
+  layout block created outside the function »). L'analyse principale est donc gardée en mémoire par
+  `analyse.analyse_memorisee` (et non `@st.cache_data`), ce qui permet la barre de progression ; vider avec
+  `analyse.oublier_resultats()` en même temps que `st.cache_data.clear()`.
 - **Livret A** : compléter `livret_a.TAUX_LIVRET_A` à chaque changement de taux (1er février, 1er août).
 - **Mac** : `installateur/compatibilite_mac.py` (lancé par `fabriquer_mac.sh`) remplace les bibliothèques
   compilées pour un macOS > 12 ; l'application doit s'ouvrir sur macOS 12 et plus (puces Apple).
