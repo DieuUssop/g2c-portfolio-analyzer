@@ -198,9 +198,79 @@ The [[Undo last change]] button then appears on the portfolio's row, in [[My acc
 
 ### The limits
 
-- **Only one level of undo.** Only the very latest version is kept. After an undo, the button disappears; and each new addition or correction replaces the version previously kept.
+- **Up to five levels of undo.** The last five versions are kept (encrypted): another click on [[Undo last change]] goes one more version back. Beyond that, the oldest is deleted. Every change and every undo is recorded in the **change log** (see the dedicated entry).
 - The button does not exist as long as no addition or correction has been saved.
 - Saving a file under the same name from the sidebar or the [[Add a portfolio]] section replaces the portfolio, but keeps the previous version (recoverable with [[Undo last change]]).
+
+## Setting the account type: PEA, CTO, life insurance
+<!-- fiche: compte-type | questions: say that my portfolio is a pea ; account type ; my portfolio is a securities account ; set the tax wrapper ; what is the account type for ; several pea and cto accounts ; life insurance in the software | mots: account type, wrapper, PEA, CTO, securities account, life insurance, taxation, several accounts -->
+
+Each portfolio in your space is **an account**. You can set its type: **PEA**, **CTO** (securities account), **Life insurance** or **Other**.
+
+### Where to choose it
+
+- when saving a file, under the upload area of the sidebar: [[Account type]] list;
+- at any time on the [[My account]] page, under the name of each portfolio.
+
+The type is shown in brackets in the list of portfolios, for example "My space · Boursorama (PEA)".
+
+### What it is for
+
+- **Wealth advisory › Taxation**: the card of your wrapper comes first, marked "your account"; the others remain displayed for comparison.
+- **All my accounts**: the "My accounts" table of the Overview shows the type of each one.
+
+The type is kept, encrypted, with the portfolio. It does not change any performance or risk calculation.
+
+## Seeing all my accounts together
+<!-- fiche: compte-tous-mes-comptes | questions: see all my accounts together ; add up my pea and my cto ; consolidated view ; all my portfolios in one ; total stock market wealth ; consolidate several portfolios ; same etf in two accounts | mots: All my accounts, consolidation, consolidated, group, several portfolios, PEA and CTO, overall wealth -->
+
+As soon as your space contains at least two portfolios, the list of portfolios offers **All my accounts (n)** last.
+
+### What is combined
+
+- all transactions on securities and all dividends: the same ETF held in two accounts becomes **a single holding** (quantities added up, combined average cost);
+- account fees;
+- cash: the **total balance is the sum of the balances of each account**, calculated separately. An account whose balance is unknown does not count.
+
+The whole analysis (performance, risk, exposures, target allocation, PDF report, Excel) then covers the whole. The Overview adds the **My accounts** table: value, invested, gain, cash and share of each account.
+
+### Read-only
+
+In this view, nothing can be changed: no balance pencil, no [[Add transactions]], no [[Edit transactions]]. Choose the account concerned in the list to update it.
+
+### Taxation
+
+The Wealth advisory workspace then assumes that everything is in the same wrapper: a message says so. For the actual taxation, open each account separately.
+
+## The change log
+<!-- fiche: compte-journal | questions: history of changes to my portfolio ; who changed my portfolio ; change log ; when did I add transactions ; list of changes ; see the undos | mots: log, change history, traceability, addition, deletion, correction, undo, restore -->
+
+Each portfolio in your space keeps a **change log**: creation, transactions added or deleted, correction, undo, restoring a backup, with the date and the number of transactions after the change.
+
+### Where to see it
+
+- in the **Transactions** tab, under the table: [[Change log ({n})]], folded;
+- on the [[My account]] page, under each portfolio.
+
+The last 50 rows are kept, encrypted with the portfolio. The log provides traceability (the "compliance" side of the G2C Master's): it says what changed and when.
+
+## Automatic backups and restoring
+<!-- fiche: compte-sauvegardes | questions: automatic backup ; restore a backup ; go back to last week's state ; I deleted everything by mistake ; recover a deleted portfolio ; back up now ; how many backups are kept | mots: automatic backup, restore, restoring, backup, copy, recover, week -->
+
+Once a week, when you sign in, the software makes an **encrypted copy of your whole space** (portfolios, account types, log, preferences). The last **four** are kept.
+
+### The "Backups" section of My account
+
+- [[Back up now]] makes a copy straight away (for example before a big change);
+- each backup is listed with its date and its number of portfolios;
+- tick [[Confirm]] then [[Restore]] to put your space back in that state. The current state is **backed up first**: you can go back.
+
+### Good to know
+
+- A restore also brings back a portfolio deleted by mistake since the backup.
+- The undo versions ("Undo last change") are not in the backups.
+- Backups stay **on this computer**, in your account folder. Against a disk failure, also download your portfolios as CSV (entry "Backing up my portfolios or changing computer").
+- Changing your password also re-encrypts the backups: they remain readable.
 
 ## Changing your password
 <!-- fiche: compte-changer-mot-de-passe | questions: how do I change my password ; edit my account password ; current password incorrect ; do I lose my portfolios if I change my password ; my password is too simple I want to change it ; someone knows my password what do I do ; password change and re-encryption | mots: password, change, edit, re-encryption, new password, security -->

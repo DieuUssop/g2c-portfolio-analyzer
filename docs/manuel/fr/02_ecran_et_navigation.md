@@ -12,19 +12,21 @@ L'écran est divisé en deux parties : la **barre latérale**, à gauche, qui re
 
 1. **L'en-tête** : le monogramme « PT », le nom « Portfolio Tracker » et la mention « Master G2C ». Juste dessous, sur une même ligne, deux petits sélecteurs : la langue (FR · EN) à gauche et l'affichage (Clair · Nuit) à droite ; l'option active est en gras.
 2. **L'espace personnel** : la mention « Espace personnel chiffré » et le lien [[Se connecter]]. Une fois connecté, vos initiales, votre identifiant et les liens [[Mon compte]] et [[Déconnexion]].
-3. **Espace de travail** : le menu des quatre espaces (Analyse du portefeuille, Conseil patrimonial, Gestion d'actifs, Manuel et aide), chacun avec une ligne de description grise. L'espace affiché est surligné en bleu clair, avec un trait bleu à gauche.
-4. **Données** : la liste des portefeuilles, la zone [[Envoyer un fichier (CSV, Excel, PDF ou image)]] (bouton [[Parcourir]], ou glisser-déposer le fichier), puis les liens [[Ajouter des opérations]] et [[Modèle de fichier]].
-5. **Paramètres** : un panneau replié qui contient l'indice de référence et le taux sans risque. Son titre résume les réglages en cours. (Le niveau de confiance de la VaR se règle dans l'onglet Risque, le seul où il sert.)
+3. **Espace de travail** : le menu des quatre espaces (Analyse du portefeuille, Conseil patrimonial, Gestion d'actifs, Manuel et aide), chacun avec une ligne de description grise. L'espace affiché est surligné en bleu clair, avec un trait bleu à gauche. Juste dessous, le sélecteur **Expert · Essentiel** choisit les onglets affichés (voir la fiche sur le mode Essentiel).
+4. **Données** : la liste des portefeuilles, la zone [[Envoyer un fichier (CSV, Excel, PDF ou image)]] (bouton [[Parcourir]], ou glisser-déposer le fichier), puis le lien [[Ajouter des opérations]].
+5. **Outils et paramètres** : un menu qui contient le [[Modèle de fichier]], l'[[Ouvrir l'assistant d'import]] (quand un fichier est envoyé), l'indice de référence et le taux sans risque. Son titre résume les réglages en cours. (Le niveau de confiance de la VaR se règle dans l'onglet Risque, le seul où il sert.)
 6. **Les informations** sur le portefeuille analysé : fichier, période, nombre d'opérations, provenance des cours, et les taux de change repliés sous « Taux de change ».
-7. **Les boutons** [[Rapport PDF]] et [[Actualiser les cours]].
+7. Le bouton **Signaler un problème** et le numéro de version.
 
-Les blocs 6 et 7 n'apparaissent qu'une fois un portefeuille analysé : ils sont absents dans l'espace « Manuel et aide » et sur les pages « Mon compte » et « Ajouter des opérations ».
+Les boutons [[Rapport PDF]], [[Excel]] et [[Actualiser les cours]] sont en haut de la zone principale, juste sous le bandeau bleu.
+
+Le bloc 6 n'apparaît qu'une fois un portefeuille analysé : ils sont absents dans l'espace « Manuel et aide » et sur les pages « Mon compte » et « Ajouter des opérations ».
 
 En bas à droite de l'écran, sur toutes les pages, le bouton [[Aide]] ouvre un petit panneau pour poser une question au manuel (voir la fiche sur la bulle d'aide).
 
 ### La zone principale
 
-Dans les espaces d'analyse, elle commence par un bandeau bleu (titre, période, indice de référence, provenance des cours), suivi d'une ligne de six chiffres clés, puis des onglets de l'espace choisi. Un pied de page rappelle les sources (Yahoo Finance pour les cours, BCE pour le taux sans risque) et que l'outil est pédagogique : il ne constitue pas un conseil en investissement.
+Dans les espaces d'analyse, elle commence par un bandeau bleu (titre, période, indice de référence, provenance des cours), la barre de boutons [[Rapport PDF]] · [[Excel]] · [[Actualiser les cours]], puis une ligne de chiffres clés (quatre en mode Essentiel), puis des onglets de l'espace choisi. Un pied de page rappelle les sources (Yahoo Finance pour les cours, BCE pour le taux sans risque) et que l'outil est pédagogique : il ne constitue pas un conseil en investissement.
 
 ### Si la barre latérale est masquée
 
@@ -126,13 +128,13 @@ L'envoi d'un fichier, l'assistant d'import et l'ajout de nouvelles opérations s
 ## Où régler les paramètres d'analyse ?
 <!-- fiche: ecran-parametres | questions: ou sont les parametres ; comment changer l'indice de référence ; je ne trouve pas le taux sans risque ; que veut dire la ligne parametres msci world 2,50 % ; les paramètres sont ils enregistrés ; pourquoi tous les chiffres changent quand je modifie un paramètre ; réglages de l'analyse | mots: paramètres, réglages, settings, options, indice de référence, taux sans risque, VaR, niveau de confiance -->
 
-Les paramètres d'analyse se trouvent dans le panneau **Paramètres** de la barre latérale, sous le bloc Données. Il est replié par défaut : cliquez sur son titre pour l'ouvrir.
+Les paramètres d'analyse se trouvent dans le menu [[Outils et paramètres]] de la barre latérale, sous le bloc Données. Cliquez sur son titre pour l'ouvrir ; il contient aussi le modèle de fichier et l'assistant d'import.
 
 ### Le résumé dans le titre
 
 Même replié, le titre du panneau rappelle les réglages en cours, par exemple :
 
-`Paramètres · MSCI World · 2,50 %`
+`Outils et paramètres · MSCI World · 2,50 %`
 
 soit l'indice de référence et le taux sans risque annuel.
 
@@ -156,7 +158,7 @@ Les réglages sont gardés pendant la session, même si vous changez de portefeu
 ## Choisir l'indice de référence : les 14 indices proposés
 <!-- fiche: ecran-indice-reference | questions: quel indice de référence choisir ; c'est quoi le benchmark ; comparer mon portefeuille au cac 40 ; mettre le s&p 500 comme référence ; pourquoi le msci world par défaut ; liste des indices disponibles ; dividendes réinvestis ou hors dividendes quelle différence ; mon portefeuille est obligataire quel indice prendre ; peut on ajouter un autre indice | mots: indice de référence, benchmark, MSCI World, CAC 40, S&P 500, Euro Stoxx 50, ACWI, Nasdaq, obligations, €STR, comparaison -->
 
-L'indice de référence sert de point de comparaison : courbe « portefeuille contre indice » en base 100, écart de performance, bêta, alpha, corrélation, tracking error, ratio d'information. Il se choisit dans le panneau **Paramètres**, menu [[Indice de référence]]. Chaque entrée du menu indique d'abord sa famille, puis son nom (par exemple « Actions · CAC 40 (hors dividendes) »).
+L'indice de référence sert de point de comparaison : courbe « portefeuille contre indice » en base 100, écart de performance, bêta, alpha, corrélation, tracking error, ratio d'information. Il se choisit dans le menu **Outils et paramètres**, menu [[Indice de référence]]. Chaque entrée du menu indique d'abord sa famille, puis son nom (par exemple « Actions · CAC 40 (hors dividendes) »).
 
 ### La liste complète
 
@@ -228,7 +230,7 @@ Le rééquilibrage est supposé gratuit et parfait, sans frais ni impôt.
 ## Quel taux sans risque utiliser ?
 <!-- fiche: ecran-taux-sans-risque | questions: c'est quoi le taux sans risque ; pourquoi 2,50 % ; d'ou vient le taux sans risque ; changer le taux sans risque ; le taux sans risque change le sharpe ; faut il mettre le livret A ; taux bce estr ; taux sans risque constant sur toute la période | mots: taux sans risque, risk free rate, BCE, facilité de dépôt, €STR, Sharpe, Sortino, alpha, rendement sans risque -->
 
-Le taux sans risque est le rendement d'un placement en euros considéré comme sans risque. Il se règle dans le panneau **Paramètres**, champ [[Taux sans risque (% par an)]].
+Le taux sans risque est le rendement d'un placement en euros considéré comme sans risque. Il se règle dans le menu **Outils et paramètres**, champ [[Taux sans risque (% par an)]].
 
 ### Valeur par défaut et source
 
@@ -302,7 +304,7 @@ Sous la pastille, la mention « Données au » donne la date du dernier cours de
 
 ### Si la pastille est orange
 
-Les calculs restent justes, mais à la date des derniers cours connus. Vérifiez votre connexion Internet, puis cliquez sur [[Actualiser les cours]] en bas de la barre latérale. La ligne « Cours » des informations de la barre latérale précise la date du cache utilisé.
+Les calculs restent justes, mais à la date des derniers cours connus. Vérifiez votre connexion Internet, puis cliquez sur [[Actualiser les cours]] en haut de la page, sous le bandeau. La ligne « Cours » des informations de la barre latérale précise la date du cache utilisé.
 
 ### Bon à savoir
 
@@ -338,6 +340,56 @@ Le gain total est un montant en euros, qui dépend de la somme investie et du mo
 
 Pour la volatilité et le Sharpe, la ligne du dessous donne la valeur de l'indice de référence choisi dans les paramètres : vous voyez d'un coup d'œil si votre portefeuille est plus ou moins risqué, et mieux ou moins bien rémunéré pour ce risque.
 
+## Le premier lancement : la carte « Bienvenue »
+<!-- fiche: ecran-bienvenue | questions: par où commencer ; premier lancement du logiciel ; c'est quoi la carte bienvenue ; comment analyser mon propre portefeuille ; pourquoi je vois un portefeuille qui n'est pas le mien ; comment fermer le message de bienvenue ; portefeuille d'exemple ou le mien | mots: bienvenue, premier lancement, prise en main, démarrage, exemple, portefeuille d'exemple, étapes, commencer -->
+
+Au premier lancement, une carte **Bienvenue dans Portfolio Tracker** s'affiche en haut de la page, au-dessus d'un portefeuille d'exemple. Elle donne les trois étapes pour analyser le vôtre :
+
+1. **Importer vos opérations** : glissez votre relevé de courtier (PDF, CSV, Excel ou photo) dans la zone « Données » de la barre latérale. Cette zone clignote doucement pour être repérée.
+2. **Vérifier le solde espèces** : sous la carte « Solde espèces », le crayon ✏️ permet de recopier le solde de votre relevé.
+3. **Lire la Vue d'ensemble** : l'encadré « Ce qu'il faut retenir » résume l'essentiel.
+
+### Les boutons de la carte
+
+- [[J'ai compris]] ferme la carte. Elle ne revient plus sur cet ordinateur (ni dans votre compte, si vous êtes connecté).
+- [[Modèle de fichier]] télécharge un fichier CSV prêt à remplir.
+- [[Lire le manuel]] ouvre l'espace « Manuel et aide ».
+
+### Le bandeau « portefeuille d'exemple »
+
+Une fois la carte fermée, tant qu'un portefeuille d'exemple est affiché, un bandeau orange le rappelle : « Vous regardez un portefeuille d'exemple ». Il disparaît dès que vous envoyez un fichier ou choisissez un portefeuille de votre espace.
+
+## Mode Essentiel ou mode Expert : choisir les onglets affichés
+<!-- fiche: ecran-mode-essentiel | questions: trop d'onglets je suis perdu ; c'est quoi le mode essentiel ; mode expert ; cacher les onglets compliqués ; ou sont passés les onglets risque et optimisation ; afficher moins de choses ; mode débutant ; simplifier l'écran | mots: mode Essentiel, mode Expert, débutant, simplifier, onglets, affichage, cacher -->
+
+Sous le menu « Espace de travail », le sélecteur **Expert · Essentiel** choisit ce qui est affiché.
+
+| Mode | Ce qui est affiché |
+|---|---|
+| Expert (par défaut) | Tous les onglets et les quatre espaces de travail, et les sept chiffres clés en haut de page |
+| Essentiel | Les onglets du quotidien : Vue d'ensemble, Positions, Expositions, Allocation cible, Transactions ; les espaces Analyse du portefeuille et Manuel et aide ; quatre chiffres clés (valeur, solde espèces, gain total, performance annualisée) |
+
+### Bon à savoir
+
+- Le mode Essentiel ne supprime rien : les calculs sont les mêmes, et le rapport PDF et l'export Excel restent complets. Repassez en Expert pour retrouver les onglets Performance, Risque, Optimisation, Projection et les espaces Conseil patrimonial et Gestion d'actifs.
+- Si vous êtes connecté, votre choix est retenu pour les visites suivantes.
+
+## Exporter le portefeuille vers Excel
+<!-- fiche: ecran-export-excel | questions: exporter vers excel ; télécharger mes positions en xlsx ; avoir mes données dans un tableur ; export excel de la performance ; bouton excel ; refaire mes calculs dans excel ; télécharger le tableau des positions | mots: Excel, xlsx, export, tableur, télécharger, classeur, feuilles -->
+
+Le bouton [[Excel]], en haut de la page entre [[Rapport PDF]] et [[Actualiser les cours]], télécharge en un clic un classeur `portefeuille_AAAAMMJJ.xlsx`.
+
+| Feuille | Contenu |
+|---|---|
+| Résumé | Valeur, investi, gain total, plus-values, dividendes, frais, solde espèces, TWR annualisé, volatilité, max drawdown, période |
+| Positions | Une ligne par titre détenu : classe, région, secteur, quantité, PRU, cours, valeur, plus-values, dividendes, frais, poids |
+| Performance mensuelle | Valeur et argent investi à chaque fin de mois, rendement du mois |
+| Transactions | Toutes les opérations, en euros |
+| Dividendes | Dividendes nets par année |
+| Diagnostic | Les constats de l'onglet Expositions (profil choisi) et leur première piste |
+
+Les montants sont de vrais nombres : vous pouvez trier, filtrer et refaire vos calculs. Les titres de colonnes suivent la langue de l'écran.
+
 ## Obtenir le rapport PDF
 <!-- fiche: ecran-rapport-pdf | questions: comment télécharger le rapport pdf ; generer un pdf de mon portefeuille ; le bouton rapport pdf ne télécharge rien ; ou est le rapport ; exporter l'analyse en pdf ; le bouton télécharger le rapport a disparu ; imprimer le rapport ; rapport pdf en anglais ; installer reportlab | mots: rapport PDF, export, imprimer, télécharger, synthèse, document, reportlab, compte rendu -->
 
@@ -345,7 +397,7 @@ Le rapport PDF rassemble l'analyse complète du portefeuille dans un document pr
 
 ### En deux temps
 
-1. En bas de la barre latérale, cliquez sur [[Rapport PDF]]. Le message « Génération du rapport... » s'affiche pendant la préparation, qui peut prendre quelques secondes.
+1. En haut de la page, sous le bandeau bleu, cliquez sur [[Rapport PDF]]. Le message « Génération du rapport... » s'affiche pendant la préparation, qui peut prendre quelques secondes.
 2. Le bouton devient [[Télécharger le rapport PDF]]. Cliquez dessus : le fichier est enregistré par votre navigateur, en général dans le dossier Téléchargements.
 
 Le fichier s'appelle `rapport_portefeuille_` suivi de la date des dernières données, par exemple `rapport_portefeuille_20261006.pdf`.
@@ -395,7 +447,7 @@ Si un calcul est impossible (par exemple l'optimisation, avec trop peu de titres
 ## Actualiser les cours
 <!-- fiche: ecran-actualiser-cours | questions: comment mettre à jour les cours ; les prix ne sont pas ceux d'aujourd'hui ; rafraichir les données ; le bouton actualiser les cours ne fait rien ; forcer le téléchargement des cours ; refresh ; les cours datent d'hier ; recharger la page | mots: actualiser, rafraîchir, refresh, mise à jour des cours, cache, recharger, cours du jour, Yahoo Finance -->
 
-Le bouton [[Actualiser les cours]] se trouve tout en bas de la barre latérale, sous le bouton du rapport PDF.
+Le bouton [[Actualiser les cours]] se trouve en haut de la page, sous le bandeau bleu, à droite des boutons du rapport PDF et d'Excel.
 
 ### À quoi il sert
 
@@ -419,7 +471,7 @@ Sans connexion, l'actualisation ne peut rien télécharger : le logiciel reprend
 ## Les informations en bas de la barre latérale
 <!-- fiche: ecran-informations | questions: c'est quoi les infos en bas à gauche ; que veut dire 1 € en usd ; quelle période est analysée ; combien d'opérations a mon portefeuille ; d'ou viennent les cours ; ligne cours cache local du ; quel taux de change est utilisé ; fichier mis à jour dans la barre | mots: informations, fichier, période, opérations, source des cours, taux de change, devise, cache local, Yahoo Finance | chiffres: nb_operations -->
 
-Une fois le portefeuille analysé, un petit bloc d'informations apparaît en bas de la barre latérale, au-dessus des boutons du rapport et de l'actualisation.
+Une fois le portefeuille analysé, un petit bloc d'informations apparaît en bas de la barre latérale, au-dessus du bouton « Signaler un problème ».
 
 | Ligne | Contenu |
 |---|---|

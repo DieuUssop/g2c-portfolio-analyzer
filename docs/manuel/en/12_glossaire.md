@@ -20,7 +20,7 @@ This glossary defines, in one to three sentences, the finance, statistics and co
 
 **Net contributions** (*apports nets*): the sum of all the money put in through purchases, minus the money taken back through sales and dividends. It is the money "from your own pocket" that is still invested.
 
-**Refresh prices** (*actualiser les cours*): button at the bottom of the sidebar that clears the results kept in memory (for one hour) and downloads the prices again. An Internet connection is required.
+**Refresh prices** (*actualiser les cours*): button at the top of the page, under the banner, that clears the results kept in memory (for one hour) and downloads the prices again. An Internet connection is required.
 
 **Skewness** (*asymétrie*): measure of the asymmetry of daily returns. Zero for a normal distribution; when negative, large falls are more frequent or more violent than large rises.
 
@@ -98,7 +98,7 @@ This glossary defines, in one to three sentences, the finance, statistics and co
 ## Glossary: F to I
 <!-- fiche: glossaire-f-i | questions: what does flat tax mean ; what is a cash flow ; efficient frontier definition ; what is fernet ; total gain definition ; what does gbp pence mean ; herfindahl definition ; what is an isin ; benchmark index definition ; composite index | mots: flat tax, PFU, cash flows, fees, Fernet, efficient frontier, total gain, GBp, pence, Herfindahl, ISIN, benchmark index, composite index, blended index -->
 
-**Benchmark index** (*indice de référence*): index to which the portfolio is compared (beta, alpha, tracking error, base-100 chart). It is chosen in [[Settings]]; by default, the MSCI World represented by the CW8 ETF.
+**Benchmark index** (*indice de référence*): index to which the portfolio is compared (beta, alpha, tracking error, base-100 chart). It is chosen in [[Tools and settings]]; by default, the MSCI World represented by the CW8 ETF.
 
 **Cash flows** (*flux*): money put in (purchase, counted positively) or taken back (sale, dividend, counted negatively) on a given day. Cash flows are removed from the calculation of daily performance.
 
@@ -242,7 +242,7 @@ This glossary defines, in one to three sentences, the finance, statistics and co
 
 **IRR** (*TRI*, internal rate of return): annual return on the money actually invested, which takes into account the amount and date of each contribution. It depends on the timing of your payments.
 
-**Risk-free rate** (*taux sans risque*): return on a risk-free investment in euros, used for the Sharpe, the Sortino and alpha. 2.50% by default (ECB deposit facility rate), constant over the period, editable in [[Settings]].
+**Risk-free rate** (*taux sans risque*): return on a risk-free investment in euros, used for the Sharpe, the Sortino and alpha. 2.50% by default (ECB deposit facility rate), constant over the period, editable in [[Tools and settings]].
 
 **Ticker**: short code for a security at Yahoo Finance, with its trading venue: `MC.PA` for LVMH in Paris, `AAPL` for Apple.
 

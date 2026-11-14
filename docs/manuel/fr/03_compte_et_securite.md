@@ -198,9 +198,79 @@ Le bouton [[Annuler la dernière modification]] apparaît alors sur la ligne du 
 
 ### Les limites
 
-- **Un seul niveau d'annulation.** Seule la toute dernière version est gardée. Après une annulation, le bouton disparaît ; et chaque nouvel ajout ou nouvelle correction remplace la version gardée précédemment.
+- **Jusqu'à cinq niveaux d'annulation.** Les cinq dernières versions sont gardées (chiffrées) : un nouveau clic sur [[Annuler la dernière modification]] revient encore une version en arrière. Au-delà, la plus ancienne est effacée. Chaque modification et chaque annulation sont notées dans le **journal des modifications** (voir la fiche dédiée).
 - Le bouton n'existe pas tant qu'aucun ajout ni aucune correction n'a été enregistré.
 - Enregistrer un fichier sous le même nom depuis la barre latérale ou la rubrique [[Ajouter un portefeuille]] remplace le portefeuille, mais garde la version précédente (récupérable avec [[Annuler la dernière modification]]).
+
+## Indiquer le type de compte : PEA, CTO, assurance-vie
+<!-- fiche: compte-type | questions: indiquer que mon portefeuille est un pea ; type de compte ; mon portefeuille est un compte-titres ; préciser l'enveloppe fiscale ; à quoi sert le type de compte ; plusieurs comptes pea et cto ; assurance-vie dans le logiciel | mots: type de compte, enveloppe, PEA, CTO, compte-titres, assurance-vie, fiscalité, plusieurs comptes -->
+
+Chaque portefeuille de votre espace est **un compte**. Vous pouvez indiquer son type : **PEA**, **CTO** (compte-titres), **Assurance-vie** ou **Autre**.
+
+### Où le choisir
+
+- à l'enregistrement d'un fichier, sous l'envoi de la barre latérale : liste [[Type de compte]] ;
+- à tout moment sur la page [[Mon compte]], sous le nom de chaque portefeuille.
+
+Le type s'affiche entre parenthèses dans la liste des portefeuilles, par exemple « Mon espace · Boursorama (PEA) ».
+
+### À quoi il sert
+
+- **Conseil patrimonial › Fiscalité** : la carte de votre enveloppe passe en premier, marquée « votre compte » ; les autres restent affichées pour comparaison.
+- **Tous mes comptes** : le tableau « Mes comptes » de la Vue d'ensemble indique le type de chacun.
+
+Le type est gardé, chiffré, avec le portefeuille. Il ne change aucun calcul de performance ou de risque.
+
+## Voir tous mes comptes ensemble
+<!-- fiche: compte-tous-mes-comptes | questions: voir tous mes comptes ensemble ; additionner mon pea et mon cto ; vue consolidée ; tous mes portefeuilles en un seul ; patrimoine total en bourse ; consolider plusieurs portefeuilles ; même etf dans deux comptes | mots: Tous mes comptes, consolidation, consolidé, regrouper, plusieurs portefeuilles, PEA et CTO, patrimoine global -->
+
+Dès que votre espace contient au moins deux portefeuilles, la liste des portefeuilles propose en dernier **Tous mes comptes (n)**.
+
+### Ce qui est réuni
+
+- toutes les opérations sur titres et tous les dividendes : un même ETF détenu dans deux comptes devient **une seule ligne** (quantités additionnées, PRU combiné) ;
+- les frais de compte ;
+- les espèces : le **solde total est la somme des soldes de chaque compte**, calculés séparément. Un compte dont le solde est inconnu ne compte pas.
+
+Toute l'analyse (performance, risque, expositions, allocation cible, rapport PDF, Excel) porte alors sur l'ensemble. La Vue d'ensemble ajoute le tableau **Mes comptes** : valeur, investi, gain, espèces et part de chaque compte.
+
+### Lecture seule
+
+Dans cette vue, on ne modifie rien : pas de crayon du solde, pas d'[[Ajouter des opérations]], pas de [[Modifier les opérations]]. Choisissez le compte concerné dans la liste pour le mettre à jour.
+
+### Fiscalité
+
+L'espace Conseil patrimonial suppose alors que tout est dans la même enveloppe : un message le rappelle. Pour la fiscalité réelle, ouvrez chaque compte séparément.
+
+## Le journal des modifications
+<!-- fiche: compte-journal | questions: historique des modifications de mon portefeuille ; qui a modifié mon portefeuille ; journal des modifications ; quand ai-je ajouté des opérations ; liste des changements ; voir les annulations | mots: journal, historique des modifications, traçabilité, ajout, suppression, correction, annulation, restauration -->
+
+Chaque portefeuille de votre espace garde un **journal des modifications** : création, ajout ou suppression d'opérations, correction, annulation, restauration d'une sauvegarde, avec la date et le nombre d'opérations après le changement.
+
+### Où le voir
+
+- dans l'onglet **Transactions**, sous le tableau : [[Journal des modifications ({n})]], replié ;
+- sur la page [[Mon compte]], sous chaque portefeuille.
+
+Les 50 dernières lignes sont gardées, chiffrées avec le portefeuille. Le journal sert de traçabilité (volet « conformité » du Master G2C) : il dit ce qui a changé et quand.
+
+## Les sauvegardes automatiques et la restauration
+<!-- fiche: compte-sauvegardes | questions: sauvegarde automatique ; restaurer une sauvegarde ; revenir à l'état de la semaine dernière ; j'ai tout supprimé par erreur ; récupérer un portefeuille supprimé ; sauvegarder maintenant ; combien de sauvegardes sont gardées | mots: sauvegarde automatique, restaurer, restauration, backup, copie, récupérer, semaine -->
+
+Une fois par semaine, à la connexion, le logiciel fait une **copie chiffrée de tout votre espace** (portefeuilles, types de compte, journal, préférences). Les **quatre** dernières sont gardées.
+
+### La rubrique « Sauvegardes » de Mon compte
+
+- [[Sauvegarder maintenant]] fait une copie tout de suite (par exemple avant une grosse modification) ;
+- chaque sauvegarde est listée avec sa date et son nombre de portefeuilles ;
+- cochez [[Confirmer]] puis [[Restaurer]] pour remettre votre espace dans cet état. L'état actuel est **d'abord sauvegardé** : vous pouvez revenir en arrière.
+
+### À savoir
+
+- Une restauration récupère aussi un portefeuille supprimé par erreur depuis la sauvegarde.
+- Les versions d'annulation (« Annuler la dernière modification ») ne sont pas dans les sauvegardes.
+- Les sauvegardes restent **sur cet ordinateur**, dans le dossier de votre compte. Contre une panne du disque, téléchargez aussi vos portefeuilles en CSV (fiche « Sauvegarder mes portefeuilles ou changer d'ordinateur »).
+- Un changement de mot de passe rechiffre aussi les sauvegardes : elles restent lisibles.
 
 ## Changer de mot de passe
 <!-- fiche: compte-changer-mot-de-passe | questions: comment changer mon mot de passe ; modifier le mot de passe de mon compte ; mot de passe actuel incorrect ; est-ce que je perds mes portefeuilles si je change de mot de passe ; mon mot de passe est trop simple je veux le changer ; quelqu'un connait mon mot de passe que faire ; changement de mot de passe et rechiffrement | mots: mot de passe, changement, modification, rechiffrement, nouveau mot de passe, sécurité, password -->

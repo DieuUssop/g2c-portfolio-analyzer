@@ -36,6 +36,12 @@ MOTIF_IDENTIFIANT = re.compile(r"^[a-z0-9._-]{3,30}$")
 LONGUEUR_MIN = 8
 ESSAIS_MAX = 5
 DUREE_BLOCAGE = 60                 # secondes
+VERSIONS_MAX = 5                   # versions précédentes gardées par portefeuille (« Annuler »)
+JOURNAL_MAX = 50                   # lignes du journal des modifications gardées par portefeuille
+SAUVEGARDE_JOURS = 7               # une sauvegarde automatique par semaine...
+SAUVEGARDES_MAX = 4                # ... les 4 dernières sont gardées
+# Type de compte d'un portefeuille (enveloppe fiscale) : sert à la fiscalité et à la vue « Tous mes comptes »
+ENVELOPPES = ["PEA", "CTO", "Assurance-vie", "Autre"]
 
 
 class ErreurCompte(Exception):
@@ -191,34 +197,45 @@ class Session:
         """Portefeuilles de l'utilisateur : liste de dictionnaires (id, nom, cree, maj, operations)."""
         return sorted(self._index(), key=lambda p: p["nom"].lower())
 
-    def enregistrer(self, nom, contenu, identifiant=None, garder_precedente=False):
+    def enregistrer(self, nom, contenu, identifiant=None, garder_precedente=False, action=None):
         """Enregistre (ou remplace) un portefeuille ; contenu = fichier CSV au format du projet (octets).
 
-        garder_precedente : conserver la version remplacée (chiffrée) pour pouvoir
-        « Annuler la dernière modification »."""
+        La version remplacée est toujours conservée (chiffrée, VERSIONS_MAX au plus) pour pouvoir
+        « Annuler la dernière modification » plusieurs fois. garder_precedente est gardé pour les
+        appels existants. action : texte du journal ; sinon déduit du nombre d'opérations."""
         nom = str(nom).strip() or "Portefeuille"
         index = self._index()
         if identifiant is None:
             existant = next((p for p in index if p["nom"].lower() == nom.lower()), None)
             identifiant = existant["id"] if existant else uuid.uuid4().hex
-            if existant:                     # même nom : on remplace, mais l'ancienne version reste récupérable
-                garder_precedente = True
         maintenant = pd.Timestamp.now().strftime("%Y-%m-%d %H:%M")
         operations = max(0, contenu.count(b"\n") - 1) if isinstance(contenu, bytes) else 0
         fichier = self.dossier / f"{identifiant}.enc"
         fiche = next((p for p in index if p["id"] == identifiant), None)
-        if garder_precedente and fiche and fichier.exists():
-            os.replace(fichier, self.dossier / f"{identifiant}.prec.enc")
-            fiche["precedente"] = {"maj": fiche.get("maj"), "operations": fiche.get("operations")}
-        elif fiche:
-            fiche.pop("precedente", None)
-            (self.dossier / f"{identifiant}.prec.enc").unlink(missing_ok=True)
+        if fiche and fichier.exists():
+            if coffre.dechiffrer(self._cle, fichier.read_bytes()) == contenu:     # contenu identique :
+                fiche["nom"] = nom                                                  # pas de nouvelle version
+                self._sauver_index(index)
+                return identifiant
+            versions = _versions(fiche, self.dossier, identifiant)
+            nom_version = f"{identifiant}.v{uuid.uuid4().hex[:8]}.enc"
+            os.replace(fichier, self.dossier / nom_version)
+            versions.append({"fichier": nom_version, "maj": fiche.get("maj"), "operations": fiche.get("operations")})
+            while len(versions) > VERSIONS_MAX:
+                (self.dossier / versions.pop(0)["fichier"]).unlink(missing_ok=True)
+            fiche["versions"] = versions
+            fiche["precedente"] = {k: versions[-1][k] for k in ("maj", "operations")}
+            avant = fiche.get("operations") or 0
+            if action is None:
+                action = ("ajout" if operations > avant else "suppression" if operations < avant else "modification")
+            _noter(fiche, maintenant, action, abs(operations - avant), operations)
         _ecrire(fichier, coffre.chiffrer(self._cle, contenu))
         if fiche:
             fiche.update({"nom": nom, "maj": maintenant, "operations": operations})
         else:
-            index.append({"id": identifiant, "nom": nom, "cree": maintenant, "maj": maintenant,
-                          "operations": operations})
+            fiche = {"id": identifiant, "nom": nom, "cree": maintenant, "maj": maintenant, "operations": operations}
+            _noter(fiche, maintenant, action or "creation", operations, operations)
+            index.append(fiche)
         self._sauver_index(index)
         return identifiant
 
@@ -229,15 +246,103 @@ class Session:
         return coffre.dechiffrer(self._cle, (self.dossier / f"{identifiant}.enc").read_bytes())
 
     def annuler_dernier_ajout(self, identifiant):
-        """Revient à la version précédente d'un portefeuille (avant le dernier ajout d'opérations)."""
+        """Revient à la version précédente d'un portefeuille (avant le dernier ajout, la dernière
+        suppression ou correction). Peut être répété : jusqu'à VERSIONS_MAX versions en arrière."""
         index = self._index()
         fiche = next((p for p in index if p["id"] == identifiant), None)
-        precedente = self.dossier / f"{identifiant}.prec.enc"
-        if fiche is None or "precedente" not in fiche or not precedente.exists():
+        versions = _versions(fiche, self.dossier, identifiant) if fiche else []
+        if not versions or not (self.dossier / versions[-1]["fichier"]).exists():
             raise ErreurCompte("Aucun ajout à annuler.")
-        os.replace(precedente, self.dossier / f"{identifiant}.enc")
-        fiche.update({"maj": fiche["precedente"]["maj"], "operations": fiche["precedente"]["operations"]})
-        fiche.pop("precedente")
+        derniere = versions.pop()
+        os.replace(self.dossier / derniere["fichier"], self.dossier / f"{identifiant}.enc")
+        _noter(fiche, pd.Timestamp.now().strftime("%Y-%m-%d %H:%M"), "annulation", 0, derniere["operations"])
+        fiche.update({"maj": derniere["maj"], "operations": derniere["operations"], "versions": versions})
+        if versions:
+            fiche["precedente"] = {k: versions[-1][k] for k in ("maj", "operations")}
+        else:
+            fiche.pop("precedente", None)
+        self._sauver_index(index)
+
+    def journal(self, identifiant):
+        """Journal des modifications d'un portefeuille, de la plus récente à la plus ancienne :
+        liste de {date, action, n, operations}."""
+        fiche = next((p for p in self._index() if p["id"] == identifiant), None)
+        return list(reversed((fiche or {}).get("journal", [])))
+
+    def definir_enveloppe(self, identifiant, enveloppe):
+        """Type de compte du portefeuille (PEA, CTO, Assurance-vie, Autre) ; None l'efface."""
+        if enveloppe is not None and enveloppe not in ENVELOPPES:
+            raise ErreurCompte("Type de compte inconnu.")
+        index = self._index()
+        for p in index:
+            if p["id"] == identifiant:
+                if enveloppe is None:
+                    p.pop("enveloppe", None)
+                else:
+                    p["enveloppe"] = enveloppe
+        self._sauver_index(index)
+
+    def enveloppe(self, identifiant):
+        return next((p.get("enveloppe") for p in self._index() if p["id"] == identifiant), None)
+
+    # -- sauvegardes automatiques (copies des fichiers chiffrés, dans le dossier du compte) --
+    def _dossier_sauvegardes(self):
+        return self.dossier / "sauvegardes"
+
+    def sauvegardes(self):
+        """Sauvegardes disponibles, de la plus récente à la plus ancienne : liste de {id, date, portefeuilles}."""
+        dossier = self._dossier_sauvegardes()
+        if not dossier.exists():
+            return []
+        liste = []
+        for d in sorted((x for x in dossier.iterdir() if x.is_dir()), reverse=True):
+            liste.append({"id": d.name, "date": f"{d.name[:4]}-{d.name[4:6]}-{d.name[6:8]} {d.name[9:11]}:{d.name[11:13]}",
+                          "portefeuilles": sum(1 for f in d.glob("*.enc") if f.name.count(".") == 1
+                                               and f.name not in ("index.enc", "preferences.enc"))})
+        return liste
+
+    def sauvegarder(self, maintenant=None):
+        """Copie chiffrée de tout l'espace (index, portefeuilles, préférences). Garde les SAUVEGARDES_MAX
+        dernières. Renvoie l'identifiant de la sauvegarde."""
+        maintenant = pd.Timestamp(maintenant) if maintenant is not None else pd.Timestamp.now()
+        nom = maintenant.strftime("%Y%m%d-%H%M%S")
+        cible = self._dossier_sauvegardes() / nom
+        cible.mkdir(parents=True, exist_ok=True)
+        for f in self.dossier.glob("*.enc"):
+            if ".v" not in f.name and ".prec." not in f.name:          # pas les versions d'annulation
+                shutil.copy2(f, cible / f.name)
+        for ancienne in [x["id"] for x in self.sauvegardes()][SAUVEGARDES_MAX:]:
+            shutil.rmtree(self._dossier_sauvegardes() / ancienne, ignore_errors=True)
+        return nom
+
+    def sauvegarde_automatique(self, maintenant=None):
+        """Sauvegarde si la dernière date de plus de SAUVEGARDE_JOURS jours (et s'il y a des portefeuilles).
+        Renvoie l'identifiant de la nouvelle sauvegarde, ou None."""
+        maintenant = pd.Timestamp(maintenant) if maintenant is not None else pd.Timestamp.now()
+        if not self._index():
+            return None
+        existantes = self.sauvegardes()
+        if existantes and maintenant - pd.Timestamp(existantes[0]["date"]) < pd.Timedelta(days=SAUVEGARDE_JOURS):
+            return None
+        return self.sauvegarder(maintenant)
+
+    def restaurer(self, id_sauvegarde):
+        """Remet l'espace dans l'état de la sauvegarde. L'état actuel est d'abord sauvegardé lui-même
+        (on peut donc revenir en arrière)."""
+        source = self._dossier_sauvegardes() / str(id_sauvegarde)
+        if not re.fullmatch(r"\d{8}-\d{6}", str(id_sauvegarde)) or not (source / "index.enc").exists():
+            raise ErreurCompte("Sauvegarde introuvable.")
+        coffre.dechiffrer(self._cle, (source / "index.enc").read_bytes())       # lisible avec ce mot de passe ?
+        self.sauvegarder(pd.Timestamp.now() + pd.Timedelta(seconds=1))
+        for f in self.dossier.glob("*.enc"):
+            f.unlink()
+        for f in source.glob("*.enc"):
+            shutil.copy2(f, self.dossier / f.name)
+        index = self._index()                    # les versions d'annulation ne sont pas dans la sauvegarde
+        for p in index:
+            p.pop("versions", None)
+            p.pop("precedente", None)
+            _noter(p, pd.Timestamp.now().strftime("%Y-%m-%d %H:%M"), "restauration", 0, p.get("operations"))
         self._sauver_index(index)
 
     annuler_derniere_modification = annuler_dernier_ajout      # ajout, suppression ou correction d'opérations
@@ -251,8 +356,8 @@ class Session:
 
     def supprimer(self, identifiant):
         index = [p for p in self._index() if p["id"] != identifiant]
-        (self.dossier / f"{identifiant}.enc").unlink(missing_ok=True)
-        (self.dossier / f"{identifiant}.prec.enc").unlink(missing_ok=True)
+        for f in self.dossier.glob(f"{identifiant}.*enc"):
+            f.unlink(missing_ok=True)
         self._sauver_index(index)
 
     # -- compte --
@@ -266,23 +371,16 @@ class Session:
             raise ErreurCompte("Le mot de passe doit contenir au moins {n} caractères.", n=LONGUEUR_MIN)
         if confirmation is not None and confirmation != nouveau:
             raise ErreurCompte("Les deux mots de passe ne sont pas identiques.")
-        index = self._index()
-        contenus = {p["id"]: self.lire(p["id"]) for p in index}       # tout est déchiffré en mémoire...
+        # tous les fichiers chiffrés de l'espace (portefeuilles, versions, préférences, sauvegardes)
+        # sont déchiffrés en mémoire avec l'ancienne clé...
+        fichiers = {f: coffre.dechiffrer(self._cle, f.read_bytes()) for f in self.dossier.rglob("*.enc")}
         fiche["sel_empreinte"], fiche["sel_cle"] = coffre.nouveau_sel(), coffre.nouveau_sel()
         fiche["iterations"] = coffre.ITERATIONS
         fiche["empreinte"] = coffre.empreinte(nouveau, fiche["sel_empreinte"], fiche["iterations"])
         nouvelle_cle = coffre.cle_de_chiffrement(nouveau, fiche["sel_cle"], fiche["iterations"])
-        precedentes = {p["id"]: coffre.dechiffrer(self._cle, (self.dossier / f"{p['id']}.prec.enc").read_bytes())
-                       for p in index if (self.dossier / f"{p['id']}.prec.enc").exists()}
-        prefs = self.preferences()
-        for identifiant, contenu in contenus.items():                  # ... puis rechiffré
-            _ecrire(self.dossier / f"{identifiant}.enc", coffre.chiffrer(nouvelle_cle, contenu))
-        for identifiant, contenu in precedentes.items():
-            _ecrire(self.dossier / f"{identifiant}.prec.enc", coffre.chiffrer(nouvelle_cle, contenu))
+        for chemin, contenu in fichiers.items():                       # ... puis rechiffrés
+            _ecrire(chemin, coffre.chiffrer(nouvelle_cle, contenu))
         self._cle = nouvelle_cle
-        self._sauver_index(index)
-        if prefs:
-            _ecrire(self.dossier / "preferences.enc", coffre.chiffrer(self._cle, json.dumps(prefs, ensure_ascii=False)))
         _ecrire_registre(registre)
 
     def supprimer_compte(self, mot_de_passe):
@@ -296,3 +394,19 @@ class Session:
         del registre["comptes"][self.identifiant]
         _ecrire_registre(registre)
         self._cle = None
+
+
+def _versions(fiche, dossier, identifiant):
+    """Versions précédentes d'un portefeuille (la plus récente en dernier). Reprend l'ancien format
+    (une seule version « .prec.enc »)."""
+    versions = list(fiche.get("versions", []))
+    if not versions and fiche.get("precedente") and (dossier / f"{identifiant}.prec.enc").exists():
+        versions = [{"fichier": f"{identifiant}.prec.enc", **fiche["precedente"]}]
+    return versions
+
+
+def _noter(fiche, date, action, n, operations):
+    """Ajoute une ligne au journal des modifications du portefeuille."""
+    journal = fiche.setdefault("journal", [])
+    journal.append({"date": date, "action": action, "n": int(n), "operations": int(operations or 0)})
+    del journal[:-JOURNAL_MAX]

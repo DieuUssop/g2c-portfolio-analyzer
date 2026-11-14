@@ -96,7 +96,7 @@ If your statement gives prices already converted into euros, that is not a probl
 - The order of the rows is free: the software sorts the transactions by date.
 - Quantities and prices must be positive: it is the type that indicates the direction. In a broker export, a negative quantity is accepted and made positive.
 - Both the dot and the comma are accepted as the decimal separator, and the semicolon as the column separator (see the fiche on broker exports).
-- The [[File template]] button in the sidebar downloads an example ready to be completed.
+- The [[File template]] button in the "Tools and settings" menu of the sidebar (or on the welcome card) downloads an example ready to be completed.
 
 ## Buy, sell, dividend: what goes in the price and the fees?
 <!-- fiche: import-types-operations | questions: how do I enter a dividend ; what do I put in price for a dividend ; is zero quantity normal for a dividend ; buy sell dividend which types are accepted ; how do I record a bond coupon ; are fees included in the price ; how is the cost basis calculated with fees ; how do I enter a sale ; dividend in dollars | mots: ACHAT, VENTE, DIVIDENDE, coupon, distribution, cost basis, PRU, brokerage fees, total amount, transaction type -->
@@ -187,7 +187,7 @@ Deposits and withdrawals do not change the performance of the securities. **Acco
 
 ### Where to find it
 
-In the sidebar, under "Data", click [[File template]]. The file `modele_transactions.csv` is downloaded. It contains the header of the project format and four example rows:
+In the sidebar, open the [[Tools and settings]] menu and click [[File template]]. The file `modele_transactions.csv` is downloaded. It contains the header of the project format and four example rows:
 
 | date | type | ticker | nom | quantite | prix | frais |
 |---|---|---|---|---|---|---|
@@ -238,13 +238,17 @@ Names are compared without accents or capital letters. A name is recognised if i
 | Security | ticker, symbole, symbol, code, isin, code isin, bloomberg, bbg, ric, code reuters, valeur, titre, instrument, produit, product, security |
 | Name | nom, name, libellé, désignation, nom du titre, security name, description |
 | Quantity | quantité, qté, qty, quantity, nombre, nombre de titres, nb titres, parts, shares, units |
-| Unit price | prix, prix unitaire, cours, cours d'exécution, price, unit price, execution price |
+| Unit price | prix, prix unitaire, cours, cours d'exécution, prix d'exé, price, unit price, execution price |
 | Total amount | montant, montant net, montant brut, montant total, total, amount, net amount, montant en eur |
 | Fees | frais, frais de courtage, courtage, commission, commissions, fees, fee, frais totaux |
 | Currency | devise, currency, monnaie, devise de cotation, ccy, cur |
 | Exchange | place, place de cotation, marché, bourse, exchange, market, mic, venue, lieu d'exécution |
 
-Columns named commentaire, remarque, note, observation, memo or info are never interpreted. All other unneeded columns are simply ignored.
+Columns named commentaire, remarque, note, observation, memo or info are never interpreted. All other unneeded columns are simply ignored. If the file only gives the security's **label** (no ISIN or ticker, as at Fortuneo), that label is used to find it.
+
+### Exports tested
+
+**Fictitious** files reproducing the layout of the CSV exports of **DEGIRO** (untitled columns, sale with a negative quantity), **Fortuneo** (label only), **Bourse Direct**, **Boursorama** and **Trade Republic** (deposits included) are read automatically, without the assistant. Brokers' websites sometimes change their columns: if your export is not recognised, the import assistant opens; use [[Report a problem]] so the format can be added.
 
 ### What if the names mean nothing?
 

@@ -18,7 +18,7 @@ Appelé par app.py : vues_transactions.afficher(res, contenu, cible, session_com
 import pandas as pd
 import streamlit as st
 
-from . import langues, mouvements
+from . import comptes, langues, mouvements
 from . import interface as ui
 from .devises import devise_par_suffixe
 from .langues import t, td
@@ -64,8 +64,8 @@ def afficher(res, contenu, cible, session_compte):
         tete, bouton = st.columns([4, 1], vertical_alignment="bottom")
         with tete:
             html(ui.titre_section(t("Historique des opérations")))
-        edition = st.session_state.get("edition_operations", False)
-        if bouton.button(t("Terminer") if edition else t("Modifier les opérations"),
+        edition = st.session_state.get("edition_operations", False) and cible.get("type") != "consolide"
+        if cible.get("type") != "consolide" and bouton.button(t("Terminer") if edition else t("Modifier les opérations"),
                          type="secondary", width="stretch", key="bouton_edition_operations",
                          help=t("Supprimer ou corriger n'importe quelle opération du portefeuille")):
             st.session_state["edition_operations"] = not edition
@@ -80,7 +80,9 @@ def afficher(res, contenu, cible, session_compte):
             _edition(contenu, cible, session_compte, transactions, choix_types, choix_titres)
         else:
             _consultation(transactions, choix_types, choix_titres)
-            _bouton_annuler(cible, session_compte)
+            if cible.get("type") != "consolide":
+                _bouton_annuler(cible, session_compte)
+            _journal(cible, session_compte)
 
 
 # ----------------------------------------------------------------------
@@ -237,6 +239,8 @@ def _valeur(v):
 
 
 def _enregistrer(nouveau, contenu_actuel, cible, session_compte, nb_supprimees, nb_corrigees):
+    if cible.get("type") == "consolide":
+        return
     contenu = mouvements.en_csv(nouveau)
     if cible["type"] == "perso" and session_compte is not None:
         session_compte.enregistrer(cible["nom"], contenu, identifiant=cible["id"], garder_precedente=True)
@@ -251,6 +255,27 @@ def _enregistrer(nouveau, contenu_actuel, cible, session_compte, nb_supprimees, 
     st.session_state["message_transactions"] = message
     st.session_state["edition_operations"] = False
     st.rerun()
+
+
+ACTIONS_JOURNAL = {"creation": "Création ({operations} opérations)", "ajout": "Ajout de {n} opération(s)",
+                   "suppression": "Suppression de {n} opération(s)", "modification": "Correction d'opérations",
+                   "annulation": "Annulation de la dernière modification", "restauration": "Restauration d'une sauvegarde"}
+
+
+def _journal(cible, session_compte):
+    """Journal des modifications d'un portefeuille de l'espace personnel (replié)."""
+    if cible.get("type") != "perso" or session_compte is None:
+        return
+    lignes = session_compte.journal(cible["id"])
+    if not lignes:
+        return
+    with st.expander(t("Journal des modifications ({n})", n=len(lignes)), icon=":material/history:"):
+        st.dataframe(pd.DataFrame([{
+            t("Date"): j["date"], t("Modification"): t(ACTIONS_JOURNAL.get(j["action"], j["action"]), n=j["n"],
+                                                     operations=j["operations"]),
+            t("Opérations après"): j["operations"]} for j in lignes]), hide_index=True, width="stretch")
+        st.caption(t("« Annuler la dernière modification » peut être répété : jusqu'à {n} versions précédentes "
+                     "sont gardées (chiffrées).", n=comptes.VERSIONS_MAX))
 
 
 def _bouton_annuler(cible, session_compte):
@@ -319,6 +344,9 @@ def effet_change(tableau, positions):
 # Opérations sur titres : divisions d'actions non appliquées, titres reçus sans prix (scission)
 # ----------------------------------------------------------------------
 def _sauver(nouveau, contenu_actuel, cible, session_compte, message):
+    if cible.get("type") == "consolide":                 # vue « Tous mes comptes » : lecture seule
+        st.warning(t("Vue « Tous mes comptes » : choisissez le compte concerné pour le modifier."))
+        return
     contenu = mouvements.en_csv(nouveau)
     if cible["type"] == "perso" and session_compte is not None:
         session_compte.enregistrer(cible["nom"], contenu, identifiant=cible["id"], garder_precedente=True)

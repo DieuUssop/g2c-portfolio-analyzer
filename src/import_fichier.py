@@ -73,7 +73,7 @@ NOMS_RECONNUS = {
     "quantite": ["quantite", "qte", "qty", "quantity", "nombre", "nombre de titres", "nb titres",
                  "nb de titres", "parts", "shares", "units"],
     "prix": ["prix", "prix unitaire", "cours", "cours d'execution", "cours execute", "price",
-             "unit price", "execution price", "prix d'execution"],
+             "unit price", "execution price", "prix d'execution", "prix d'exe", "prix exe", "cours d'exe"],
     "montant": ["montant", "montant net", "montant brut", "montant total", "total", "amount",
                 "net amount", "valeur totale", "montant en eur", "montant eur", "total eur"],
     "frais": ["frais", "frais de courtage", "courtage", "commission", "commissions", "fees", "fee",
@@ -1036,6 +1036,8 @@ def detecter_ligne_entete(grille, limite=30):
         textes = sum(1 for c in cellules if pd.isna(convertir_nombres(pd.Series([c]))[0]))
         if textes < len(cellules) * 0.6:
             continue                                     # plutôt une ligne de données
+        if _ressemble_a_des_donnees(cellules) and score_max >= 0:
+            continue                    # date ou ISIN : une ligne de données, même riche en texte (DEGIRO)
         if len(cellules) > score_max:
             meilleure, score_max = i, len(cellules)
     return meilleure
@@ -1216,6 +1218,8 @@ def proposer_correspondance(tableau_ou_colonnes):
         if proposition[champ] is None and c not in prises:
             proposition[champ] = c
             prises.add(c)
+    if proposition["identifiant"] is None and proposition["nom"] is not None:
+        proposition["identifiant"] = proposition["nom"]    # seul le nom du titre est donné (Fortuneo)
     if tableau is None:
         return proposition
 
@@ -1948,6 +1952,8 @@ def importer_automatiquement(brut, chercher=None, marche=donnees_de_marche):
     from .analyse import charger_referentiel
     connus = set(charger_referentiel().index)
     natures = {v: nature_identifiant(v, connus) for v in identifiants}
+    if correspondance.get("nom") == colonne_id:          # colonne de libellés (Fortuneo) : « LVMH » est un nom
+        natures = {v: n if n == "isin" else "nom" for v, n in natures.items()}
     a_chercher = [v for v in identifiants if natures[v] in ("isin", "nom", "global")]
     courts = [v for v in identifiants if natures[v] == "court"]
     correspondances_titres, noms_trouves = {}, {}

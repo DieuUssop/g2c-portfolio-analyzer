@@ -207,7 +207,7 @@ excess(t) = r(t) − rf_d
 Sharpe = mean(excess) × 252 / (standard deviation(excess) × √252)
 ```
 
-The annual rate is the one set in [[Settings]] (2.50% by default).
+The annual rate is the one set in [[Tools and settings]] (2.50% by default).
 
 ### Example
 

@@ -12,13 +12,15 @@ The screen is split into two parts: the **sidebar**, on the left, which groups a
 
 1. **The header**: the "PT" monogram, the name "Portfolio Tracker" and the label "Master G2C". Just below, on a single line, two small selectors: language (FR · EN) on the left and display (Light · Dark) on the right; the active option is in bold.
 2. **The personal space**: the label "Encrypted personal space" and the [[Sign in]] link. Once signed in, your initials, your username and the [[My account]] and [[Sign out]] links.
-3. **Workspace**: the menu of the four workspaces (Portfolio analysis, Wealth advisory, Asset management, Manual and help), each with a grey line of description. The workspace on screen is highlighted in light blue, with a blue bar on the left.
-4. **Data**: the list of portfolios, the [[Upload a file (CSV, Excel, PDF or image)]] area ([[Browse]] button, or drag and drop the file), then the [[Add transactions]] and [[File template]] links.
-5. **Settings**: a collapsed panel that contains the benchmark index and the risk-free rate. Its title summarises the current settings. (The VaR confidence level is set in the Risk tab, the only place where it is used.)
+3. **Workspace**: the menu of the four workspaces (Portfolio analysis, Wealth advisory, Asset management, Manual and help), each with a grey line of description. The workspace on screen is highlighted in light blue, with a blue bar on the left. Just below, the **Expert · Essential** selector chooses the tabs shown (see the entry on Essential mode).
+4. **Data**: the list of portfolios, the [[Upload a file (CSV, Excel, PDF or image)]] area ([[Browse]] button, or drag and drop the file), then the [[Add transactions]] link.
+5. **Tools and settings**: a menu that contains the [[File template]], the [[Open the import assistant]] button (when a file has been uploaded), the benchmark index and the risk-free rate. Its title summarises the current settings. (The VaR confidence level is set in the Risk tab, the only place where it is used.)
 6. **Information** about the portfolio being analysed: file, period, number of transactions, source of prices, and the exchange rates folded under "Exchange rates".
-7. **The buttons** [[PDF report]] and [[Refresh prices]].
+7. The **Report a problem** button and the version number.
 
-Blocks 6 and 7 only appear once a portfolio has been analysed: they are absent in the "Manual and help" space and on the "My account" and "Add transactions" pages.
+The [[PDF report]], [[Excel]] and [[Refresh prices]] buttons are at the top of the main area, just under the blue banner.
+
+Block 6 only appears once a portfolio has been analysed: they are absent in the "Manual and help" space and on the "My account" and "Add transactions" pages.
 
 At the bottom right of the screen, on every page, the [[Help]] button opens a small panel to ask the manual a question (see the article on the help bubble).
 
@@ -126,13 +128,13 @@ Uploading a file, the import wizard and adding new transactions are explained in
 ## Where do I set the analysis settings?
 <!-- fiche: ecran-parametres | questions: where are the settings ; how do I change the benchmark index ; I can't find the risk-free rate ; what does the line settings msci world 2.50% mean ; are the settings saved ; why do all the figures change when I change a setting ; analysis settings | mots: settings, options, benchmark index, risk-free rate, VaR, confidence level -->
 
-The analysis settings are in the **Settings** panel of the sidebar, under the Data block. It is collapsed by default: click its title to open it.
+The analysis settings are in the [[Tools and settings]] menu of the sidebar, under the Data block. Click its title to open it; it also contains the file template and the import assistant.
 
 ### The summary in the title
 
 Even when collapsed, the panel's title recalls the current settings, for example:
 
-`Settings · MSCI World · 2.50%`
+`Tools and settings · MSCI World · 2.50%`
 
 that is, the benchmark index and the annual risk-free rate.
 
@@ -156,7 +158,7 @@ The settings are kept during the session, even if you change portfolio or worksp
 ## Choosing the benchmark index: the 14 indices offered
 <!-- fiche: ecran-indice-reference | questions: which benchmark index should I choose ; what is the benchmark ; compare my portfolio to the cac 40 ; set the s&p 500 as the reference ; why msci world by default ; list of available indices ; dividends reinvested or excluding dividends what is the difference ; my portfolio is bonds which index should I take ; can another index be added | mots: benchmark index, benchmark, MSCI World, CAC 40, S&P 500, Euro Stoxx 50, ACWI, Nasdaq, bonds, €STR, comparison -->
 
-The benchmark index serves as a point of comparison: "portfolio versus index" curve in base 100, performance gap, beta, alpha, correlation, tracking error, information ratio. It is chosen in the **Settings** panel, in the [[Benchmark index]] menu. Each entry in the menu shows its family first, then its name (for example "Equities · CAC 40 (price index, excl. dividends)").
+The benchmark index serves as a point of comparison: "portfolio versus index" curve in base 100, performance gap, beta, alpha, correlation, tracking error, information ratio. It is chosen in the **Tools and settings** menu, in the [[Benchmark index]] menu. Each entry in the menu shows its family first, then its name (for example "Equities · CAC 40 (price index, excl. dividends)").
 
 ### The full list
 
@@ -228,7 +230,7 @@ The rebalancing is assumed to be free and perfect, with no fees or tax.
 ## Which risk-free rate should I use?
 <!-- fiche: ecran-taux-sans-risque | questions: what is the risk-free rate ; why 2.50% ; where does the risk-free rate come from ; change the risk-free rate ; does the risk-free rate change the sharpe ; should I put the livret A ; ecb rate estr ; is the risk-free rate constant over the whole period | mots: risk-free rate, risk free rate, ECB, deposit facility, €STR, Sharpe, Sortino, alpha, risk-free return -->
 
-The risk-free rate is the return on a euro investment regarded as risk-free. It is set in the **Settings** panel, in the [[Risk-free rate (% per year)]] field.
+The risk-free rate is the return on a euro investment regarded as risk-free. It is set in the **Tools and settings** menu, in the [[Risk-free rate (% per year)]] field.
 
 ### Default value and source
 
@@ -302,7 +304,7 @@ Under the badge, the "Data as of" line gives the date of the last price in the h
 
 ### If the badge is orange
 
-The calculations remain correct, but as of the date of the latest known prices. Check your Internet connection, then click [[Refresh prices]] at the bottom of the sidebar. The "Prices" line in the sidebar information specifies the date of the cache used.
+The calculations remain correct, but as of the date of the latest known prices. Check your Internet connection, then click [[Refresh prices]] at the top of the page, under the banner. The "Prices" line in the sidebar information specifies the date of the cache used.
 
 ### Good to know
 
@@ -338,6 +340,56 @@ The total gain is an amount in euros, which depends on the sum invested and the 
 
 For volatility and Sharpe, the line below gives the value of the benchmark index chosen in the settings: you see at a glance whether your portfolio is more or less risky, and better or worse rewarded for that risk.
 
+## First launch: the "Welcome" card
+<!-- fiche: ecran-bienvenue | questions: where do I start ; where do I start with the software ; first launch of the software ; what is the welcome card ; how do I analyse my own portfolio ; why do I see a portfolio that is not mine ; how to close the welcome message ; sample portfolio or mine | mots: welcome, first launch, getting started, start, sample, sample portfolio, steps, begin -->
+
+On first launch, a **Welcome to Portfolio Tracker** card appears at the top of the page, above a sample portfolio. It gives the three steps to analyse yours:
+
+1. **Import your transactions**: drop your broker statement (PDF, CSV, Excel or photo) in the "Data" area of the sidebar. This area flashes gently so it is easy to spot.
+2. **Check the cash balance**: under the "Cash balance" card, the ✏️ pencil lets you copy the balance from your statement.
+3. **Read the Overview**: the "Key takeaways" box sums up the essentials.
+
+### The card's buttons
+
+- [[Got it]] closes the card. It does not come back on this computer (nor in your account, if you are signed in).
+- [[File template]] downloads a CSV file ready to fill in.
+- [[Read the manual]] opens the "Manual and help" workspace.
+
+### The "sample portfolio" banner
+
+Once the card is closed, as long as a sample portfolio is displayed, an orange banner says so: "You are looking at a sample portfolio". It disappears as soon as you upload a file or choose a portfolio from your space.
+
+## Essential or Expert mode: choosing the tabs shown
+<!-- fiche: ecran-mode-essentiel | questions: too many tabs I am lost ; what is essential mode ; expert mode ; hide the complicated tabs ; where did the risk and optimisation tabs go ; show fewer things ; beginner mode ; simplify the screen | mots: Essential mode, Expert mode, beginner, simplify, tabs, display, hide -->
+
+Under the "Workspace" menu, the **Expert · Essential** selector chooses what is shown.
+
+| Mode | What is shown |
+|---|---|
+| Expert (default) | All tabs and the four workspaces, and the seven key figures at the top of the page |
+| Essential | The everyday tabs: Overview, Holdings, Exposures, Target allocation, Transactions; the Portfolio analysis and Manual and help workspaces; four key figures (value, cash balance, total gain, annualised performance) |
+
+### Good to know
+
+- Essential mode removes nothing: the calculations are the same, and the PDF report and the Excel export stay complete. Switch back to Expert to get the Performance, Risk, Optimisation and Projection tabs and the Wealth advisory and Asset management workspaces back.
+- If you are signed in, your choice is remembered for your next visits.
+
+## Exporting the portfolio to Excel
+<!-- fiche: ecran-export-excel | questions: export to excel ; download my holdings as xlsx ; get my data in a spreadsheet ; excel export of the performance ; excel button ; redo my calculations in excel ; download the holdings table | mots: Excel, xlsx, export, spreadsheet, download, workbook, sheets -->
+
+The [[Excel]] button, at the top of the page between [[PDF report]] and [[Refresh prices]], downloads a `portefeuille_YYYYMMDD.xlsx` workbook in one click.
+
+| Sheet | Content |
+|---|---|
+| Summary | Value, invested, total gain, gains, dividends, fees, cash balance, annualised TWR, volatility, max drawdown, period |
+| Holdings | One row per security held: class, region, sector, quantity, average cost, price, value, gains, dividends, fees, weight |
+| Monthly performance | Value and money invested at each month end, monthly return |
+| Transactions | All transactions, in euros |
+| Dividends | Net dividends per year |
+| Diagnosis | The findings of the Exposures tab (chosen profile) and their first suggestion |
+
+The amounts are real numbers: you can sort, filter and redo your calculations. Column titles follow the screen language.
+
 ## Getting the PDF report
 <!-- fiche: ecran-rapport-pdf | questions: how do I download the pdf report ; generate a pdf of my portfolio ; the pdf report button downloads nothing ; where is the report ; export the analysis to pdf ; the download report button has disappeared ; print the report ; pdf report in english ; install reportlab | mots: PDF report, export, print, download, summary, document, reportlab, write-up -->
 
@@ -345,7 +397,7 @@ The PDF report gathers the complete portfolio analysis in a document ready to pr
 
 ### In two steps
 
-1. At the bottom of the sidebar, click [[PDF report]]. The message "Generating the report..." is displayed during preparation, which may take a few seconds.
+1. At the top of the page, under the blue banner, click [[PDF report]]. The message "Generating the report..." is displayed during preparation, which may take a few seconds.
 2. The button becomes [[Download the PDF report]]. Click it: the file is saved by your browser, usually in the Downloads folder.
 
 The file is called `rapport_portefeuille_` followed by the date of the latest data, for example `rapport_portefeuille_20261006.pdf`.
@@ -395,7 +447,7 @@ If a calculation is impossible (for example optimisation, with too few securitie
 ## Refreshing prices
 <!-- fiche: ecran-actualiser-cours | questions: how do I update the prices ; the prices are not today's ; refresh the data ; the refresh prices button does nothing ; force the download of prices ; refresh ; the prices are from yesterday ; reload the page | mots: refresh, update, price update, cache, reload, today's prices, Yahoo Finance -->
 
-The [[Refresh prices]] button is at the very bottom of the sidebar, under the PDF report button.
+The [[Refresh prices]] button is at the top of the page, under the blue banner, to the right of the PDF report and Excel buttons.
 
 ### What it is for
 
@@ -419,7 +471,7 @@ Without a connection, refreshing cannot download anything: the software takes th
 ## The information at the bottom of the sidebar
 <!-- fiche: ecran-informations | questions: what is the info at the bottom left ; what does 1 € in usd mean ; which period is analysed ; how many transactions does my portfolio have ; where do the prices come from ; the prices line local cache of ; which exchange rate is used ; file updated in the sidebar | mots: information, file, period, transactions, price source, exchange rate, currency, local cache, Yahoo Finance | chiffres: nb_operations -->
 
-Once the portfolio has been analysed, a small block of information appears at the bottom of the sidebar, above the report and refresh buttons.
+Once the portfolio has been analysed, a small block of information appears at the bottom of the sidebar, above the "Report a problem" button.
 
 | Line | Content |
 |---|---|

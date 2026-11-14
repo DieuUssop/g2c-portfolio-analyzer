@@ -352,7 +352,7 @@ Les coupons d'un fonds obligataire distribuant se saisissent de la même façon.
 ## Puis-je obtenir un rapport à rendre ou à imprimer ?
 <!-- fiche: faq-rapport-pdf | questions: puis je obtenir un rapport pdf ; rapport à rendre pour mon mémoire ; imprimer l'analyse ; le rapport est il en anglais ; exporter les résultats ; rapport pour mon client ; le rapport reprend-il mes réglages | mots: rapport PDF, export, impression, mémoire, synthèse, document, annexe, reportlab -->
 
-**Oui.** En bas de la barre latérale, cliquez sur [[Rapport PDF]], puis sur [[Télécharger le rapport PDF]].
+**Oui.** En haut de la page, sous le bandeau, cliquez sur [[Rapport PDF]], puis sur [[Télécharger le rapport PDF]].
 
 ### Son contenu
 
@@ -615,7 +615,7 @@ Le CAC 40 proposé est l'indice de prix, **hors dividendes** : il désavantage l
 
 ### Choisir le bon indice
 
-Dans [[Paramètres]], [[Indice de référence]] propose des indices d'actions, obligataires, monétaire et mixtes (20/80, 60/40, 80/20). Choisissez celui qui ressemble à votre allocation : un portefeuille équilibré se compare mieux à un indice 60/40 qu'au MSCI World. Un indice inadapté fausse le bêta, l'alpha et la tracking error ; face à un indice obligataire ou monétaire, l'onglet Performance prévient que le bêta et l'alpha ont peu de sens.
+Dans [[Outils et paramètres]], [[Indice de référence]] propose des indices d'actions, obligataires, monétaire et mixtes (20/80, 60/40, 80/20). Choisissez celui qui ressemble à votre allocation : un portefeuille équilibré se compare mieux à un indice 60/40 qu'au MSCI World. Un indice inadapté fausse le bêta, l'alpha et la tracking error ; face à un indice obligataire ou monétaire, l'onglet Performance prévient que le bêta et l'alpha ont peu de sens.
 
 ## La projection Monte-Carlo est-elle une prévision ?
 <!-- fiche: faq-projection | questions: la projection est elle une prévision ; combien vaudra mon portefeuille dans 10 ans ; le scénario médian va-t-il se réaliser ; fiabilité de la simulation monte carlo ; probabilité de perte fiable ; pourquoi l'éventail s'élargit | mots: projection, Monte-Carlo, prévision, scénario médian, probabilité, incertitude, hypothèses, horizon | aller: Analyse du portefeuille/Projection -->

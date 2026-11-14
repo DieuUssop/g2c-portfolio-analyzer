@@ -207,7 +207,7 @@ excédent(t) = r(t) − rf_j
 Sharpe = moyenne(excédent) × 252 / (écart-type(excédent) × √252)
 ```
 
-Le taux annuel est celui des [[Paramètres]] (2,50 % par défaut).
+Le taux annuel est celui des [[Outils et paramètres]] (2,50 % par défaut).
 
 ### Exemple
 

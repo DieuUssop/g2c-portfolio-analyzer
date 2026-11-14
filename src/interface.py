@@ -264,3 +264,37 @@ def constat(niveau, dimension, titre, risque="", pistes=()):
             f'<div class="constat-titre">{escape(titre)}</div>'
             + (f'<div class="constat-risque">{escape(risque)}</div>' if risque else "")
             + (f'<ul class="constat-pistes">{liste}</ul>' if liste else "") + '</div>')
+
+
+# ----------------------------------------------------------------------
+# Prise en main (revue du 14/11/2026) : bienvenue, « Ce qu'il faut retenir »
+# ----------------------------------------------------------------------
+def bienvenue(titre, sous_titre, etapes):
+    """Carte d'accueil du premier lancement : étapes numérotées [(titre, texte)]."""
+    cases = "".join(f'<div class="bienvenue-etape"><div class="bienvenue-num">{i}</div>'
+                    f'<div><div class="bienvenue-etape-titre">{escape(a)}</div>'
+                    f'<div class="bienvenue-etape-texte">{escape(b)}</div></div></div>'
+                    for i, (a, b) in enumerate(etapes, start=1))
+    return (f'<div class="bienvenue"><div class="bienvenue-titre">{escape(titre)}</div>'
+            f'<div class="bienvenue-sous-titre">{escape(sous_titre)}</div>'
+            f'<div class="bienvenue-etapes">{cases}</div></div>')
+
+
+def bandeau_exemple(texte):
+    """Bandeau discret « Vous regardez un portefeuille d'exemple »."""
+    return f'<div class="bandeau-exemple">{escape(texte)}</div>'
+
+
+def retenir(titre, lignes):
+    """Encadré « Ce qu'il faut retenir » : lignes [(niveau, texte)], niveau = couleur du point."""
+    couleurs = {"positive": "positive", "ok": "positive", "negative": "negative", "alerte": "negative",
+                "attention": "attention", "neutre": "neutre"}
+    items = "".join(f'<li><span class="retenir-point {couleurs.get(n, "neutre")}"></span>{escape(texte)}</li>'
+                    for n, texte in lignes)
+    return f'<div class="retenir"><div class="retenir-titre">{escape(titre)}</div><ul>{items}</ul></div>'
+
+
+def surligner_depot():
+    """Fait clignoter doucement la zone d'envoi de fichier de la barre latérale (premier lancement)."""
+    return ('<style>section[data-testid="stSidebar"] [data-testid="stFileUploaderDropzone"]'
+            '{ animation: depot-pulse 1.8s ease-in-out 4; outline: 2px solid var(--primaire); }</style>')

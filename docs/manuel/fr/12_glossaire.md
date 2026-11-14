@@ -8,7 +8,7 @@ Ce glossaire définit, en une à trois phrases, les termes de finance, de statis
 
 **Achat-conservation** (*buy and hold*) : stratégie du backtest qui achète les titres une fois et n'y touche plus ; les poids dérivent avec les cours, les gagnants grossissent.
 
-**Actualiser les cours** : bouton en bas de la barre latérale qui efface les résultats gardés en mémoire (une heure) et télécharge de nouveau les cours. Internet est nécessaire.
+**Actualiser les cours** : bouton en haut de la page, sous le bandeau, qui efface les résultats gardés en mémoire (une heure) et télécharge de nouveau les cours. Internet est nécessaire.
 
 **Alpha de Jensen** : performance annuelle qui ne s'explique pas par l'exposition au marché, selon le MEDAF. Positif, le choix des titres a créé de la valeur par rapport à l'indice.
 
@@ -116,7 +116,7 @@ Ce glossaire définit, en une à trois phrases, les termes de finance, de statis
 
 **Indice composite** (ou mixte) : indice calculé par le logiciel, mélange d'une poche actions et d'une poche obligations (20/80, 60/40 ou 80/20), remis à ses poids cibles à chaque fin de mois.
 
-**Indice de référence** (*benchmark*) : indice auquel le portefeuille est comparé (bêta, alpha, tracking error, graphique base 100). Il se choisit dans [[Paramètres]] ; par défaut, le MSCI World représenté par l'ETF CW8.
+**Indice de référence** (*benchmark*) : indice auquel le portefeuille est comparé (bêta, alpha, tracking error, graphique base 100). Il se choisit dans [[Outils et paramètres]] ; par défaut, le MSCI World représenté par l'ETF CW8.
 
 **ISIN** : code international à 12 caractères qui identifie un titre (par exemple FR0013380607). Deux lettres de pays, neuf caractères et une clé de contrôle.
 
@@ -240,7 +240,7 @@ Ce glossaire définit, en une à trois phrases, les termes de finance, de statis
 
 **Taux de change** : prix d'une devise en euros. Le logiciel utilise les taux de Yahoo Finance, exprimés en nombre d'unités de devise pour 1 euro (`EURUSD=X` = dollars pour 1 €).
 
-**Taux sans risque** : rendement d'un placement sans risque en euros, servant au Sharpe, au Sortino et à l'alpha. 2,50 % par défaut (taux de la facilité de dépôt de la BCE), constant sur la période, modifiable dans [[Paramètres]].
+**Taux sans risque** : rendement d'un placement sans risque en euros, servant au Sharpe, au Sortino et à l'alpha. 2,50 % par défaut (taux de la facilité de dépôt de la BCE), constant sur la période, modifiable dans [[Outils et paramètres]].
 
 **Ticker** : code court d'un titre chez Yahoo Finance, avec sa place de cotation : `MC.PA` pour LVMH à Paris, `AAPL` pour Apple.
 

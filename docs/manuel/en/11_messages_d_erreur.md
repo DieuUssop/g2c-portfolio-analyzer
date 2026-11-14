@@ -139,7 +139,7 @@ None of the ETFs that represent the chosen index has a history available (no Int
 
 ### Solution
 
-1. Open [[Settings]], then choose another [[Benchmark index]], for example the MSCI World offered by default.
+1. Open [[Tools and settings]], then choose another [[Benchmark index]], for example the MSCI World offered by default.
 2. Connect to the Internet and click [[Refresh prices]].
 
 The index is used mainly for comparisons (beta, alpha, tracking error, base 100 chart): changing it unblocks the analysis without changing anything in your positions.

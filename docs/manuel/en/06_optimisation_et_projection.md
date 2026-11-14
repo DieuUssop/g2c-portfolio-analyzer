@@ -8,6 +8,8 @@ This chapter explains the two forward-looking tabs of the "Portfolio analysis" a
 
 The **Optimisation** tab looks for other allocations, **among the securities you already hold**, that would offer a better return / risk trade-off. It adds no security: it only changes the weights.
 
+The calculation compares thousands of allocations and takes a few seconds: it only runs when you click [[Run the optimization]]. The result is then kept for this portfolio during the session (so the page opens faster).
+
 ### Markowitz's idea (1952)
 
 An investor looks not only at return but also at risk. Yet the risk of a portfolio is not the average of the risks of its securities: when two securities do not rise and fall exactly together (correlation below 1), their movements partly offset each other. Risk can therefore be reduced without reducing return.

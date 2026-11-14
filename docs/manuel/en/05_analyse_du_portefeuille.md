@@ -3,10 +3,10 @@
 
 This chapter explains, tab by tab, the "Portfolio analysis" workspace: the overview and the world map, holdings, performance, risk, exposures and real diversification, and then the viewing of transactions. Each indicator has its own entry: the exact formula used by the software, the intuition, a worked example, how to read it and its limits. The Optimisation and Projection tabs are covered in a separate chapter.
 
-## The eight analysis tabs: what is where?
+## The nine analysis tabs: what is where?
 <!-- fiche: analyse-onglets | questions: what are the tabs in the portfolio analysis ; where do I find volatility ; which tab has the VaR ; where can I see my capital gains ; i am looking for the correlations ; where is the table of my holdings ; what is each tab for ; where are the transactions | mots: tabs, Overview, Holdings, Performance, Risk, Exposures, Optimisation, Projection, Transactions, navigation | aller: Analyse du portefeuille -->
 
-The "Portfolio analysis" workspace has eight tabs, displayed at the top of the main area below the six key figures.
+The "Portfolio analysis" workspace has nine tabs, displayed at the top of the main area below the key figures (only five in Essential mode: Overview, Holdings, Exposures, Target allocation, Transactions).
 
 | Tab | What you find there |
 |---|---|
@@ -15,20 +15,21 @@ The "Portfolio analysis" workspace has eight tabs, displayed at the top of the m
 | [[Performance]] | TWR, IRR (TRI), gap versus the benchmark, base-100 curve, returns by calendar year, drawdown, beta, alpha, correlation, tracking error, information ratio |
 | [[Risk]] | Sharpe, Sortino, VaR and CVaR, distribution of daily returns compared with the normal distribution, skewness, kurtosis, Jarque-Bera test |
 | [[Exposures]] | Diagnosis across six dimensions (geography, sectors, currencies, concentration, interest rates, real diversification), findings and suggestions, correlations between holdings |
+| [[Target allocation]] | Your targets per bucket (World equities, emerging markets, bonds…), where to invest the next contribution without selling anything, and the "What if I bought…" simulator |
 | [[Optimisation]] | Markowitz efficient frontier and compared allocations (chapter devoted to optimisation and projection) |
 | [[Projection]] | Monte Carlo simulation of future value (same chapter) |
 | [[Transactions]] | The transaction history, filterable and downloadable; editing transactions is described in the chapter on importing |
 
 ### Good to know
 
-- All tabs analyse the same portfolio, with the benchmark index and the risk-free rate chosen in the **Settings** panel of the sidebar; the VaR level is set in the Risk tab.
+- All tabs analyse the same portfolio, with the benchmark index and the risk-free rate chosen in the **Tools and settings** menu of the sidebar; the VaR level is set in the Risk tab.
 - All amounts are expressed **in euros**, including for securities quoted in another currency.
 - Correlations between holdings are not in the Risk tab: they are in the [[Exposures]] tab, [[Correlations]] sub-tab.
 
 ## What does the Overview tab show?
 <!-- fiche: analyse-vue-ensemble | questions: chart of a single holding ; chart of one etf or share ; see the price with my purchases ; what does the overview show ; what are the coloured rings for ; where do i see the breakdown by asset class ; why is the region breakdown a percentage of the equity portion ; what is the others slice in the pie chart ; where do i see the percentages of the rings ; the four cards at the bottom of the overview ; i dont see the sector ring ; allocation by holding chart | mots: overview, allocation, ring, pie chart, asset class, region, sector, equity portion, summary, donut | aller: Analyse du portefeuille/Vue d'ensemble | chiffres: valeur_actuelle, gain_total, dividendes, frais_totaux -->
 
-The [[Overview]] tab gives a snapshot of the portfolio in four blocks, from top to bottom.
+The [[Overview]] tab starts with the **Key takeaways** box (three sentences: performance, point to watch, suggestion; dedicated entry), then gives a snapshot of the portfolio in four blocks, from top to bottom.
 
 ### 1. Change in value and allocation
 
@@ -53,7 +54,7 @@ Shares below 3% are grouped into "Other (n)", n being the number of groups combi
 
 ### Chart of one holding
 
-Above the "Portfolio value over time" chart, the **Whole portfolio** menu lets you choose a single holding (an ETF or a share, including a sold holding). Three views: **Value** (value of the holding and money invested at average cost), **Price and average cost** (security price, average cost dotted, purchases ▲ and sales ▼ at the price paid), **Compared with the index** (price since the first purchase, base 100, against the benchmark). Under the chart: unrealised gain, realised gain, dividends and fees of the holding. The same menu is at the bottom of the [[Holdings]] tab (« Chart of one holding »).
+Above the "Portfolio value over time" chart, the **Whole portfolio** menu lets you choose a single holding (an ETF or a share, including a sold holding). Three views: **Value** (value of the holding and money invested at average cost), **Price and average cost** (security price, average cost dotted, purchases ▲ and sales ▼ at the price paid), **Compared with the index** (price since the first purchase, base 100, against the benchmark). Under the chart: unrealised gain, realised gain, dividends and fees of the holding. The same menu is in the [[Performance]] tab (« Chart of one holding »).
 
 ### 4. The cards at the bottom
 
@@ -64,6 +65,24 @@ Above the "Portfolio value over time" chart, the **Whole portfolio** menu lets y
 | Account fees and levies | Custody fees, social levies… (shown if there are any) |
 
 **Unrealised gains** (securities held, not cashed in) and **realised gains** (securities sold, cashed in) are shown at the top of the page, **under the total gain**, in its card: "of which unrealized", "of which realized", then dividends and account fees. Their sum gives the total gain.
+
+## The "Key takeaways" box
+<!-- fiche: analyse-retenir | questions: what is key takeaways ; summary of my portfolio in one sentence ; is my portfolio doing well ; the three sentences at the top of the overview ; where does the point to watch come from ; is the suggestion advice ; automatic summary | mots: Key takeaways, summary, synthesis, point to watch, suggestion, sentences, in short -->
+
+At the top of the [[Overview]], three sentences sum up the portfolio. They are written by **simple rules** from the figures already calculated: no AI, nothing is sent over the Internet.
+
+| Sentence | Where it comes from |
+|---|---|
+| 1. Performance | The annualised TWR, and the gap with the benchmark index over the same period ("better than", "at the same pace as" within half a point, "less than") |
+| 2. Point to watch | The most serious finding of the [[Exposures]] tab diagnosis (alert, then caution), with the profile chosen in that tab; otherwise "No point to watch" |
+| 3. Suggestion | If the cash balance is negative: add the deposits or enter the balance; otherwise the first suggestion of the finding of sentence 2; otherwise "Nothing urgent" |
+
+The coloured dot to the left of each sentence shows the level: green (good), orange (caution), red (alert), grey (neutral).
+
+### Good to know
+
+- A portfolio with fewer than 20 days of prices shows its current gain instead of an annualised performance, which would be meaningless.
+- Like the whole diagnosis, the suggestion is educational: it is not investment advice.
 
 ## Reading the "Portfolio value over time" chart
 <!-- fiche: analyse-evolution-valeur | questions: what does the orange line mean ; what are net contributions ; why is the orange line going down ; difference between value and money invested ; the blue area between the two lines ; my value is below the money invested am i losing ; why does the line move in steps ; negative money invested | mots: change in value, market value, net contributions, invested capital, money invested, curve, history, unrealised gain, chart | aller: Analyse du portefeuille/Vue d'ensemble | chiffres: valeur_actuelle, gain_total -->
@@ -328,6 +347,28 @@ They are not deducted a second time: they are already taken into account in the 
 
 The software only knows what is in your transactions: custody fees, account-keeping fees, taxes and social contributions are not taken into account unless they are entered.
 
+## Dividends per year and estimate for the next 12 months
+<!-- fiche: analyse-dividendes | questions: how much in dividends will I receive ; estimate of future dividends ; dividends per year ; income from my portfolio ; dividend yield ; why does my etf pay nothing ; last year's dividends | mots: dividends, coupons, income, estimate, 12 months, yield, per year, accumulating, distributing -->
+
+In the [[Holdings]] tab, the **Dividends and coupons** box shows the **net** amounts (after withholding tax) received each year, and an estimate for the next 12 months.
+
+### The three cards
+
+- **Received in** (last year) and **Total since inception**;
+- **12-month estimate**, with the yield on the current value.
+
+### How the estimate is made
+
+For each holding still held: the dividends received over the last 12 months, **per share** (amount ÷ quantity held on the payment date), multiplied by the quantity held today.
+
+> Example: €150 gross received in April for 20 shares, of which €30 withheld, i.e. €6 net per share. With 20 shares today, the estimate is €120.
+
+A holding that has paid nothing for a year (**accumulating** ETF, recent purchase, share without dividend) counts as 0: nothing is guessed. The table on the right details each paying holding.
+
+### Limits
+
+Future dividends are never guaranteed: a company can cut or scrap its dividend. Dividends missing from the file are not counted.
+
 ## Securities quoted in dollars or another currency: how are they valued?
 <!-- fiche: analyse-titres-devises | questions: how are my dollar securities converted ; my performance in euros is different from the one in dollars ; which exchange rate is used ; my american stock went up but im losing money ; currency effect on my portfolio ; the pru of a dollar stock is in euros ; currency column of the holdings table ; currency risk | mots: currency, exchange rate, dollar, USD, conversion into euros, currency effect, currency risk, trading currency, EURUSD | aller: Analyse du portefeuille/Positions -->
 
@@ -456,8 +497,10 @@ The [[Performance]] tab answers two questions: how much have you earned, and hav
 1. **Four cards**: Total TWR ("Since" + start date), Annualised TWR ("365-day basis"), Annual IRR ("Money-weighted return") and Difference vs the index (an "outperformance" or "underperformance" badge).
 2. **Portfolio and index**: the two curves rebased to 100 at the first common date.
 3. **Calendar-year returns**: the TWR for each year, portfolio and index side by side.
-4. **Drawdown**: the fall from the last peak, with, in the subtitle, the dates of the peak, the trough and the return to the peak.
-5. **Five cards** comparing with the index: Beta, Jensen's alpha, Correlation, Tracking error and Information ratio.
+4. **Chart of one holding**: a single ETF or share (same menu as in the Overview).
+5. **Compared with a Livret A**: the same money placed in a Livret A (dedicated entry).
+6. **Drawdown**: the fall from the last peak, with, in the subtitle, the dates of the peak, the trough and the return to the peak.
+7. **Five cards** comparing with the index: Beta, Jensen's alpha, Correlation, Tracking error and Information ratio.
 
 ### The orange warning
 
@@ -466,6 +509,26 @@ If the index chosen in [[Benchmark index]] is a bond or money-market index, a bo
 ### Suggested reading order
 
 Start with the annualised TWR and the difference vs the index, look at the curve to see **when** the gap opened up, then the drawdown to measure the worst ordeal endured. The following entries detail each indicator.
+
+## Compared with a Livret A
+<!-- fiche: analyse-livret-a | questions: would I have done better putting everything in a livret a ; compare my portfolio with the livret a ; livret a or stock market ; how much would I have in a livret a ; livret a rate used ; does the stock market pay more than the livret a | mots: Livret A, regulated savings, comparison, risk-free, Livret A rate, Banque de France -->
+
+In the [[Performance]] tab, the **Compared with a Livret A** box answers the question: "what if I had put the same money in a Livret A?" (the French tax-free savings account).
+
+### The calculation
+
+The Livret A receives **the same deposits and the same withdrawals, on the same dates**, as the portfolio (purchases, sales, dividends cashed). Each day it earns the official rate in force that day: 3% in 2023 and 2024, 2.4% in February 2025, 1.7% in August 2025, 1.5% in February 2026, 1.7% since 1 August 2026 (Banque de France, info.gouv.fr; table since 2008).
+
+Three cards: the value of the portfolio, that of the Livret A (with the current rate) and the **difference**. The chart shows both curves and the money invested.
+
+### Simplifications
+
+- interest counted daily (the real rule works by fortnights) and added to the capital on 31 December; interest for the current year is included;
+- the deposit ceiling (€22,950) is ignored, to compare the same amount.
+
+### How to read it
+
+The Livret A is **risk-free** and available at any time: the difference is what the risk taken on the stock market has earned (or cost) over the period. Over a few months it can be negative even for a good portfolio.
 
 ## "Contribution-neutral" daily returns
 <!-- fiche: analyse-rendements-quotidiens | questions: how are daily returns calculated ; why does a purchase not count as a gain ; what does neutralising contributions mean ; my deposit makes the line go up but not the performance ; why is the first day return negative ; basis of calculation of the indicators ; daily return | mots: daily return, cash flows, contributions, withdrawals, neutralisation, base 100, end of day | aller: Analyse du portefeuille/Performance -->
@@ -858,7 +921,7 @@ daily excess = r_day − rf_day,   with rf_day = (1 + risk-free rate) ^ (1/252) 
 Sharpe = mean(excess) × 252 / (standard deviation(excess) × √252)
 ```
 
-The return is the **arithmetic** mean of the daily returns, annualised by 252; it is not the annualised TWR. The risk-free rate is the one in the **Settings** panel (2.50% by default).
+The return is the **arithmetic** mean of the daily returns, annualised by 252; it is not the annualised TWR. The risk-free rate is the one in the **Tools and settings** menu (2.50% by default).
 
 ### Example
 
@@ -1605,6 +1668,54 @@ The suggestions made: replace part of the block with weakly correlated assets, o
 ### Limits
 
 The 0.7 threshold is a convention. Blocks rest on past correlations and may change from one period to another.
+
+## The Target allocation tab: where to invest the next contribution
+<!-- fiche: analyse-allocation-cible | questions: how should I split my next contribution ; target allocation ; set my 70 30 targets ; rebalance without selling ; how much to put on each etf ; is my portfolio in line with my target ; where to invest 500 euros this month | mots: target allocation, target, allocation, rebalancing, contribution, buckets, World equities, without selling -->
+
+The [[Target allocation]] tab compares your allocation with **your targets** and works out where to invest the next contribution.
+
+### The buckets
+
+Each holding is placed in a bucket, as it is held: World equities (an MSCI World or ACWI ETF), North American equities, European equities, Asia-Pacific equities, Emerging-market equities, Other equities, Bonds, Money market, Gold and commodities.
+
+### Setting your targets
+
+The table starts by proposing your current allocation, rounded to 5 points. Edit the **Target** column: the total must be 100%. Click [[Save these targets]]: they are kept with the portfolio (encrypted in your space if you are signed in, for the session otherwise).
+
+### The next contribution
+
+Enter the [[Amount of the next contribution (€)]]. The buckets **behind** their target receive the money, in proportion to their shortfall; if the contribution covers all shortfalls, the rest follows the target. Nothing is sold: no selling costs, no tax on a capital gain.
+
+> Example: €10,000 of which €7,000 in World equities, target 60% World, 20% emerging, 20% bonds. With €2,000 more (€12,000 in total), the shortfalls are €200 (World), €1,400 (emerging) and €1,400 (bonds): the €2,000 is split pro rata, €133, €933 and €933.
+
+The "Where to invest" table suggests, for each bucket, the largest holding already held. The chart compares the current weight, the target and the weight after the contribution; the **Gap to target** card adds up the excess points.
+
+## The "What if I bought…" simulator
+<!-- fiche: analyse-simulateur | questions: test a purchase before making it ; what if I bought ; simulate a purchase ; effect of a new etf on my portfolio ; does this purchase diversify ; purchase simulation ; what happens if I add a share | mots: simulator, simulation, hypothetical purchase, what if, test, before buying, effect, diversification -->
+
+At the bottom of the [[Target allocation]] tab, the simulator shows the effect of a purchase **before** you place the order. Nothing is saved.
+
+### How to use it
+
+1. Choose a security you already hold, or **Other security (Yahoo Finance ticker)…** then type its ticker (CW8.PA, AAPL, PAEJ.PA…).
+2. Enter the **Amount (€)**, then click [[Simulate]].
+
+The purchase is hypothetical, at the last known price, on the portfolio's last date.
+
+### What is compared
+
+| Row | Before / after |
+|---|---|
+| Value of the securities | Rises by the amount |
+| Allocation volatility (3 years) | Volatility the allocation would have had over the last three years |
+| Largest holding, top country, top sector | Concentration, on a look-through basis |
+| Alerts and points to watch | Number of findings of the diagnosis (profile of the Exposures tab) |
+
+The **new** findings and those **solved by this purchase** are listed below.
+
+### Why an "allocation" volatility?
+
+The purchase has no history: the portfolio's past volatility would hardly move. So the volatility of the new allocation is calculated (today's weights × covariances of the securities over 3 years). A new security needs the Internet for its prices.
 
 ## Viewing the transaction history (Transactions tab)
 <!-- fiche: analyse-transactions | questions: where do i see all my transactions ; filter transactions by security ; show only dividends ; export my transactions to csv ; why is the price in euros in the history ; price in currency column ; how many transactions in my portfolio ; history of purchases and sales | mots: transactions, history, filter, CSV export, purchases, sales, dividends, viewing, price in currency | aller: Analyse du portefeuille/Transactions | chiffres: nb_operations -->

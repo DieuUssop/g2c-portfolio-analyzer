@@ -137,7 +137,7 @@ Aucun des ETF qui représentent l'indice choisi n'a d'historique disponible (pas
 
 ### Solution
 
-1. Ouvrez [[Paramètres]], puis choisissez un autre [[Indice de référence]], par exemple le MSCI World proposé par défaut.
+1. Ouvrez [[Outils et paramètres]], puis choisissez un autre [[Indice de référence]], par exemple le MSCI World proposé par défaut.
 2. Connectez-vous à Internet et cliquez sur [[Actualiser les cours]].
 
 L'indice sert surtout aux comparaisons (bêta, alpha, tracking error, graphique base 100) : en changer débloque l'analyse sans rien modifier à vos positions.

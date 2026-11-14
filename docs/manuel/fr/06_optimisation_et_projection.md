@@ -8,6 +8,8 @@ Ce chapitre explique les deux onglets prospectifs de l'espace « Analyse du port
 
 L'onglet **Optimisation** cherche, **parmi les titres que vous détenez déjà**, d'autres répartitions qui offriraient un meilleur couple rendement / risque. Il n'ajoute aucun titre : il ne fait que changer les poids.
 
+Le calcul compare des milliers de répartitions et prend quelques secondes : il n'est lancé que si vous cliquez sur [[Lancer l'optimisation]]. Le résultat est ensuite gardé pour ce portefeuille pendant la session (la page s'ouvre ainsi plus vite).
+
 ### L'idée de Markowitz (1952)
 
 Un investisseur ne regarde pas seulement le rendement, mais aussi le risque. Or le risque d'un portefeuille n'est pas la moyenne des risques de ses titres : quand deux titres ne montent et ne baissent pas exactement ensemble (corrélation inférieure à 1), leurs variations se compensent en partie. On peut donc réduire le risque sans réduire le rendement.

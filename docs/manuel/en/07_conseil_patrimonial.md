@@ -170,7 +170,7 @@ In the [[Taxation]] tab, the "If everything were sold today" section assumes you
 
 ### The three cards
 
-One card per wrapper: "CTO exit", "PEA exit", "Life insurance exit". Each shows:
+One card per wrapper: "CTO exit", "PEA exit", "Life insurance exit". If the portfolio comes from your space and its **account type** is set (My account page), the card of that wrapper comes first with the label "your account"; in the "All my accounts" view, a message reminds you that each card assumes a single wrapper. Each shows:
 
 - the **net gain** after tax, in euros;
 - a "tax x%" badge: the **effective rate**;

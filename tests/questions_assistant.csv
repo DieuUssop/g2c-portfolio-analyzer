@@ -192,3 +192,16 @@ comment modifier le solde especes a la main;import-especes
 mon etf cac 40 est classe monde;sources-classification
 comment ecrire au createur du logiciel;faq-signaler-probleme
 voir la courbe d une seule action;analyse-vue-ensemble
+par où commencer avec le logiciel;ecran-bienvenue
+comment fermer la carte de bienvenue;ecran-bienvenue
+trop d'onglets je veux un affichage simple;ecran-mode-essentiel
+exporter mes positions vers excel;ecran-export-excel
+indiquer que mon portefeuille est un pea;compte-type
+additionner mon pea et mon cto;compte-tous-mes-comptes
+historique des modifications de mon portefeuille;compte-journal
+restaurer une sauvegarde de la semaine dernière;compte-sauvegardes
+résumé de mon portefeuille en trois phrases;analyse-retenir
+estimation de mes dividendes des 12 prochains mois;analyse-dividendes
+aurais-je mieux fait de tout mettre sur un livret a;analyse-livret-a
+où investir mon prochain versement;analyse-allocation-cible
+tester un achat avant de le faire;analyse-simulateur

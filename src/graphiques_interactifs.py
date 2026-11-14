@@ -1029,3 +1029,56 @@ def fig_ligne_performance(cours, indice, nom_indice):
     fig.update_layout(hovermode="x unified")
     fig.add_hline(y=100, line=dict(color="#a3a39e", width=1, dash="dot"))
     return _selecteur_periode(fig)
+
+
+# ======================================================================
+# Revue du 14/11/2026 : allocation cible, dividendes par année, Livret A
+# ======================================================================
+def fig_allocation(detail):
+    """Poids actuel, cible et après le versement de chaque poche (barres horizontales groupées)."""
+    tableau = detail.iloc[::-1]
+    noms = [td(p) for p in tableau.index]
+    fig = go.Figure()
+    for colonne, libelle, couleur in (("cible", t("Cible"), GRIS_CLAIR), ("actuel", t("Actuel"), BLEU),
+                                      ("apres", t("Après le versement"), ORANGE)):
+        fig.add_trace(go.Bar(
+            x=tableau[colonne], y=noms, orientation="h", name=libelle, marker=dict(color=couleur, cornerradius=3),
+            hovertemplate="%{y}<br>%{x:.1f}" + espace_pct() + f"%<extra>{libelle}</extra>"))
+    _style(fig, hauteur=max(280, 46 * len(tableau) + 80))
+    fig.update_layout(barmode="group", bargap=0.25)
+    fig.update_xaxes(ticksuffix=espace_pct() + "%", showgrid=True, gridcolor=GRILLE)
+    return fig
+
+
+def fig_dividendes_annuels(annuel, estimation=None):
+    """Dividendes nets reçus chaque année (barres), et estimation des 12 prochains mois (barre hachurée)."""
+    fig = go.Figure(go.Bar(
+        x=[str(a) for a in annuel.index], y=annuel.values, name=t("Reçus"),
+        marker=dict(color=BLEU, cornerradius=4), hovertemplate="%{x}<br>" + eur("%{y:,.0f}") + "<extra></extra>"))
+    if estimation:
+        fig.add_trace(go.Bar(
+            x=[t("12 prochains mois")], y=[estimation], name=t("Estimation"),
+            marker=dict(color="rgba(42, 120, 214, 0.25)", line=dict(color=BLEU, width=1.5), pattern_shape="/",
+                        cornerradius=4),
+            hovertemplate="%{x}<br>" + eur("%{y:,.0f}") + f"<extra>{t('Estimation')}</extra>"))
+    _style(fig, hauteur=320, legende=bool(estimation))
+    fig.update_yaxes(tickformat=",.0f", **_axe_euros("y"))
+    return fig
+
+
+def fig_livret_a(histo, livret):
+    """Valeur du portefeuille et du même argent placé sur un Livret A."""
+    fig = go.Figure()
+    fig.add_trace(go.Scatter(x=histo.index, y=histo["apports_nets"], name=t("Argent investi (apports nets)"),
+                             mode="lines", line=dict(color=ORANGE, width=1.5, shape="hv"),
+                             hovertemplate=eur("%{y:,.0f}") + f"<extra>{t('Investi')}</extra>"))
+    fig.add_trace(go.Scatter(x=livret.index, y=livret.values, name=t("Le même argent sur un Livret A"),
+                             mode="lines", line=dict(color=GRIS_FONCE, width=2, dash="dot"),
+                             hovertemplate=eur("%{y:,.0f}") + "<extra>Livret A</extra>"))
+    fig.add_trace(go.Scatter(x=histo.index, y=histo["valeur"], name=t("Mon portefeuille"), mode="lines",
+                             line=dict(color=BLEU, width=2.5),
+                             hovertemplate=eur("%{y:,.0f}") + f"<extra>{t('Portefeuille')}</extra>"))
+    _style(fig, hauteur=380)
+    fig.update_layout(hovermode="x unified")
+    fig.update_yaxes(tickformat=",.0f", **_axe_euros("y"))
+    return _selecteur_periode(fig)

@@ -96,7 +96,7 @@ Si votre relevé donne des prix déjà convertis en euros, ce n'est pas grave : 
 - L'ordre des lignes est libre : le logiciel trie les opérations par date.
 - Les quantités et les prix doivent être positifs : c'est le type qui indique le sens. Dans un export de courtier, une quantité négative est acceptée et rendue positive.
 - Le point et la virgule sont acceptés comme séparateur décimal, et le point-virgule comme séparateur de colonnes (voir la fiche sur les exports de courtier).
-- Le bouton [[Modèle de fichier]] de la barre latérale télécharge un exemple prêt à compléter.
+- Le bouton [[Modèle de fichier]] du menu « Outils et paramètres » de la barre latérale (ou de la carte de bienvenue) télécharge un exemple prêt à compléter.
 
 ## Achat, vente, dividende : que mettre dans le prix et les frais ?
 <!-- fiche: import-types-operations | questions: comment saisir un dividende ; que mettre dans prix pour un dividende ; quantité zéro pour un dividende c'est normal ; achat vente dividende quels types sont acceptés ; comment noter un coupon d'obligation ; les frais sont ils inclus dans le prix ; comment le pru est calculé avec les frais ; comment saisir une vente ; dividende en dollars | mots: ACHAT, VENTE, DIVIDENDE, coupon, distribution, PRU, frais de courtage, montant total, type d'opération -->
@@ -187,7 +187,7 @@ Les versements et retraits ne changent pas la performance des titres. Les **frai
 
 ### Où le trouver
 
-Dans la barre latérale, rubrique « Données », cliquez sur [[Modèle de fichier]]. Le fichier `modele_transactions.csv` est téléchargé. Il contient l'en-tête du format du projet et quatre lignes d'exemple :
+Dans la barre latérale, ouvrez le menu [[Outils et paramètres]] et cliquez sur [[Modèle de fichier]]. Le fichier `modele_transactions.csv` est téléchargé. Il contient l'en-tête du format du projet et quatre lignes d'exemple :
 
 | date | type | ticker | nom | quantite | prix | frais |
 |---|---|---|---|---|---|---|
@@ -238,13 +238,17 @@ Les noms sont comparés sans accents ni majuscules. Un nom est reconnu s'il est 
 | Titre | ticker, symbole, symbol, code, isin, code isin, bloomberg, bbg, ric, code reuters, valeur, titre, instrument, produit, product, security |
 | Nom | nom, name, libellé, désignation, nom du titre, security name, description |
 | Quantité | quantité, qté, qty, quantity, nombre, nombre de titres, nb titres, parts, shares, units |
-| Prix unitaire | prix, prix unitaire, cours, cours d'exécution, price, unit price, execution price |
+| Prix unitaire | prix, prix unitaire, cours, cours d'exécution, prix d'exé, price, unit price, execution price |
 | Montant total | montant, montant net, montant brut, montant total, total, amount, net amount, montant en eur |
 | Frais | frais, frais de courtage, courtage, commission, commissions, fees, fee, frais totaux |
 | Devise | devise, currency, monnaie, devise de cotation, ccy, cur |
 | Place | place, place de cotation, marché, bourse, exchange, market, mic, venue, lieu d'exécution |
 
-Les colonnes nommées commentaire, remarque, note, observation, memo ou info ne sont jamais interprétées. Toutes les autres colonnes inutiles sont simplement ignorées.
+Les colonnes nommées commentaire, remarque, note, observation, memo ou info ne sont jamais interprétées. Toutes les autres colonnes inutiles sont simplement ignorées. Si le fichier ne donne que le **libellé** du titre (sans ISIN ni ticker, comme chez Fortuneo), ce libellé sert à le retrouver.
+
+### Exports testés
+
+Des fichiers **fictifs** reproduisant la disposition des exports CSV de **DEGIRO** (colonnes sans titre, vente à quantité négative), **Fortuneo** (libellé seul), **Bourse Direct**, **Boursorama** et **Trade Republic** (dépôts compris) sont lus automatiquement, sans l'assistant. Les sites des courtiers changent parfois leurs colonnes : si votre export n'est pas reconnu, l'assistant d'import s'ouvre ; utilisez [[Signaler un problème]] pour que le format soit ajouté.
 
 ### Et si les noms ne disent rien ?
 

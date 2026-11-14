@@ -170,7 +170,7 @@ Dans l'onglet [[Fiscalité]], la section « Si tout était vendu aujourd'hui » 
 
 ### Les trois cartes
 
-Une carte par enveloppe : « Sortie CTO », « Sortie PEA », « Sortie Assurance-vie ». Chacune affiche :
+Une carte par enveloppe : « Sortie CTO », « Sortie PEA », « Sortie Assurance-vie ». Si le portefeuille vient de votre espace et que son **type de compte** est indiqué (page Mon compte), la carte de cette enveloppe passe en premier avec la mention « votre compte » ; dans la vue « Tous mes comptes », un message rappelle que chaque carte suppose une seule enveloppe. Chacune affiche :
 
 - le **gain net** d'impôts, en euros ;
 - une pastille « impôts x % » : le **taux effectif** ;

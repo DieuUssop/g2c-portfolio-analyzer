@@ -110,6 +110,12 @@ def barre_laterale():
                         st.session_state["session_compte"] = comptes.creer_compte(identifiant, mot_de_passe,
                                                                                   confirmation)
                 st.session_state.pop("formulaire_connexion", None)
+                try:                                     # sauvegarde automatique chiffrée (une par semaine)
+                    if st.session_state["session_compte"].sauvegarde_automatique():
+                        st.session_state["message_compte"] = t("Sauvegarde automatique de votre espace effectuée "
+                                                               "(« Mon compte » › « Sauvegardes »).")
+                except Exception:
+                    pass
                 try:                                     # mode clair / nuit choisi lors d'une visite précédente
                     preference = st.session_state["session_compte"].preference("theme")
                     if preference:
@@ -135,8 +141,14 @@ def bouton_enregistrer(s, contenu, nom_propose):
             return
         st.markdown(f"**{t('Enregistrer dans mon espace')}**")
         nom = st.text_input(t("Nom du portefeuille"), value=nom_propose, key="nom_a_enregistrer")
+        enveloppe = st.selectbox(t("Type de compte"), [None] + comptes.ENVELOPPES, key="enveloppe_a_enregistrer",
+                                 format_func=lambda e: t("— (à préciser plus tard)") if e is None else t(e),
+                                 help=t("PEA, compte-titres (CTO), assurance-vie : utilisé par la fiscalité et la "
+                                        "vue « Tous mes comptes »"))
         if st.button(t("Enregistrer"), type="primary", width="stretch", key="bouton_enregistrer"):
-            s.enregistrer(nom, contenu)
+            identifiant = s.enregistrer(nom, contenu)
+            if enveloppe:
+                s.definir_enveloppe(identifiant, enveloppe)
             deja[empreinte] = nom.strip() or nom_propose
             st.rerun()
 
@@ -189,6 +201,13 @@ def page_compte(s, importer=None):
             if nouveau_nom.strip() and nouveau_nom != p["nom"]:
                 s.renommer(p["id"], nouveau_nom)
                 st.rerun()
+            types = [None] + comptes.ENVELOPPES
+            enveloppe = a.selectbox(t("Type de compte"), types, index=types.index(p.get("enveloppe")),
+                                    key=f"env_{p['id']}",
+                                    format_func=lambda e: t("— (à préciser)") if e is None else t(e))
+            if enveloppe != p.get("enveloppe"):
+                s.definir_enveloppe(p["id"], enveloppe)
+                st.rerun()
             b.download_button(t("Télécharger"), data=s.lire(p["id"]), file_name=f"{p['nom']}.csv",
                               mime="text/csv", icon=":material/download:", key=f"dl_{p['id']}", width="stretch")
             confirmer = c.checkbox(t("Confirmer"), key=f"conf_{p['id']}")
@@ -208,7 +227,42 @@ def page_compte(s, importer=None):
                                                        date=p["precedente"].get("maj", ""))):
                 s.annuler_dernier_ajout(p["id"])
                 st.rerun()
+            journal = s.journal(p["id"])
+            if journal:
+                from .vues_transactions import ACTIONS_JOURNAL
+                with st.expander(t("Journal des modifications ({n})", n=len(journal)), icon=":material/history:"):
+                    for j in journal[:15]:
+                        st.caption(f"{j['date']} — " + t(ACTIONS_JOURNAL.get(j["action"], j["action"]), n=j["n"],
+                                                          operations=j["operations"]))
             st.divider()
+
+    # 1 bis. Sauvegardes automatiques
+    with st.container(border=True):
+        html(ui.titre_section(t("Sauvegardes"), t("Une copie chiffrée de tout votre espace chaque semaine, à la "
+                                                  "connexion ; les {n} dernières sont gardées",
+                                                  n=comptes.SAUVEGARDES_MAX)))
+        sauvegardes = s.sauvegardes()
+        if st.button(t("Sauvegarder maintenant"), icon=":material/backup:", key="sauvegarder_maintenant"):
+            s.sauvegarder()
+            st.rerun()
+        if not sauvegardes:
+            st.caption(t("Aucune sauvegarde pour l'instant."))
+        for sv in sauvegardes:
+            a, b, c = st.columns([4, 2, 2], vertical_alignment="center")
+            a.markdown(t("**{date}** · {n} portefeuille(s)", date=sv["date"], n=sv["portefeuilles"]))
+            confirmer = b.checkbox(t("Confirmer"), key=f"conf_sv_{sv['id']}")
+            if c.button(t("Restaurer"), icon=":material/restore:", disabled=not confirmer, key=f"rest_{sv['id']}",
+                        width="stretch", help=t("Remet votre espace dans cet état. L'état actuel est d'abord "
+                                                "sauvegardé : vous pourrez revenir en arrière.")):
+                try:
+                    s.restaurer(sv["id"])
+                    st.session_state["message_compte"] = t("Sauvegarde du {date} restaurée.", date=sv["date"])
+                    st.cache_data.clear()
+                    st.rerun()
+                except comptes.ErreurCompte as erreur:
+                    st.error(message(erreur))
+        html(ui.note(t("Les sauvegardes restent sur cet ordinateur, dans le dossier de votre compte. Pour vous protéger "
+                       "d'une panne du disque, téléchargez aussi vos portefeuilles (bouton « Télécharger »).")))
 
     # 2. Mot de passe
     with st.container(border=True):

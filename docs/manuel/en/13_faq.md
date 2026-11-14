@@ -352,7 +352,7 @@ Coupons from a distributing bond fund are entered in the same way.
 ## Can I get a report to hand in or print?
 <!-- fiche: faq-rapport-pdf | questions: can I get a pdf report ; report to hand in for my dissertation ; print the analysis ; is the report in english ; export the results ; report for my client ; does the report use my settings | mots: PDF report, export, printing, dissertation, summary, document, appendix, reportlab -->
 
-**Yes.** At the bottom of the sidebar, click [[PDF report]], then [[Download the PDF report]].
+**Yes.** At the top of the page, under the banner, click [[PDF report]], then [[Download the PDF report]].
 
 ### Its content
 
@@ -615,7 +615,7 @@ The CAC 40 offered is the price index, **excluding dividends**: it puts the inde
 
 ### Choosing the right index
 
-In [[Settings]], [[Benchmark index]] offers equity, bond, money-market and mixed indices (20/80, 60/40, 80/20). Choose the one that resembles your allocation: a balanced portfolio compares better with a 60/40 index than with the MSCI World. An unsuitable index distorts beta, alpha and tracking error; against a bond or money-market index, the Performance tab warns that beta and alpha have little meaning.
+In [[Tools and settings]], [[Benchmark index]] offers equity, bond, money-market and mixed indices (20/80, 60/40, 80/20). Choose the one that resembles your allocation: a balanced portfolio compares better with a 60/40 index than with the MSCI World. An unsuitable index distorts beta, alpha and tracking error; against a bond or money-market index, the Performance tab warns that beta and alpha have little meaning.
 
 ## Is the Monte Carlo projection a forecast?
 <!-- fiche: faq-projection | questions: is the projection a forecast ; how much will my portfolio be worth in 10 years ; will the median scenario happen ; reliability of the monte carlo simulation ; is the probability of loss reliable ; why does the fan widen | mots: projection, Monte Carlo, forecast, median scenario, probability, uncertainty, assumptions, horizon | aller: Analyse du portefeuille/Projection -->

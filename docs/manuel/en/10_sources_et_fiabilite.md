@@ -178,7 +178,7 @@ The software keeps prices in two places to avoid downloading them again and agai
 
 The results of an analysis are kept in memory for **one hour** as long as the portfolio and the settings do not change: the page stays fast. During this time, prices are not requested again from Yahoo Finance. The result of the automatic reading of an imported file is kept in the same way.
 
-The [[Refresh prices]] button, at the bottom of the sidebar, clears all this memory and reloads the page: prices are downloaded again (Internet required).
+The [[Refresh prices]] button, at the top of the page under the banner, clears all this memory and reloads the page: prices are downloaded again (Internet required).
 
 ### 2. In files, for offline use
 
@@ -425,7 +425,7 @@ A normal consequence: a PEA made of these ETFs can be **more exposed to the Unit
 ## Benchmark indices and composite indices
 <!-- fiche: sources-indices | questions: which benchmark indices are offered ; how is the 60 40 blended index calculated ; does the benchmark include dividends ; why compare with an ETF rather than the index ; composite index rebalanced every month ; how do I change the benchmark ; the cac 40 excludes dividends ; where does the index history come from | mots: benchmark, benchmark index, composite, blended, 60/40, monthly rebalancing, MSCI World, CAC 40, €STR, dividends reinvested -->
 
-The benchmark index is chosen in [[Settings]], at the bottom of the sidebar, under [[Benchmark index]]. By default: the MSCI World, represented by the CW8 ETF.
+The benchmark index is chosen in [[Tools and settings]], in the sidebar, under [[Benchmark index]]. By default: the MSCI World, represented by the CW8 ETF.
 
 ### The four families
 
@@ -475,7 +475,7 @@ The software does not fetch this rate from the Internet: it is a **fixed value**
 
 ### Changing it
 
-In the sidebar, open [[Settings]] and change [[Risk-free rate (% per year)]]: from 0 to 10%, in steps of 0.25 points. The tooltip recalls the ECB value. All the indicators concerned are recalculated.
+In the sidebar, open [[Tools and settings]] and change [[Risk-free rate (% per year)]]: from 0 to 10%, in steps of 0.25 points. The tooltip recalls the ECB value. All the indicators concerned are recalculated.
 
 ### The simplification to be aware of
 

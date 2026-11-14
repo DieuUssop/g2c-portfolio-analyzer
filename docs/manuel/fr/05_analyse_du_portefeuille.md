@@ -3,10 +3,10 @@
 
 Ce chapitre explique, onglet par onglet, l'espace « Analyse du portefeuille » : la vue d'ensemble et la carte du monde, les positions, la performance, le risque, les expositions et la diversification réelle, puis la consultation des transactions. Chaque indicateur a sa fiche : la formule exacte utilisée par le logiciel, l'intuition, un exemple chiffré, la manière de le lire et ses limites. Les onglets Optimisation et Projection sont traités dans un chapitre à part.
 
-## Les huit onglets de l'analyse : que trouver où ?
+## Les neuf onglets de l'analyse : que trouver où ?
 <!-- fiche: analyse-onglets | questions: quels sont les onglets de l'analyse du portefeuille ; ou trouver la volatilité ; dans quel onglet est la var ; ou voir mes plus-values ; je cherche les corrélations ; ou est le tableau de mes lignes ; à quoi sert chaque onglet ; ou sont les transactions | mots: onglets, Vue d'ensemble, Positions, Performance, Risque, Expositions, Optimisation, Projection, Transactions, navigation | aller: Analyse du portefeuille -->
 
-L'espace « Analyse du portefeuille » compte huit onglets, affichés en haut de la zone principale sous les six chiffres clés.
+L'espace « Analyse du portefeuille » compte neuf onglets, affichés en haut de la zone principale sous les chiffres clés (cinq seulement en mode Essentiel : Vue d'ensemble, Positions, Expositions, Allocation cible, Transactions).
 
 | Onglet | Ce que vous y trouvez |
 |---|---|
@@ -15,20 +15,21 @@ L'espace « Analyse du portefeuille » compte huit onglets, affichés en haut de
 | [[Performance]] | TWR, TRI, écart avec l'indice, courbe en base 100, rendements par année civile, drawdown, bêta, alpha, corrélation, tracking error, ratio d'information |
 | [[Risque]] | Sharpe, Sortino, VaR et CVaR, distribution des rendements quotidiens comparée à la loi normale, asymétrie, kurtosis, test de Jarque-Bera |
 | [[Expositions]] | Diagnostic en six dimensions (géographie, secteurs, devises, concentration, taux, diversification réelle), constats et pistes, corrélations entre les lignes |
+| [[Allocation cible]] | Vos objectifs par poche (Actions Monde, émergentes, obligations…), où investir le prochain versement sans rien vendre, et le simulateur « Et si j'achetais… » |
 | [[Optimisation]] | Frontière efficiente de Markowitz et répartitions comparées (chapitre consacré à l'optimisation et à la projection) |
 | [[Projection]] | Simulation de Monte-Carlo de la valeur future (même chapitre) |
 | [[Transactions]] | L'historique des opérations, filtrable et téléchargeable ; la modification des opérations est décrite dans le chapitre sur l'import |
 
 ### Bon à savoir
 
-- Tous les onglets analysent le même portefeuille, avec l'indice de référence et le taux sans risque choisis dans le panneau **Paramètres** de la barre latérale ; le niveau de la VaR se règle dans l'onglet Risque.
+- Tous les onglets analysent le même portefeuille, avec l'indice de référence et le taux sans risque choisis dans le menu **Outils et paramètres** de la barre latérale ; le niveau de la VaR se règle dans l'onglet Risque.
 - Tous les montants sont exprimés **en euros**, y compris pour les titres cotés dans une autre devise.
 - Les corrélations entre les lignes ne sont pas dans l'onglet Risque : elles se trouvent dans l'onglet [[Expositions]], sous-onglet [[Corrélations]].
 
 ## Que montre l'onglet Vue d'ensemble ?
 <!-- fiche: analyse-vue-ensemble | questions: courbe d une seule ligne ; graphique d un etf ou d une action ; voir le cours avec mes achats ; que montre la vue d'ensemble ; à quoi servent les anneaux de couleur ; répartition par classe d'actifs ou la voir ; pourquoi la répartition par région est en pourcentage de la poche actions ; c'est quoi la part autres dans le camembert ; ou voir les pourcentages des anneaux ; les quatre cartes en bas de la vue d'ensemble ; je ne vois pas l'anneau par secteur ; graphique répartition par ligne | mots: vue d'ensemble, répartition, anneau, camembert, classe d'actifs, région, secteur, poche actions, synthèse, donut | aller: Analyse du portefeuille/Vue d'ensemble | chiffres: valeur_actuelle, gain_total, dividendes, frais_totaux -->
 
-L'onglet [[Vue d'ensemble]] donne une photographie du portefeuille en quatre blocs, de haut en bas.
+L'onglet [[Vue d'ensemble]] commence par l'encadré **Ce qu'il faut retenir** (trois phrases : performance, point de vigilance, piste ; fiche dédiée), puis donne une photographie du portefeuille en quatre blocs, de haut en bas.
 
 ### 1. Évolution et répartition
 
@@ -53,7 +54,7 @@ Les parts inférieures à 3 % sont regroupées dans « Autres (n) », n étant l
 
 ### Courbe d'une ligne
 
-Au-dessus du graphique « Évolution du portefeuille », le menu **Tout le portefeuille** permet de choisir une seule ligne (un ETF ou une action, y compris une ligne vendue). Trois vues : **Valeur** (valeur de la ligne et argent investi au PRU), **Cours et PRU** (cours du titre, PRU en pointillé, achats ▲ et ventes ▼ au prix payé), **Comparée à l'indice** (cours depuis le premier achat en base 100, face à l'indice de référence). Sous le graphique : plus-value latente, réalisée, dividendes et frais de la ligne. Le même menu existe en bas de l'onglet [[Positions]] (« Courbe d'une ligne »).
+Au-dessus du graphique « Évolution du portefeuille », le menu **Tout le portefeuille** permet de choisir une seule ligne (un ETF ou une action, y compris une ligne vendue). Trois vues : **Valeur** (valeur de la ligne et argent investi au PRU), **Cours et PRU** (cours du titre, PRU en pointillé, achats ▲ et ventes ▼ au prix payé), **Comparée à l'indice** (cours depuis le premier achat en base 100, face à l'indice de référence). Sous le graphique : plus-value latente, réalisée, dividendes et frais de la ligne. Le même menu existe dans l'onglet [[Performance]] (« Courbe d'une ligne »).
 
 ### 4. Les cartes du bas
 
@@ -64,6 +65,24 @@ Au-dessus du graphique « Évolution du portefeuille », le menu **Tout le porte
 | Frais de compte et prélèvements | Droits de garde, prélèvements sociaux… (affichée s'il y en a) |
 
 Les **plus-values latentes** (titres détenus, non encaissées) et **réalisées** (titres vendus, encaissées) sont affichées en haut de page, **sous le gain total**, dans sa carte : « dont latentes », « dont réalisées », puis les dividendes et les frais de compte. Leur somme donne le gain total.
+
+## L'encadré « Ce qu'il faut retenir »
+<!-- fiche: analyse-retenir | questions: c'est quoi ce qu'il faut retenir ; résumé de mon portefeuille en une phrase ; est ce que mon portefeuille va bien ; les trois phrases en haut de la vue d'ensemble ; d'ou vient le point de vigilance ; la piste est elle un conseil ; résumé automatique | mots: Ce qu'il faut retenir, résumé, synthèse, point de vigilance, piste, phrases, en bref -->
+
+En haut de la [[Vue d'ensemble]], trois phrases résument le portefeuille. Elles sont écrites par des **règles simples** à partir des chiffres déjà calculés : aucune IA, rien n'est envoyé sur Internet.
+
+| Phrase | D'où elle vient |
+|---|---|
+| 1. La performance | Le TWR annualisé, et l'écart avec l'indice de référence sur la même période (« mieux que », « au même rythme que » à moins d'un demi-point près, « moins que ») |
+| 2. Le point de vigilance | Le constat le plus grave du diagnostic de l'onglet [[Expositions]] (alerte, puis attention), avec le profil choisi dans cet onglet ; sinon « Aucun point de vigilance » |
+| 3. La piste | Si le solde espèces est négatif : ajouter les versements ou saisir le solde ; sinon la première piste du constat de la phrase 2 ; sinon « Rien d'urgent » |
+
+Le point de couleur à gauche de chaque phrase reprend le niveau : vert (bon), orange (attention), rouge (alerte), gris (neutre).
+
+### À savoir
+
+- Un portefeuille de moins de 20 jours de cotation affiche son gain actuel au lieu d'une performance annualisée, qui n'aurait pas de sens.
+- Comme tout le diagnostic, la piste est pédagogique : ce n'est pas un conseil en investissement.
 
 ## Lire le graphique « Évolution du portefeuille »
 <!-- fiche: analyse-evolution-valeur | questions: que veut dire la courbe orange ; c'est quoi les apports nets ; pourquoi la courbe orange descend ; différence entre valeur et argent investi ; la zone bleue entre les deux courbes ; ma valeur est sous l'argent investi est ce que je perds ; pourquoi la courbe fait des marches ; argent investi négatif | mots: évolution, valeur de marché, apports nets, capital investi, argent investi, courbe, historique, gain latent, graphique | aller: Analyse du portefeuille/Vue d'ensemble | chiffres: valeur_actuelle, gain_total -->
@@ -328,6 +347,28 @@ Ils ne sont pas retirés une seconde fois : ils sont déjà pris en compte dans 
 
 Le logiciel ne connaît que ce qui figure dans vos opérations : les droits de garde, les frais de tenue de compte, les impôts et prélèvements sociaux ne sont pas pris en compte s'ils ne sont pas saisis.
 
+## Dividendes par année et estimation des 12 prochains mois
+<!-- fiche: analyse-dividendes | questions: combien de dividendes vais-je toucher ; estimation des dividendes futurs ; dividendes par année ; revenus de mon portefeuille ; rendement en dividendes ; pourquoi mon etf ne verse rien ; dividendes de l'année dernière | mots: dividendes, coupons, revenus, estimation, 12 mois, rendement, par année, capitalisant, distribuant -->
+
+Dans l'onglet [[Positions]], l'encadré **Dividendes et coupons** montre les montants **nets** (après retenue à la source) reçus chaque année, et une estimation pour les 12 prochains mois.
+
+### Les trois cartes
+
+- **Reçus en** (dernière année) et **Total depuis l'origine** ;
+- **Estimation sur 12 mois**, avec le rendement sur la valeur actuelle.
+
+### Comment est faite l'estimation
+
+Pour chaque ligne encore détenue : les dividendes reçus pendant les 12 derniers mois, **ramenés à une part** (montant ÷ quantité détenue le jour du versement), multipliés par la quantité détenue aujourd'hui.
+
+> Exemple : 150 € bruts reçus en avril pour 20 actions, dont 30 € de retenue, soit 6 € nets par action. Avec 20 actions aujourd'hui, l'estimation est de 120 €.
+
+Une ligne qui n'a rien versé depuis un an (ETF **capitalisant**, achat récent, action sans dividende) compte pour 0 : rien n'est deviné. Le tableau à droite détaille chaque ligne qui verse.
+
+### Limites
+
+Les dividendes futurs ne sont jamais garantis : une société peut réduire ou supprimer le sien. Les dividendes absents du fichier ne sont pas comptés.
+
 ## Titres cotés en dollars ou en autre devise : comment sont-ils valorisés ?
 <!-- fiche: analyse-titres-devises | questions: comment sont convertis mes titres en dollars ; ma performance en euros est différente de celle en dollars ; quel taux de change est utilisé ; mon action américaine a monté mais je perds de l'argent ; effet de change sur mon portefeuille ; le pru d'une action en dollars est en euros ; colonne devise du tableau des positions ; risque de change | mots: devise, taux de change, dollar, USD, conversion en euros, effet de change, risque de change, devise de cotation, EURUSD | aller: Analyse du portefeuille/Positions -->
 
@@ -456,8 +497,10 @@ L'onglet [[Performance]] répond à deux questions : combien avez-vous gagné, e
 1. **Quatre cartes** : TWR total (« Depuis le » + date de début), TWR annualisé (« Base 365 jours »), TRI annuel (« Rendement de l'argent investi ») et Écart avec l'indice (pastille « surperformance » ou « sous-performance »).
 2. **Portefeuille et indice** : les deux courbes en base 100 à la première date commune.
 3. **Rendement par année civile** : le TWR de chaque année, portefeuille et indice côte à côte.
-4. **Drawdown** : la baisse depuis le dernier plus haut, avec, dans le sous-titre, les dates du plus haut, du plus bas et du retour au plus haut.
-5. **Cinq cartes** de comparaison avec l'indice : Bêta, Alpha de Jensen, Corrélation, Tracking error et Ratio d'information.
+4. **Courbe d'une ligne** : un ETF ou une action seul (même menu que dans la Vue d'ensemble).
+5. **Comparé au Livret A** : le même argent placé sur un Livret A (fiche dédiée).
+6. **Drawdown** : la baisse depuis le dernier plus haut, avec, dans le sous-titre, les dates du plus haut, du plus bas et du retour au plus haut.
+7. **Cinq cartes** de comparaison avec l'indice : Bêta, Alpha de Jensen, Corrélation, Tracking error et Ratio d'information.
 
 ### L'avertissement orange
 
@@ -466,6 +509,26 @@ Si l'indice choisi dans [[Indice de référence]] est obligataire ou monétaire,
 ### Ordre de lecture conseillé
 
 Commencez par le TWR annualisé et l'écart avec l'indice, regardez la courbe pour voir **quand** l'écart s'est creusé, puis le drawdown pour mesurer la pire épreuve traversée. Les fiches suivantes détaillent chaque indicateur.
+
+## Comparé au Livret A
+<!-- fiche: analyse-livret-a | questions: aurais-je mieux fait de tout mettre sur un livret a ; comparer mon portefeuille au livret a ; livret a ou bourse ; combien j'aurais sur un livret a ; taux du livret a utilisé ; la bourse rapporte-t-elle plus que le livret a | mots: Livret A, épargne réglementée, comparaison, sans risque, taux du Livret A, Banque de France -->
+
+Dans l'onglet [[Performance]], l'encadré **Comparé au Livret A** répond à la question : « et si j'avais mis le même argent sur un Livret A ? »
+
+### Le calcul
+
+Le Livret A reçoit **les mêmes versements et les mêmes retraits, aux mêmes dates**, que le portefeuille (achats, ventes, dividendes encaissés). Il rapporte chaque jour le taux officiel en vigueur ce jour-là : 3 % en 2023 et 2024, 2,4 % en février 2025, 1,7 % en août 2025, 1,5 % en février 2026, 1,7 % depuis le 1er août 2026 (Banque de France, info.gouv.fr ; table depuis 2008).
+
+Trois cartes : la valeur du portefeuille, celle du Livret A (avec le taux actuel) et la **différence**. Le graphique montre les deux courbes et l'argent investi.
+
+### Simplifications
+
+- intérêts comptés au jour près (la vraie règle compte par quinzaines) et ajoutés au capital le 31 décembre ; les intérêts de l'année en cours sont inclus ;
+- plafond de dépôt (22 950 €) ignoré, pour comparer la même somme.
+
+### Comment le lire
+
+Le Livret A est **sans risque** et disponible à tout moment : la différence est ce que le risque pris en bourse a rapporté (ou coûté) sur la période. Sur quelques mois, elle peut être négative même pour un bon portefeuille.
 
 ## Les rendements quotidiens « neutres aux apports »
 <!-- fiche: analyse-rendements-quotidiens | questions: comment sont calculés les rendements quotidiens ; pourquoi un achat ne compte pas comme un gain ; neutraliser les apports ça veut dire quoi ; mon versement fait monter la courbe mais pas la performance ; rendement du premier jour négatif pourquoi ; base de calcul des indicateurs ; rendement journalier | mots: rendement quotidien, rendement journalier, flux, apports, retraits, neutralisation, base 100, fin de journée | aller: Analyse du portefeuille/Performance -->
@@ -858,7 +921,7 @@ excédent quotidien = r_jour − rf_jour,   avec rf_jour = (1 + taux sans risque
 Sharpe = moyenne(excédent) × 252 / (écart-type(excédent) × √252)
 ```
 
-Le rendement est la moyenne **arithmétique** des rendements quotidiens, annualisée par 252 ; ce n'est pas le TWR annualisé. Le taux sans risque est celui du panneau **Paramètres** (2,50 % par défaut).
+Le rendement est la moyenne **arithmétique** des rendements quotidiens, annualisée par 252 ; ce n'est pas le TWR annualisé. Le taux sans risque est celui du menu **Outils et paramètres** (2,50 % par défaut).
 
 ### Exemple
 
@@ -1605,6 +1668,54 @@ Les pistes proposées : remplacer une partie du bloc par des actifs peu corrél�
 ### Limites
 
 Le seuil de 0,7 est une convention. Les blocs reposent sur des corrélations passées et peuvent changer d'une période à l'autre.
+
+## L'onglet Allocation cible : où investir le prochain versement
+<!-- fiche: analyse-allocation-cible | questions: comment répartir mon prochain versement ; allocation cible ; fixer mes objectifs 70 30 ; rééquilibrer sans vendre ; combien mettre sur chaque etf ; mon portefeuille est il aligné sur ma cible ; où investir 500 euros ce mois-ci | mots: allocation cible, objectif, répartition, rééquilibrage, versement, poches, Actions Monde, sans vendre -->
+
+L'onglet [[Allocation cible]] compare votre répartition à **vos objectifs** et calcule où investir le prochain versement.
+
+### Les poches
+
+Chaque ligne est rangée dans une poche, telle qu'elle est détenue : Actions Monde (un ETF MSCI World ou ACWI), Actions Amérique du Nord, Actions Europe, Actions Asie-Pacifique, Actions émergentes, Actions autres, Obligations, Monétaire, Or et matières premières.
+
+### Fixer ses objectifs
+
+Le tableau propose au départ votre répartition actuelle, arrondie à 5 points. Modifiez la colonne **Cible** : le total doit faire 100 %. Cliquez sur [[Enregistrer ces objectifs]] : ils sont gardés avec le portefeuille (chiffrés dans votre espace si vous êtes connecté, pour la session sinon).
+
+### Le prochain versement
+
+Indiquez le [[Montant du prochain versement (€)]]. Les poches **en retard** sur leur cible reçoivent l'argent, au prorata de leur retard ; si le versement couvre tous les retards, le reste suit la cible. Rien n'est vendu : pas de frais de vente, pas d'impôt sur une plus-value.
+
+> Exemple : 10 000 € dont 7 000 € en Actions Monde, cible 60 % Monde, 20 % émergents, 20 % obligations. Avec 2 000 € de plus (12 000 € au total), les retards sont 200 € (Monde), 1 400 € (émergents) et 1 400 € (obligations) : les 2 000 € sont répartis au prorata, 133 €, 933 € et 933 €.
+
+Le tableau « Où investir » propose, pour chaque poche, la plus grosse ligne déjà détenue. Le graphique compare le poids actuel, la cible et le poids après le versement ; la carte **Écart à la cible** totalise les points en trop.
+
+## Le simulateur « Et si j'achetais… »
+<!-- fiche: analyse-simulateur | questions: tester un achat avant de le faire ; et si j'achetais ; simuler un achat ; effet d'un nouvel etf sur mon portefeuille ; est ce que cet achat diversifie ; simulation d'achat ; que se passe-t-il si j'ajoute une action | mots: simulateur, simulation, achat fictif, et si, tester, avant d'acheter, effet, diversification -->
+
+En bas de l'onglet [[Allocation cible]], le simulateur montre l'effet d'un achat **avant** de passer l'ordre. Rien n'est enregistré.
+
+### Utilisation
+
+1. Choisissez un titre déjà détenu, ou **Autre titre (ticker Yahoo Finance)…** puis tapez son ticker (CW8.PA, AAPL, PAEJ.PA…).
+2. Indiquez le **Montant (€)**, puis cliquez sur [[Simuler]].
+
+L'achat est fictif, au dernier cours connu, à la dernière date du portefeuille.
+
+### Ce qui est comparé
+
+| Ligne | Avant / après |
+|---|---|
+| Valeur des titres | Augmente du montant |
+| Volatilité de la répartition (3 ans) | Volatilité qu'aurait eue la répartition, sur les trois dernières années |
+| Plus grosse ligne, premier pays, premier secteur | Concentration, en transparence |
+| Alertes et points d'attention | Nombre de constats du diagnostic (profil de l'onglet Expositions) |
+
+Les constats **nouveaux** et ceux **réglés par cet achat** sont listés dessous.
+
+### Pourquoi une volatilité « de la répartition » ?
+
+L'achat n'a pas d'histoire : la volatilité passée du portefeuille ne bougerait presque pas. On calcule donc celle de la nouvelle répartition (poids d'aujourd'hui × covariances des titres sur 3 ans). Un nouveau titre demande Internet pour ses cours.
 
 ## Consulter l'historique des opérations (onglet Transactions)
 <!-- fiche: analyse-transactions | questions: ou voir toutes mes transactions ; filtrer les opérations par titre ; afficher seulement les dividendes ; exporter mes transactions en csv ; pourquoi le prix est en euros dans l'historique ; colonne prix en devise ; combien d'opérations dans mon portefeuille ; historique des achats et ventes | mots: transactions, opérations, historique, filtre, export CSV, achats, ventes, dividendes, consultation, prix en devise | aller: Analyse du portefeuille/Transactions | chiffres: nb_operations -->

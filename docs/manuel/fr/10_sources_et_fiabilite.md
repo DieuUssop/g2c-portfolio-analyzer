@@ -178,7 +178,7 @@ Le logiciel garde les cours à deux endroits pour éviter de les retélécharger
 
 Les résultats d'une analyse sont gardés en mémoire **une heure** tant que le portefeuille et les paramètres ne changent pas : la page reste rapide. Pendant ce temps, les cours ne sont pas redemandés à Yahoo Finance. Le résultat de la lecture automatique d'un fichier importé est gardé de la même façon.
 
-Le bouton [[Actualiser les cours]], en bas de la barre latérale, efface toute cette mémoire et relance la page : les cours sont téléchargés de nouveau (Internet nécessaire).
+Le bouton [[Actualiser les cours]], en haut de la page sous le bandeau, efface toute cette mémoire et relance la page : les cours sont téléchargés de nouveau (Internet nécessaire).
 
 ### 2. Dans des fichiers, pour le hors connexion
 
@@ -423,7 +423,7 @@ Conséquence normale : un PEA composé de ces ETF peut être **plus exposé aux 
 ## Les indices de référence et les indices composites
 <!-- fiche: sources-indices | questions: quels indices de référence sont proposés ; comment est calculé l'indice mixte 60 40 ; l'indice de référence inclut il les dividendes ; pourquoi comparer à un etf plutôt qu'à l'indice ; indice composite rééquilibré chaque mois ; changer d'indice de référence ; le cac 40 est hors dividendes ; d'où vient l'historique de l'indice | mots: benchmark, indice de référence, composite, mixte, 60/40, rééquilibrage mensuel, MSCI World, CAC 40, €STR, dividendes réinvestis -->
 
-L'indice de référence se choisit dans [[Paramètres]], en bas de la barre latérale, rubrique [[Indice de référence]]. Par défaut : le MSCI World, représenté par l'ETF CW8.
+L'indice de référence se choisit dans [[Outils et paramètres]], dans la barre latérale, rubrique [[Indice de référence]]. Par défaut : le MSCI World, représenté par l'ETF CW8.
 
 ### Les quatre familles
 
@@ -473,7 +473,7 @@ Le logiciel ne va pas chercher ce taux sur Internet : c'est une **valeur fixe**,
 
 ### Le modifier
 
-Dans la barre latérale, ouvrez [[Paramètres]] et changez [[Taux sans risque (% par an)]] : de 0 à 10 %, par pas de 0,25 point. L'info-bulle rappelle la valeur de la BCE. Tous les indicateurs concernés sont recalculés.
+Dans la barre latérale, ouvrez [[Outils et paramètres]] et changez [[Taux sans risque (% par an)]] : de 0 à 10 %, par pas de 0,25 point. L'info-bulle rappelle la valeur de la BCE. Tous les indicateurs concernés sont recalculés.
 
 ### La simplification à connaître
 

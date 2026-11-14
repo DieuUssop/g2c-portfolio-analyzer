@@ -148,6 +148,7 @@ button[data-testid="stBaseButton-tertiary"], button[data-testid="stBaseButton-te
 
 /* Nos éléments aux couleurs fixes */
 .pastille.attention { color: #f5c07a; background: rgba(240, 169, 91, 0.14); }
+.bandeau-exemple { color: #f5c07a; background: rgba(240, 169, 91, 0.10); border-color: rgba(240, 169, 91, 0.35); }
 .constat { box-shadow: none; }
 .constat.alerte { background: rgba(255, 138, 128, 0.07); }
 .constat.attention { background: rgba(240, 169, 91, 0.07); }

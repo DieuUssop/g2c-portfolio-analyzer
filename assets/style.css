@@ -409,3 +409,31 @@ table.tableau-simple tr:last-child td { border-bottom: none; }
 .kpi-decomp-montant.neutre { color: var(--texte-2); }
 /* Crayon du solde espèces : petit lien discret sous la carte */
 .st-key-crayon_solde button { padding: 0.1rem 0.5rem; min-height: 0; font-size: 0.8rem; }
+
+/* ---------- Prise en main (14/11/2026) : bienvenue, bandeau d'exemple, « Ce qu'il faut retenir » ---------- */
+.bienvenue { background: var(--fond-carte); border: 1px solid var(--bordure); border-left: 4px solid var(--primaire);
+             border-radius: 10px; padding: 1rem 1.2rem; margin-bottom: 0.6rem; }
+.bienvenue-titre { font-size: 1.15rem; font-weight: 700; color: var(--texte); }
+.bienvenue-sous-titre { font-size: 0.85rem; color: var(--texte-2); margin: 0.15rem 0 0.8rem 0; }
+.bienvenue-etapes { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 0.8rem; }
+.bienvenue-etape { display: flex; gap: 0.6rem; align-items: flex-start; }
+.bienvenue-num { flex: none; width: 1.7rem; height: 1.7rem; border-radius: 50%; background: var(--primaire);
+                 color: #fff; font-weight: 700; display: flex; align-items: center; justify-content: center;
+                 font-size: 0.85rem; }
+.bienvenue-etape-titre { font-weight: 600; font-size: 0.9rem; color: var(--texte); }
+.bienvenue-etape-texte { font-size: 0.8rem; color: var(--texte-2); }
+.bandeau-exemple { font-size: 0.82rem; color: var(--attention); background: #fff7e8; border: 1px solid #f3d9a8;
+                   border-radius: 8px; padding: 0.45rem 0.8rem; margin-bottom: 0.6rem; }
+.retenir { background: var(--fond-doux); border: 1px solid var(--bordure); border-radius: 10px;
+           padding: 0.7rem 1rem; margin: 0.4rem 0 0.8rem 0; }
+.retenir-titre { font-size: 0.72rem; letter-spacing: 0.05em; text-transform: uppercase; font-weight: 700;
+                 color: var(--texte-2); margin-bottom: 0.3rem; }
+.retenir ul { margin: 0; padding-left: 0; list-style: none; }
+.retenir li { font-size: 0.9rem; color: var(--texte); margin: 0.2rem 0; display: flex; gap: 0.55rem;
+              align-items: baseline; }
+.retenir-point { flex: none; width: 0.55rem; height: 0.55rem; border-radius: 50%; display: inline-block;
+                 background: var(--texte-3); transform: translateY(-1px); }
+.retenir-point.positive { background: var(--positif); }
+.retenir-point.negative { background: var(--negatif); }
+.retenir-point.attention { background: var(--attention); }
+@keyframes depot-pulse { 0%, 100% { outline-color: var(--primaire); } 50% { outline-color: transparent; } }

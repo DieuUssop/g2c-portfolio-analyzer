@@ -53,6 +53,14 @@ def _p0(x):
     return pct(x, signe=False, decimales=0)
 
 
+def constats_du_portefeuille(res, cle):
+    """Constats du diagnostic avec le profil choisi dans l'onglet Expositions (Équilibré par défaut) :
+    repris par « Ce qu'il faut retenir » (Vue d'ensemble) et par l'export Excel."""
+    transp, div, _, doublons = _calculs(cle, res)
+    profil = st.session_state.get("profil_expositions") or "Équilibré"
+    return ex.diagnostic(res["positions"], transp, div, profil=profil, f_pct=_p0, f_nom=td, doublons=doublons)
+
+
 def _p1(x):
     return pct(x, signe=False, decimales=1)
 

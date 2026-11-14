@@ -173,13 +173,26 @@ def _fiscalite(res, cible=None, session_compte=None):
     # Sortie aujourd'hui
     lignes = fiscalite.comparer_enveloppes(resume["gain_total"], resume["montant_investi"], anciennetes,
                                            resume["dividendes"], situation, taux)
+    # Type de compte connu (espace personnel) : sa fiscalité passe en premier, les autres pour comparaison
+    reelle = (cible or {}).get("enveloppe")
+    if reelle in {l["enveloppe"] for l in lignes}:
+        lignes = sorted(lignes, key=lambda l: l["enveloppe"] != reelle)
+        html(ui.note(t("Ce portefeuille est enregistré comme {enveloppe} : c'est la carte « Sortie {enveloppe} » qui "
+                       "s'applique. Les autres enveloppes sont données pour comparaison.", enveloppe=td(reelle))))
+    elif (cible or {}).get("type") == "consolide":
+        html(ui.note(t("Vue « Tous mes comptes » : chaque carte suppose que tout le portefeuille est dans la même "
+                       "enveloppe. Pour la fiscalité réelle, ouvrez chaque compte séparément."), attention=True))
+    elif (cible or {}).get("type") == "perso":
+        st.caption(t("Astuce : indiquez le type de ce compte (PEA, CTO, assurance-vie) dans « Mon compte » pour "
+                     "mettre sa fiscalité en avant."))
     cartes = []
     for ligne in lignes:
         attente = ligne["annees_avant_avantage"]
         detail = (t("Pas d'avantage lié à la durée") if attente is None else
                   t("Avantage fiscal acquis") if attente == 0 else
                   t("Avantage fiscal dans {n} an(s)", n=nombre(attente, 1)))
-        cartes.append(ui.carte(t("Sortie {enveloppe}", enveloppe=td(ligne["enveloppe"])),
+        cartes.append(ui.carte(t("Sortie {enveloppe}", enveloppe=td(ligne["enveloppe"]))
+                               + (" · " + t("votre compte") if ligne["enveloppe"] == reelle else ""),
                                euros(ligne["gain_net"], signe=True),
                                detail=ui.pastille(t("impôts {taux}", taux=pct(ligne["taux_effectif"], signe=False,
                                                                                 decimales=1)), "neutre")

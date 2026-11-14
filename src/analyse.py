@@ -10,6 +10,7 @@ contient aucun affichage : elle renvoie seulement des résultats. Avantage :
 on peut la tester sans lancer l'interface.
 """
 
+import threading
 from pathlib import Path
 
 import pandas as pd
@@ -25,6 +26,24 @@ from .portfolio import Portfolio
 
 
 CHEMIN_REFERENTIEL = Path(__file__).resolve().parent.parent / "data" / "referentiel.csv"
+
+# Avancement du calcul (barre de progression du tableau de bord) : une fonction (part de 0 à 1, texte)
+# propre à chaque visiteur (threading.local : Streamlit sert chaque visiteur dans son propre fil).
+_avancement = threading.local()
+
+
+def suivre_avancement(fonction):
+    """Indique la fonction à appeler à chaque étape (None pour arrêter)."""
+    _avancement.fonction = fonction
+
+
+def _etape(part, texte):
+    fonction = getattr(_avancement, "fonction", None)
+    if fonction is not None:
+        try:
+            fonction(part, texte)
+        except Exception:
+            pass                                 # l'affichage de l'avancement ne bloque jamais le calcul
 
 
 def charger_fiches():
@@ -141,6 +160,7 @@ def analyse_complete(source_csv,
                  (par exemple un fichier envoyé depuis le tableau de bord).
     """
     # Étape 1 : les transactions, telles que saisies (vérification du fichier)
+    _etape(0.05, "Lecture des opérations")
     brut = Portfolio(source_csv)
     especes = brut.especes                       # versements, retraits, frais de compte (pas des titres)
     # Titres saisis par leur code ISIN (« FR0011550185 ») : remplacés par leur ticker Yahoo (« ESE.PA »), pour
@@ -162,6 +182,7 @@ def analyse_complete(source_csv,
     etrangeres = devises_etrangeres(info_devises)
     tickers_change = [ticker_change(d) for d in etrangeres]
 
+    _etape(0.2, "Téléchargement des cours (Yahoo Finance)")
     # Étape 3 : historique des cours (titres + indice + taux de change, en un seul
     # téléchargement : le cache hors ligne contient ainsi tout le nécessaire)
     prix_hist_brut, source_hist = obtenir_historique(tous + tickers_change, brut.date_debut())
@@ -206,6 +227,7 @@ def analyse_complete(source_csv,
     colonnes_titres = [c for c in tous if c in prix_hist_brut.columns]
     prix_hist = prix_hist_brut[colonnes_titres].dropna(how="all")
 
+    _etape(0.55, "Conversion en euros")
     # Conversion en euros (si nécessaire) des transactions et des cours passés
     if etrangeres:
         portefeuille = Portfolio(convertir_transactions(brut.transactions, info_devises, taux_hist))
@@ -232,6 +254,7 @@ def analyse_complete(source_csv,
     prix = convertir_cours(prix, info_devises, taux_actuels)
     positions = portefeuille.valoriser(prix)
     positions["devise"] = [info_devises.get(t, ("EUR", 1.0))[0] for t in positions.index]
+    _etape(0.7, "Classement des titres (pays, secteurs)")
     # Classement de chaque titre (classe d'actifs, région, pays, secteur : src/classement.py) :
     # fiche du référentiel ou de la base locale, ETF selon l'indice suivi, valeurs françaises,
     # puis Yahoo Finance (avec Internet) pour les titres restés non classés
@@ -254,6 +277,7 @@ def analyse_complete(source_csv,
     # Étape 3 (suite) : historique du portefeuille, en euros
     histo = portefeuille.historique(prix_hist)
 
+    _etape(0.85, "Calcul des indicateurs de performance et de risque")
     # Étapes 4 et 5 : indicateurs
     indicateurs = calculer_indicateurs(histo)
     avances = calculer_indicateurs_avances(
