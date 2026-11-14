@@ -206,7 +206,10 @@ def doublons_probables(positions, transp, fiches=None):
             elif indice in ("S&P 500", "US Total Market"):
                 dans = dans or (pays == "États-Unis" and (not appartenance or "S&P 500" in appartenance))
             if dans:
-                resultat.append({"ticker": ticker, "nom": p.get("nom", ticker), "indice": indice})
+                total = positions["valeur"].sum() if "valeur" in positions.columns else 0
+                resultat.append({"ticker": ticker, "nom": p.get("nom", ticker), "indice": indice,
+                                 # poids de la ligne détenue en direct (la part via l'ETF n'est pas connue au titre près)
+                                 "exposition": float(p.get("valeur", 0) / total) if total else 1.0})
                 break
     return resultat
 
@@ -426,13 +429,20 @@ def qualificatif(rho):
 # 5. Le diagnostic : constats, risques, pistes
 # ======================================================================
 # Seuils par famille de profil (prudent, équilibré, dynamique)
+# pays / secteur : (écart au marché mondial « à surveiller », « à corriger ») ; pays_seul : poids d'un pays hors
+# États-Unis au-delà duquel c'est « à corriger » ; secteur_poids : (poids « à surveiller », « à corriger ») ;
+# defensifs : part minimale de secteurs défensifs ; doublon : exposition totale minimale à un titre détenu en
+# direct ET via un ETF pour le signaler. Un profil dynamique accepte des paris plus marqués.
 SEUILS = {
     "prudent":   {"devises": (0.30, 0.50), "emergents": (0.10, 0.20), "ligne": (0.05, 0.10),
-                  "duration": (5.0, 8.0)},
+                  "duration": (5.0, 8.0), "pays": (0.10, 0.20), "pays_seul": 0.35, "secteur": (0.06, 0.12),
+                  "secteur_poids": (0.25, 0.35), "defensifs": 0.15, "doublon": 0.03},
     "equilibre": {"devises": (0.50, 0.70), "emergents": (0.20, 0.30), "ligne": (0.07, 0.10),
-                  "duration": (7.0, 10.0)},
+                  "duration": (7.0, 10.0), "pays": (0.15, 0.25), "pays_seul": 0.40, "secteur": (0.08, 0.15),
+                  "secteur_poids": (0.30, 0.40), "defensifs": 0.10, "doublon": 0.04},
     "dynamique": {"devises": (0.70, 0.85), "emergents": (0.25, 0.40), "ligne": (0.10, 0.15),
-                  "duration": (8.0, 12.0)},
+                  "duration": (8.0, 12.0), "pays": (0.20, 0.35), "pays_seul": 0.50, "secteur": (0.12, 0.25),
+                  "secteur_poids": (0.40, 0.50), "defensifs": 0.05, "doublon": 0.05},
 }
 PROFILS = ["Prudent", "Équilibré", "Dynamique"]       # choix proposés dans l'onglet « Expositions »
 FAMILLE_PROFIL = {"Prudent": "prudent", "Équilibré": "equilibre", "Dynamique": "dynamique"}
@@ -467,9 +477,15 @@ def diagnostic(positions, transp, div=None, profil="Équilibré", f_pct=None, f_
     if part_actions > 0.05:
         pays = repartition(transp, "pays", "Actions", normaliser=True).drop(NON_CLASSE, errors="ignore")
         monde = ce.pays_de("MSCI ACWI")
+        france = pays.get("France", 0)
+        biais_domestique = france > 0.15 and france > 4 * monde.get("France", 0)
         for nom_pays, poids in pays.head(3).items():
             ecart = poids - monde.get(nom_pays, 0)
-            if ecart > 0.25 or (nom_pays != "États-Unis" and poids > 0.40):
+            if nom_pays == "France" and biais_domestique and not (ecart > s["pays"][1] or poids > s["pays_seul"]):
+                continue                     # dit une seule fois, par le constat « biais domestique » ci-dessous
+            if ecart > s["pays"][1] or (nom_pays != "États-Unis" and poids > s["pays_seul"]):
+                if nom_pays == "France":
+                    biais_domestique = False  # déjà signalé ici, plus fort
                 constats.append(_constat(
                     "geographie", "alerte", "{pays} pèse {poids} de la poche actions ({monde} dans le marché mondial).",
                     "Votre performance dépend fortement de l'économie, de la politique et de la monnaie d'un seul "
@@ -478,20 +494,21 @@ def diagnostic(positions, transp, div=None, profil="Équilibré", f_pct=None, f_
                     ["Diversifier une partie de cette poche avec un ETF monde (MSCI World ou ACWI).",
                      "Renforcer les zones sous-représentées plutôt que de vendre, si la fiscalité l'impose."],
                     pays=f_nom(nom_pays), poids=f_pct(poids), monde=f_pct(monde.get(nom_pays, 0))))
-            elif ecart > 0.15:
+            elif ecart > s["pays"][0]:
                 constats.append(_constat(
                     "geographie", "attention", "{pays} pèse {poids} de la poche actions ({monde} dans le marché mondial).",
                     "Surpondération marquée d'un pays par rapport au marché mondial.",
                     ["Vérifier que ce choix est volontaire (conviction, biais domestique)."],
                     pays=f_nom(nom_pays), poids=f_pct(poids), monde=f_pct(monde.get(nom_pays, 0))))
-        france = pays.get("France", 0)
-        if france > 0.15 and france > 4 * monde.get("France", 0):
+        if biais_domestique:
             constats.append(_constat(
-                "geographie", "attention", "Biais domestique : la France représente {poids} de la poche actions.",
+                "geographie", "attention", "Biais domestique : la France représente {poids} de la poche actions "
+                "({monde} dans le marché mondial).",
                 "Les investisseurs surpondèrent souvent leur propre pays : le patrimoine (emploi, immobilier) "
                 "est alors déjà exposé à la même économie.",
-                ["Un ETF monde éligible au PEA permet de garder l'enveloppe tout en diversifiant."],
-                poids=f_pct(france)))
+                ["Vérifier que ce choix est volontaire (conviction, biais domestique).",
+                 "Un ETF monde éligible au PEA permet de garder l'enveloppe tout en diversifiant."],
+                poids=f_pct(france), monde=f_pct(monde.get("France", 0))))
         emergents = repartition(transp, "region", "Actions", normaliser=True).get("Émergents", 0)
         if emergents > s["emergents"][0]:
             constats.append(_constat(
@@ -512,9 +529,9 @@ def diagnostic(positions, transp, div=None, profil="Équilibré", f_pct=None, f_
         alerte_secteur = False
         for nom_sect, poids in secteurs.head(3).items():
             ecart = poids - ref.get(nom_sect, 0)
-            if poids > 0.40 or ecart > 0.15:
+            if poids > s["secteur_poids"][1] or ecart > s["secteur"][1]:
                 niveau = "alerte"
-            elif poids > 0.30 or ecart > 0.08:
+            elif poids > s["secteur_poids"][0] or ecart > s["secteur"][0]:
                 niveau = "attention"
             else:
                 continue
@@ -528,7 +545,7 @@ def diagnostic(positions, transp, div=None, profil="Équilibré", f_pct=None, f_
                  "base, services publics).", "Un ETF monde équipondéré ou sectoriel peut corriger le biais."],
                 secteur=f_nom(nom_sect), poids=f_pct(poids), monde=f_pct(ref.get(nom_sect, 0))))
         defensifs = sum(secteurs.get(x, 0) for x in ["Santé", "Consommation de base", "Services publics"])
-        if len(secteurs) and defensifs < 0.10:
+        if len(secteurs) and defensifs < s["defensifs"]:
             constats.append(_constat(
                 "secteurs", "attention", "Peu de secteurs défensifs : {poids} (santé, consommation de base, "
                 "services publics).",
@@ -579,6 +596,8 @@ def diagnostic(positions, transp, div=None, profil="Équilibré", f_pct=None, f_
             "Au-delà, le portefeuille dépend de quelques entreprises.",
             ["Ramener certaines lignes sous 5 % ou ajouter des ETF diversifiés."],
             n=conc["nb_actions_plus_5"], poids=f_pct(conc["actions_plus_5"])))
+    # doublon direct + ETF : seulement si l'exposition totale au titre compte vraiment (sinon, du bruit)
+    doublons = [d for d in (doublons or []) if d.get("exposition", 1.0) >= s["doublon"]]
     if doublons:
         noms = ", ".join(d["nom"] for d in doublons[:4]) + ("…" if len(doublons) > 4 else "")
         constats.append(_constat(

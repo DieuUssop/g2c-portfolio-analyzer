@@ -23,7 +23,7 @@ python -m streamlit run app.py                     # ouvre l'application
 python -m pytest                                   # vérifie que tout fonctionne
 ```
 
-Si `python -m pytest` affiche « 330 passed » (ou plus), l'installation est bonne.
+Si `python -m pytest` affiche « 342 passed » (ou plus), l'installation est bonne.
 
 ## 2. Travailler avec Claude
 

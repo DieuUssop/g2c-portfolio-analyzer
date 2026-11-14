@@ -188,6 +188,17 @@ def analyse_complete(source_csv,
     transactions_ost, operations_appliquees = appliquer_operations_connues(brut.transactions, prix_hist_brut)
     if operations_appliquees:
         brut = Portfolio(transactions_ost)
+    # même ETF sous deux tickers (Paris et Cboe Europe « .XC »…) : une seule ligne, si les cours concordent
+    from .import_fichier import regrouper_cotations
+    regroupees, remplacements = regrouper_cotations(brut.transactions)
+    def _dernier(tk):
+        serie = prix_hist_brut[tk].dropna() if tk in prix_hist_brut.columns else pd.Series(dtype=float)
+        return float(serie.iloc[-1]) if len(serie) else None
+    remplacements = {a: b for a, b in remplacements.items()
+                     if _dernier(a) and _dernier(b) and abs(_dernier(a) / _dernier(b) - 1) < 0.05}
+    if remplacements:
+        brut = Portfolio(brut.transactions.assign(ticker=brut.transactions["ticker"].replace(remplacements)))
+        brut.especes = especes
     taux_hist = prix_hist_brut[tickers_change].copy()
     taux_hist.columns = etrangeres
     # On ne garde que les jours où au moins un titre a coté (les marchés des

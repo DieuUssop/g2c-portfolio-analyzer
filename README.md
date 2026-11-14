@@ -13,7 +13,7 @@ un tableau de bord web interactif et dans un rapport PDF généré automatiqueme
 
 | Domaine | Ce que fait l'outil |
 |---|---|
-| **Suivi** | PRU, plus-values latentes (titres détenus) et réalisées (titres vendus) affichées séparément, frais de transaction par ligne, **espèces** (versements, retraits, frais de compte et prélèvements lus dans les relevés ; solde espèces modifiable au crayon puis tenu à jour automatiquement, solde négatif refusé ; valeur du compte) ; titres mal reconnus signalés et corrigeables au crayon ; « Signaler un problème » : message libre envoyé par e-mail, dividendes (brut, retenues à la source, net), frais, valorisation quotidienne, titres en devises étrangères convertis en euros avec **effet marché / effet change** séparés ; divisions d'actions oubliées détectées (Yahoo Finance) et ajustées après confirmation ; titres reçus sans prix (scission) signalés |
+| **Suivi** | PRU, plus-values latentes (titres détenus) et réalisées (titres vendus) affichées séparément, frais de transaction par ligne, **espèces** (versements, retraits, frais de compte et prélèvements lus dans les relevés ; solde espèces modifiable au crayon puis tenu à jour automatiquement, solde négatif refusé ; valeur du compte) ; titres mal reconnus signalés et corrigeables au crayon ; « Signaler un problème » : message libre envoyé par e-mail ; courbe d'une seule ligne (valeur, cours avec achats / ventes et PRU, comparaison à l'indice), dividendes (brut, retenues à la source, net), frais, valorisation quotidienne, titres en devises étrangères convertis en euros avec **effet marché / effet change** séparés ; divisions d'actions oubliées détectées (Yahoo Finance) et ajustées après confirmation ; titres reçus sans prix (scission) signalés |
 | **Performance** | TWR (total, annualisé, par année civile), TRI, comparaison avec un indice de référence |
 | **Risque** | Volatilité, maximum drawdown, VaR historique, loi normale et Cornish-Fisher, CVaR ; distribution des rendements comparée à la loi normale (asymétrie, kurtosis, test de Jarque-Bera) ; corrélations |
 | **Performance relative** | Ratios de Sharpe et de Sortino, bêta, alpha de Jensen, tracking error, ratio d'information |
@@ -30,7 +30,7 @@ un tableau de bord web interactif et dans un rapport PDF généré automatiqueme
 | **Expositions** | Analyse en transparence (ETF répartis selon leur indice) : carte du monde, pays, secteurs, devise réelle, concentration (règle 5/10/40), sensibilité aux taux, diversification réelle (blocs de titres corrélés, ratio de diversification) ; diagnostic vert / orange / rouge avec risques et pistes, selon le profil — voir docs/GUIDE_EXPOSITIONS.md |
 | **Indices de référence** | 14 indices : actions (monde, États-Unis, Europe, France, émergents), obligations, monétaire (€STR) et mixtes 20/80, 60/40, 80/20 calculés par l'outil |
 | **Mise à jour** | Ajout de nouvelles opérations sans renvoyer tout l'historique (avis d'opéré PDF, Excel, CSV, saisie manuelle), doublons détectés, contrôles ; suppression ou correction de n'importe quelle opération (onglet Transactions) ; annulation de la dernière modification |
-| **Fiabilité** | 330 tests automatiques, contrôle croisé du gain total, base cumulative hors ligne |
+| **Fiabilité** | 342 tests automatiques, contrôle croisé du gain total, base cumulative hors ligne |
 
 ## Reprendre le projet (promotions suivantes)
 
@@ -69,7 +69,7 @@ python generer_portefeuille_diversifie.py           # crée le portefeuille dive
 python construire_base_titres.py                    # base locale hors connexion (≈ 1 h, une fois)
 python construire_base_titres.py --mise-a-jour      # ajoute les derniers cours (quelques minutes)
 python mettre_a_jour_titres.py                      # listes officielles Euronext et Xetra (quelques minutes)
-python -m pytest                                    # lance les 330 tests
+python -m pytest                                    # lance les 342 tests
 ```
 
 Python 3.11 ou plus récent est nécessaire, ainsi qu'une connexion Internet pour l'installation.
@@ -181,7 +181,7 @@ portfolio_tracker/
 │   ├── theme.py                     # mode clair / nuit
 │   └── rapport.py                   # rapport PDF (reportlab)
 ├── assets/style.css · assets/icone.ico · .streamlit/config.toml   # apparence du tableau de bord
-├── tests/                           # 330 tests automatiques (pytest)
+├── tests/                           # 342 tests automatiques (pytest)
 └── docs/                            # guides pas à pas ; docs/manuel/ : le manuel (fr, en, Word, PDF)
 ```
 

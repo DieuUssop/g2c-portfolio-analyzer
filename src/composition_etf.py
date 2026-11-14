@@ -113,9 +113,11 @@ _AMERIQUE_LATINE = ("Brésil", "Mexique", "Chili", "Pérou", "Colombie")
 _ZONE_EURO = ("France", "Allemagne", "Pays-Bas", "Espagne", "Italie", "Belgique", "Finlande", "Irlande", "Autriche",
               "Portugal", "Luxembourg", "Grèce", "Slovaquie", "Slovénie")
 # Ordres de grandeur 2025-2026 (fiches des indices et des émetteurs d'ETF) : à revoir une fois par an
-_ASIE_PACIFIQUE_HORS_JAPON = {"Chine": 24, "Taïwan": 20, "Inde": 17, "Australie": 15, "Corée du Sud": 11,
-                              "Hong Kong": 4.5, "Singapour": 3.5, "Indonésie": 1.3, "Malaisie": 1.3,
-                              "Thaïlande": 1.1, "Philippines": 0.4, "Nouvelle-Zélande": 0.4}
+# MSCI AC Asia Pacific ex Japan : répartition de l'indice d'après la fiche mensuelle Amundi de l'ETF PAEJ
+# (FR0011869312) au 31/10/2026 (« Autres pays » 1 % réparti entre Indonésie, Philippines, Nouvelle-Zélande)
+_ASIE_PACIFIQUE_HORS_JAPON = {"Taïwan": 28.5, "Corée du Sud": 19.7, "Chine": 19.1, "Australie": 12.2, "Inde": 11.2,
+                              "Hong Kong": 3.3, "Singapour": 3.2, "Thaïlande": 0.9, "Malaisie": 0.9,
+                              "Indonésie": 0.5, "Philippines": 0.3, "Nouvelle-Zélande": 0.2}
 _ASIE_HORS_JAPON = {p: v for p, v in _ASIE_PACIFIQUE_HORS_JAPON.items() if p not in ("Australie", "Nouvelle-Zélande")}
 _PACIFIQUE_HORS_JAPON = {"Australie": 63, "Hong Kong": 18, "Singapour": 15, "Nouvelle-Zélande": 2.5}
 _PACIFIQUE = {"Japon": 65, "Australie": 22, "Hong Kong": 6.5, "Singapour": 5, "Nouvelle-Zélande": 1}
@@ -356,7 +358,8 @@ ETF_INDICE = {
     "EWJ": "MSCI Japan", "PTPXE.PA": "MSCI Japan", "RS2K.PA": "Russell 2000", "IUSN.DE": "MSCI World Small Cap",
     "WSML.L": "MSCI World Small Cap", "MCHI": "MSCI China", "FXI": "MSCI China", "INDA": "MSCI India",
     "EWZ": "MSCI Brazil", "EWY": "MSCI Korea", "EWT": "MSCI Taiwan", "EWU": "FTSE 100", "EWL": "MSCI Switzerland",
-    "EWC": "MSCI Canada", "EWA": "MSCI Australia", "AAXJ": "MSCI AC Asia ex Japan", "RSP": "S&P 500 Equal Weight",
+    "EWC": "MSCI Canada", "EWA": "MSCI Australia", "AAXJ": "MSCI AC Asia ex Japan",
+    "PAEJ.PA": "MSCI AC Asia Pacific ex Japan",       # Amundi PEA Asie Pacifique (fiche Amundi, FR0011869312) "RSP": "S&P 500 Equal Weight",
     "IJR": "Russell 2000", "VB": "Russell 2000", "VGK": "MSCI Europe", "EZU": "MSCI EMU",
     "BNDX": "Obligations agrégées mondiales", "VCIT": "Obligations d'entreprises américaines",
     "IUSB": "Emprunts d'État américains", "GOVT": "Emprunts d'État américains",
@@ -398,6 +401,10 @@ MOTIFS_NOM = [
     (r"(asia|asie)[ -]?(pac|pacific|pacifique)[a-z]*.*ex[ -]?(jap|japan|japon)|"
      r"apac.*ex[ -]?(jap|japan)|(all country|\bac\b).*(asia|asie).*(pac|pacific).*ex", "MSCI AC Asia Pacific ex Japan"),
     (r"(pacific|pacifique).*ex[ -]?(jap|japan|japon)", "MSCI Pacific ex Japan"),
+    # « Asie Pacifique » sans autre précision (« Amundi PEA Asie Pacifique ») : c'est l'Asie-Pacifique hors
+    # Japon (MSCI AC Asia Pacific ex Japan : Taïwan, Corée, Chine, Australie, Inde…), pas le « MSCI Pacific »
+    # (Japon, Australie, Hong Kong, Singapour, Nouvelle-Zélande) ni le Pacifique seul (surtout l'Australie)
+    (r"(asia|asie)[ -]?(pac|pacific|pacifique)\b", "MSCI AC Asia Pacific ex Japan"),
     (r"(asia|asie).*ex[ -]?(jap|japan|japon)|far east ex|asia 50|asie hors japon", "MSCI AC Asia ex Japan"),
     (r"(emerging|emergent|émergent|\bem\b).*(asia|asie)|(asia|asie).*(emerging|émergente?|emergente?)",
      "MSCI EM Asia"),
@@ -460,7 +467,7 @@ ABREVIATIONS = {
     "XTR": "xtrackers", "XTRA": "xtrackers", "DBX": "xtrackers", "BNPP": "bnp paribas", "VANG": "vanguard",
     "INV": "invesco", "HSBC": "hsbc", "UBS": "ubs", "WT": "wisdomtree", "SPDR": "spdr",
     "P": "pea", "M": "msci", "AC": "all country", "AP": "asia pacific", "APAC": "asia pacific",
-    "PAC": "pacific", "JAP": "japan", "JPN": "japan", "JP": "japan", "EXJAP": "ex japan", "XJ": "ex japan",
+    "PAC": "pacific", "JAP": "japan", "JPN": "japan", "JP": "japan", "EXJAP": "ex japan", "XJ": "ex japan", "EXJ": "ex japan", "EXJP": "ex japan",
     "EMER": "emerging", "EMERG": "emerging", "EMRG": "emerging", "EMG": "emerging", "EME": "emerging",
     "EMKT": "emerging markets", "WLD": "world", "WRLD": "world", "WORL": "world", "MOND": "monde",
     "STX": "stoxx", "ESTX": "euro stoxx", "SP": "s&p", "NASD": "nasdaq", "NSDQ": "nasdaq", "NDX": "nasdaq",

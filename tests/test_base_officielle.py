@@ -39,8 +39,10 @@ def test_fiches_classees_et_base_completee():
     assert (fiches["SAP.DE"]["pays"], fiches["SAP.DE"]["region"]) == ("Allemagne", "Europe")
     base_titres.ajouter_titres(list(fiches.values()))
     # l'ISIN d'un avis d'opéré est retrouvé hors connexion, avec son ticker Yahoo
+    # (FR0011869312 est dans la table des ISIN intégrée : PAEJ.PA, son vrai ticker de Paris, d'après la fiche
+    #  Amundi ; elle passe avant la base, dont l'extrait de test ci-dessus est fictif)
     trouve = base_titres.chercher_localement("FR0011869312")
-    assert trouve and trouve[0]["symbol"] == "PAASI.PA"
+    assert trouve and trouve[0]["symbol"] == "PAEJ.PA"
     # un avis au libellé illisible : le nom officiel de la base permet de classer l'ETF
     fiche = base_titres.lire_titres().loc["PAASI.PA"].to_dict()
     k = classement.classer("PAASI.PA", "ETF XYZ", fiche)

@@ -1493,6 +1493,11 @@ def _meilleur_resultat(resultats, isin=None):
               ("EQUITY", "ETF", "MUTUALFUND", "INDEX")]
     if not utiles:
         return None
+    # places secondaires (Cboe Europe, Londres « IOB », bourses régionales allemandes, EuroTLX) : cours peu
+    # fiables ou en d'autres devises, et le même titre se retrouverait sur deux lignes ; écartées s'il existe
+    # une autre cotation
+    principales = [r for r in utiles if _suffixe(r["symbol"]) not in SUFFIXES_SECONDAIRES]
+    utiles = principales or utiles
     ordre = SUFFIXE_PAR_PAYS.get(isin[:2], []) if isin else []
     ordre = ordre + [".PA", ".DE", ".AS", ".MI", ""]
     def rang(r):
@@ -1500,6 +1505,39 @@ def _meilleur_resultat(resultats, isin=None):
         suffixe = symbole[symbole.rfind("."):] if "." in symbole else ""
         return ordre.index(suffixe) if suffixe in ordre else len(ordre)
     return min(utiles, key=rang)
+
+
+SUFFIXES_SECONDAIRES = {".XC", ".XD", ".IL", ".SG", ".DU", ".MU", ".BE", ".HM", ".HA", ".TI", ".NE", ".AQ"}
+
+
+def _suffixe(symbole):
+    symbole = str(symbole)
+    return symbole[symbole.rfind("."):].upper() if "." in symbole else ""
+
+
+def regrouper_cotations(transactions):
+    """Un même titre acheté sous deux tickers (« MSE.PA » et « MSE.XC », Paris et Cboe Europe) : les lignes de
+    la place secondaire sont ramenées sur la place principale quand le nom (ou la racine du ticker) est le même.
+    Renvoie (transactions, {ancien ticker: nouveau})."""
+    t = transactions.copy()
+    tickers = [tk for tk in t["ticker"].astype(str).unique() if tk != TICKER_ESPECES]
+    noms = t.groupby("ticker")["nom"].first().astype(str).str.upper().str.split().str.join(" ").to_dict()
+    remplacements = {}
+    for tk in tickers:
+        if _suffixe(tk) not in SUFFIXES_SECONDAIRES:
+            continue
+        racine = tk[:tk.rfind(".")].upper()
+        candidats = [a for a in tickers if a != tk and _suffixe(a) not in SUFFIXES_SECONDAIRES
+                     and (a[:a.rfind(".")].upper() == racine if "." in a else a.upper() == racine
+                          or noms.get(a) == noms.get(tk))]
+        if not candidats:
+            candidats = [a for a in tickers if a != tk and _suffixe(a) not in SUFFIXES_SECONDAIRES
+                         and noms.get(a) and noms.get(a) == noms.get(tk)]
+        if len(candidats) == 1:
+            remplacements[tk] = candidats[0]
+    if remplacements:
+        t["ticker"] = t["ticker"].replace(remplacements)
+    return t, remplacements
 
 
 def _place_preferee(symbole, isin):

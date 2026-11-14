@@ -38,7 +38,7 @@ améliorée par les promotions suivantes.
    ne pas la remplacer par une base de test.
 4. **Jamais de valeur fausse en silence.** En cas de doute à l'import, ouvrir le formulaire
    « Compléter l'opération » ou afficher un avertissement plutôt que deviner.
-5. **Tout doit passer les tests** : `python -m pytest` (330 tests au 10/11/2026). Toute
+5. **Tout doit passer les tests** : `python -m pytest` (342 tests au 14/11/2026). Toute
    correction ou fonctionnalité ajoute au moins un test.
 6. **Pas de code en double** : une amélioration de lecture doit profiter à tous les chemins
    (PDF texte, PDF image, photo, CSV, Excel).
@@ -143,6 +143,7 @@ python diagnostic_pdf.py relevé.pdf --anonyme    # ce que l'application lit dan
 | `langues.py`, `traductions.py` | Français / anglais |
 | `vues_conseil.py`, `vues_gestion.py`, `vues_expositions.py`, `vues_transactions.py` | Espaces et onglets du tableau de bord |
 | `vues_import.py`, `vues_mouvements.py`, `vues_pdf.py` | Assistant d'import, ajout d'opérations, formulaire « Compléter l'opération » |
+| `vues_ligne.py` | Courbe d'une seule ligne (valeur, cours et PRU, comparaison à l'indice) : `portfolio.suivi_ligne` |
 | `vues_compte.py`, `comptes.py`, `coffre.py` | Comptes utilisateurs, chiffrement (PBKDF2 + AES) |
 | `manuel.py`, `vues_manuel.py` | Manuel et assistant « Poser une question » (hors connexion, sans IA générative) |
 | `signalement.py`, `vues_signalement.py` | « Signaler un problème » : diagnostic anonymisé (`CONTACT` = adresse du responsable) |
@@ -185,5 +186,9 @@ python diagnostic_pdf.py relevé.pdf --anonyme    # ce que l'application lit dan
 - **ETF dont l'indice est inconnu** : région `classement.A_PRECISER` (« À préciser (ETF) »), jamais « Monde »
   deviné ; l'utilisateur corrige au crayon (« Titres à vérifier », `base_titres.corriger` →
   `data/base/corrections.csv`, prioritaire via `analyse.charger_fiches`).
+- **Seuils du diagnostic** (`expositions.SEUILS`) : pays, secteurs, défensifs et doublons dépendent aussi
+  du profil ; un même fait n'est signalé qu'une fois (biais domestique / surpondération de la France).
+- **Même titre sur deux places** (Paris et Cboe Europe « .XC ») : `import_fichier.regrouper_cotations` ramène
+  la place secondaire (`SUFFIXES_SECONDAIRES`) sur la principale si les cours concordent (analyse).
 - **Mac** : `installateur/compatibilite_mac.py` (lancé par `fabriquer_mac.sh`) remplace les bibliothèques
   compilées pour un macOS > 12 ; l'application doit s'ouvrir sur macOS 12 et plus (puces Apple).

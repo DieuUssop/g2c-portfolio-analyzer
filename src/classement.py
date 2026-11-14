@@ -178,7 +178,7 @@ MOTIF_OBLIGATION = re.compile(r"bond|govt|government|treasury|aggregate|oblig|co
 MOTIF_PEA = re.compile(r"\bpea\b", re.IGNORECASE)
 # ETF éligibles au PEA par réplication synthétique (swap) : exposition = l'indice, pas le panier détenu
 ETF_PEA_SYNTHETIQUES = {"CW8.PA", "EWLD.PA", "WPEA.PA", "DCAM.PA", "ESE.PA", "PE500.PA", "PSP5.PA", "PUST.PA",
-                        "PANX.PA", "PAEEM.PA", "PCEU.PA", "RS2K.PA", "PTPXE.PA", "PAASI.PA", "MEUD.PA"}
+                        "PANX.PA", "PAEEM.PA", "PCEU.PA", "PAEJ.PA", "RS2K.PA", "PTPXE.PA", "PAASI.PA", "MEUD.PA"}
 
 
 def est_un_etf(ticker, nom, fiche=None):

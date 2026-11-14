@@ -26,7 +26,7 @@ L'espace « Analyse du portefeuille » compte huit onglets, affichés en haut de
 - Les corrélations entre les lignes ne sont pas dans l'onglet Risque : elles se trouvent dans l'onglet [[Expositions]], sous-onglet [[Corrélations]].
 
 ## Que montre l'onglet Vue d'ensemble ?
-<!-- fiche: analyse-vue-ensemble | questions: que montre la vue d'ensemble ; à quoi servent les anneaux de couleur ; répartition par classe d'actifs ou la voir ; pourquoi la répartition par région est en pourcentage de la poche actions ; c'est quoi la part autres dans le camembert ; ou voir les pourcentages des anneaux ; les quatre cartes en bas de la vue d'ensemble ; je ne vois pas l'anneau par secteur ; graphique répartition par ligne | mots: vue d'ensemble, répartition, anneau, camembert, classe d'actifs, région, secteur, poche actions, synthèse, donut | aller: Analyse du portefeuille/Vue d'ensemble | chiffres: valeur_actuelle, gain_total, dividendes, frais_totaux -->
+<!-- fiche: analyse-vue-ensemble | questions: courbe d une seule ligne ; graphique d un etf ou d une action ; voir le cours avec mes achats ; que montre la vue d'ensemble ; à quoi servent les anneaux de couleur ; répartition par classe d'actifs ou la voir ; pourquoi la répartition par région est en pourcentage de la poche actions ; c'est quoi la part autres dans le camembert ; ou voir les pourcentages des anneaux ; les quatre cartes en bas de la vue d'ensemble ; je ne vois pas l'anneau par secteur ; graphique répartition par ligne | mots: vue d'ensemble, répartition, anneau, camembert, classe d'actifs, région, secteur, poche actions, synthèse, donut | aller: Analyse du portefeuille/Vue d'ensemble | chiffres: valeur_actuelle, gain_total, dividendes, frais_totaux -->
 
 L'onglet [[Vue d'ensemble]] donne une photographie du portefeuille en quatre blocs, de haut en bas.
 
@@ -50,6 +50,10 @@ La carte colore chaque pays selon son poids dans la **poche actions** (fiche dé
 Les trois anneaux sont calculés **en transparence** : un ETF est réparti entre les pays et les secteurs de l'indice qu'il suit. Ils ont tous la même taille ; sous chacun, une légende donne chaque part avec son pourcentage (une décimale), de la plus grande à la plus petite, et le centre de l'anneau rappelle la plus grande part. Le survol donne aussi le montant en euros.
 
 Les parts inférieures à 3 % sont regroupées dans « Autres (n) », n étant le nombre de groupes réunis ; une seule petite part garde son nom (il n'y a jamais « Autres (1) »). Chaque anneau montre au plus huit parts nommées. Les classes d'actifs ont toujours les mêmes couleurs dans le logiciel : actions en bleu, obligations en vert, or en doré, monétaire en bleu clair, comme dans les « Répartitions comparées » de l'onglet [[Optimisation]]. Un anneau qui ne compterait qu'un seul groupe (par exemple un portefeuille 100 % actions pour les classes d'actifs) n'est pas affiché.
+
+### Courbe d'une ligne
+
+Au-dessus du graphique « Évolution du portefeuille », le menu **Tout le portefeuille** permet de choisir une seule ligne (un ETF ou une action, y compris une ligne vendue). Trois vues : **Valeur** (valeur de la ligne et argent investi au PRU), **Cours et PRU** (cours du titre, PRU en pointillé, achats ▲ et ventes ▼ au prix payé), **Comparée à l'indice** (cours depuis le premier achat en base 100, face à l'indice de référence). Sous le graphique : plus-value latente, réalisée, dividendes et frais de la ligne. Le même menu existe en bas de l'onglet [[Positions]] (« Courbe d'une ligne »).
 
 ### 4. Les cartes du bas
 
@@ -1305,10 +1309,16 @@ Pour chaque règle, la première valeur fait passer à l'orange (« À surveille
 | Pays émergents dans la poche actions | 10 % / 20 % | 20 % / 30 % | 25 % / 40 % |
 | Plus grosse action détenue en direct | 5 % / 10 % | 7 % / 10 % | 10 % / 15 % |
 | Duration moyenne des obligations | 5 / 8 ans | 7 / 10 ans | 8 / 12 ans |
+| Pays : écart au marché mondial | +10 / +20 points | +15 / +25 points | +20 / +35 points |
+| Pays autre que les États-Unis (rouge au-delà de) | 35 % | 40 % | 50 % |
+| Secteur : écart au marché mondial | +6 / +12 points | +8 / +15 points | +12 / +25 points |
+| Secteur : poids dans la poche actions | 25 % / 35 % | 30 % / 40 % | 40 % / 50 % |
+| Secteurs défensifs (orange en dessous de) | 15 % | 10 % | 5 % |
+| Doublon direct + ETF (signalé au-delà de) | 3 % | 4 % | 5 % |
 
 ### Les règles identiques pour tous les profils
 
-Géographie (hors émergents), secteurs, règle 5/10/40, doublons probables et corrélations ont les mêmes seuils quel que soit le profil (voir les fiches correspondantes).
+La règle 5/10/40 et les corrélations ont les mêmes seuils quel que soit le profil (voir les fiches correspondantes). La carte « Concentration » de la synthèse indique la plus grosse **action** détenue en direct : un ETF diversifié n'est pas une concentration.
 
 ### Exemple
 
@@ -1331,14 +1341,14 @@ Le profil est gardé pendant la session ; il n'est pas enregistré dans votre co
 
 Elles s'appliquent si les actions pèsent plus de 5 % du portefeuille. Les trois premiers pays sont comparés à leur poids dans le **MSCI ACWI** (marché mondial) :
 
-- **À corriger** : un pays dépasse son poids mondial de plus de 25 points, ou un pays autre que les États-Unis pèse plus de 40 % ;
+- **À corriger** : un pays dépasse son poids mondial de plus de 25 points, ou un pays autre que les États-Unis pèse plus de 40 % (profil Équilibré ; seuils des autres profils dans la fiche précédente) ;
 - **À surveiller** : il le dépasse de plus de 15 points ;
-- **Biais domestique** (à surveiller) : la France pèse plus de 15 % **et** plus de quatre fois son poids mondial (environ 2 %) ;
+- **Biais domestique** (à surveiller) : la France pèse plus de 15 % **et** plus de quatre fois son poids mondial (environ 2 %). Il remplace alors le constat de surpondération de la France : un seul constat pour un même fait ;
 - **Pays émergents** : seuils selon le profil.
 
 ### Les règles de secteurs (poche actions)
 
-Elles s'appliquent dans les mêmes conditions. Pour les trois premiers secteurs : à corriger au-delà de 40 % ou de 15 points au-dessus du marché mondial ; à surveiller au-delà de 30 % ou de 8 points. Un constat « peu de secteurs défensifs » apparaît si santé, consommation de base et services publics totalisent moins de 10 %.
+Elles s'appliquent dans les mêmes conditions. Pour les trois premiers secteurs (profil Équilibré) : à corriger au-delà de 40 % ou de 15 points au-dessus du marché mondial ; à surveiller au-delà de 30 % ou de 8 points. Un constat « peu de secteurs défensifs » apparaît si santé, consommation de base et services publics totalisent moins de 10 %. En profil Dynamique, un secteur n'est « à corriger » qu'au-delà de 50 % ou de 25 points.
 
 ### Exemple
 

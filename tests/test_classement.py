@@ -1,5 +1,6 @@
 """Classement des titres (src/classement.py) : actions françaises, ETF selon l'indice suivi,
 ETF éligibles au PEA par swap, obligations, or, monétaire ; éligibilité au PEA."""
+import pytest
 import pandas as pd
 
 from src import classement as c
@@ -156,3 +157,22 @@ def test_symboles_des_courtiers():
         assert imp.normaliser_symbole_courtier(inchange) == inchange
     tableau = imp.resoudre_identifiants(["ESE SBF"], memoire=False, chercher=lambda q: [])
     assert tableau.iloc[0]["ticker"] == "ESE.PA" and tableau.iloc[0]["identifiant"] == "ESE SBF"
+
+
+@pytest.mark.parametrize("nom", ["Amundi PEA Asie Pacifique", "AMUNDI PEA ASIE PACIFIQUE UCITS ETF ACC",
+                                 "Amundi PEA Asie Pacifique (MSCI AC Asia Pacific Ex Japan) UCITS ETF Acc",
+                                 "AM P AP M AC AP EX JAP ETF-C"])
+def test_etf_asie_pacifique_pea_pas_seulement_australie(nom):
+    """L'Amundi PEA Asie Pacifique (PAEJ, FR0011869312) suit le MSCI AC Asia Pacific ex Japan : Taïwan, Corée,
+    Chine en tête, l'Australie ne pèse qu'environ 12 % (fiche Amundi au 31/10/2026)."""
+    from src import composition_etf as ce
+    indice = ce.indice_suivi("XYZ.PA", nom)
+    assert indice == "MSCI AC Asia Pacific ex Japan"
+    pays = ce.pays_de(indice)
+    assert pays.index[0] == "Taïwan" and pays["Australie"] < 0.15
+    assert ce.indice_suivi("PAEJ.PA", "") == indice
+
+
+def test_isin_paej():
+    from src import base_titres
+    assert base_titres.ISIN_ETF["FR0011869312"][0] == "PAEJ.PA"

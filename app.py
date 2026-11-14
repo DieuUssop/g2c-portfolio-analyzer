@@ -33,6 +33,7 @@ import streamlit as st
 from src import config, images, langues, lecture, market_data, mouvements, theme
 from src import graphiques_interactifs as gi
 from src import interface as ui
+from src import vues_ligne
 from src import (expositions, fond_de_carte, import_fichier, indices, vues_compte, vues_conseil, vues_signalement,
                  vues_transactions,
                  vues_expositions, vues_gestion, vues_import, vues_manuel, vues_mouvements, vues_pdf)
@@ -643,8 +644,18 @@ with onglets[0]:
     vues_transactions.valeurs_incoherentes(res.get("valeurs_incoherentes"))
     gauche, droite = st.columns([2, 1], gap="medium")
     with gauche, st.container(border=True):
-        html(ui.titre_section(t("Évolution du portefeuille"), t("Valeur de marché et capital investi (apports nets)")))
-        graphique(gi.fig_valeur_et_apports(histo))
+        tete, menu = st.columns([3, 2], vertical_alignment="center")
+        with menu:
+            ligne_choisie = vues_ligne.choisir_ligne(res, "vue_ensemble")       # tout le portefeuille ou une ligne
+        if ligne_choisie is None:
+            with tete:
+                html(ui.titre_section(t("Évolution du portefeuille"),
+                                      t("Valeur de marché et capital investi (apports nets)")))
+            graphique(gi.fig_valeur_et_apports(histo))
+        else:
+            with tete:
+                html(ui.titre_section(t("Évolution d'une ligne"), t("Valeur, cours et PRU, ou comparaison à l'indice")))
+            vues_ligne.afficher_ligne(res, ligne_choisie, nom_court, code_indice, "vue_ensemble", graphique)
     with droite, st.container(border=True):
         html(ui.titre_section(t("Répartition"), t("Poids de chaque ligne dans la valeur totale")))
         graphique(gi.fig_repartition(positions))
@@ -792,6 +803,12 @@ with onglets[1]:
     with st.container(border=True):
         html(ui.titre_section(t("Plus-values latentes par ligne"), t("En euros, au dernier cours connu")))
         graphique(gi.fig_plus_values(positions))
+    with st.container(border=True):
+        html(ui.titre_section(t("Courbe d'une ligne"), t("Choisissez un ETF ou une action : valeur, cours et PRU, "
+                                                        "ou comparaison à l'indice")))
+        ligne_positions = vues_ligne.choisir_ligne(res, "positions")
+        if ligne_positions is not None:
+            vues_ligne.afficher_ligne(res, ligne_positions, nom_court, code_indice, "positions", graphique)
 
 # ----------------------------------------------------------------------
 # 3. Performance

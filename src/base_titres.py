@@ -55,6 +55,7 @@ ISIN_ETF = {
     "FR0011869353": ("EWLD.PA", "Amundi PEA MSCI World UCITS ETF"),
     "IE0002XZSHO1": ("WPEA.PA", "iShares MSCI World Swap PEA UCITS ETF"),
     "FR0011550185": ("ESE.PA", "BNP Paribas Easy S&P 500 UCITS ETF"),
+    "FR0011869312": ("PAEJ.PA", "Amundi PEA Asie Pacifique (MSCI AC Asia Pacific Ex Japan) UCITS ETF Acc"),
     "FR0011871128": ("PE500.PA", "Amundi PEA S&P 500 UCITS ETF"),
     "FR0011871110": ("PUST.PA", "Amundi PEA Nasdaq-100 UCITS ETF"),
     "FR0013412020": ("PAEEM.PA", "Amundi PEA MSCI Emerging Markets UCITS ETF"),

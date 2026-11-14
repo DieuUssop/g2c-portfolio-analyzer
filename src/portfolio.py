@@ -491,3 +491,39 @@ class Portfolio:
         resultat["gain"] = resultat["valeur"] - resultat["apports_nets"]
         resultat.index.name = "date"
         return resultat
+
+
+# ----------------------------------------------------------------------
+# 6. Suivi d'une seule ligne (un ETF ou une action) : courbe par ligne
+# ----------------------------------------------------------------------
+def suivi_ligne(transactions, ticker, prix):
+    """Vie d'une ligne jour par jour, à partir de son premier achat (montants en euros).
+
+    transactions : opérations du portefeuille (en euros) ; prix : cours de clôture (colonne ticker).
+    Renvoie (tableau, operations) :
+        tableau     : date -> cours, quantite, pru, investi (quantité × PRU), valeur (quantité × cours)
+        operations  : achats et ventes de la ligne (date, type, quantite, prix)."""
+    ops = transactions[transactions["ticker"] == ticker].sort_values("date", kind="stable")
+    cours = prix[ticker].dropna().sort_index() if ticker in prix.columns else pd.Series(dtype=float)
+    if ops.empty or cours.empty:
+        return pd.DataFrame(columns=["cours", "quantite", "pru", "investi", "valeur"]), ops
+    debut = pd.Timestamp(ops["date"].min())
+    cours = cours[cours.index >= debut - pd.Timedelta(days=5)]
+    calendrier = cours.index
+    quantite, pru, etats = 0.0, 0.0, []
+    for _, o in ops.iterrows():                    # même règle que la classe Portfolio (PRU frais compris)
+        if o["type"] == "ACHAT":
+            cout = quantite * pru + o["quantite"] * o["prix"] + o["frais"]
+            quantite += o["quantite"]
+            pru = cout / quantite if quantite else 0.0
+        elif o["type"] == "VENTE":
+            quantite = max(0.0, quantite - o["quantite"])
+            pru = pru if quantite > 0 else 0.0
+        etats.append((pd.Timestamp(o["date"]), quantite, pru))
+    etat = pd.DataFrame(etats, columns=["date", "quantite", "pru"]).groupby("date").last()
+    etat = etat.reindex(calendrier.union(etat.index)).ffill().reindex(calendrier).fillna(0.0)
+    tableau = pd.DataFrame({"cours": cours, "quantite": etat["quantite"], "pru": etat["pru"]})
+    tableau["investi"] = tableau["quantite"] * tableau["pru"]
+    tableau["valeur"] = tableau["quantite"] * tableau["cours"]
+    tableau.loc[tableau["quantite"] <= 0, "pru"] = float("nan")
+    return tableau, ops[ops["type"].isin(["ACHAT", "VENTE"])][["date", "type", "quantite", "prix"]]

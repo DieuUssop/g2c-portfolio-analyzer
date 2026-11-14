@@ -971,3 +971,61 @@ def fig_effets_attribution(par_region):
     fig.update_layout(barmode="group", bargap=0.25)
     fig.update_yaxes(tickformat=".1%", zeroline=True, zerolinecolor=GRIS)
     return fig
+
+
+# ----------------------------------------------------------------------
+# Courbe d'une seule ligne (sélecteur « Tout le portefeuille / une ligne »)
+# ----------------------------------------------------------------------
+def fig_ligne_valeur(suivi):
+    """Valeur de la ligne et argent investi dans la ligne (quantité × PRU)."""
+    fig = go.Figure()
+    fig.add_trace(go.Scatter(x=suivi.index, y=suivi["investi"], name=t("Investi dans la ligne (au PRU)"),
+                             mode="lines", line=dict(color=ORANGE, width=2, shape="hv"),
+                             hovertemplate=eur("%{y:,.0f}") + f"<extra>{t('Investi')}</extra>"))
+    fig.add_trace(go.Scatter(x=suivi.index, y=suivi["valeur"], name=t("Valeur de la ligne"), mode="lines",
+                             line=dict(color=BLEU, width=2.5), fill="tonexty", fillcolor="rgba(42, 120, 214, 0.08)",
+                             hovertemplate=eur("%{y:,.0f}") + f"<extra>{t('Valeur')}</extra>"))
+    _style(fig, hauteur=400)
+    fig.update_layout(hovermode="x unified")
+    fig.update_yaxes(tickformat=",.0f", **_axe_euros("y"))
+    return _selecteur_periode(fig)
+
+
+def fig_ligne_cours(suivi, operations):
+    """Cours du titre, PRU en pointillé, achats ▲ et ventes ▼ au prix payé."""
+    fig = go.Figure()
+    fig.add_trace(go.Scatter(x=suivi.index, y=suivi["cours"], name=t("Cours"), mode="lines",
+                             line=dict(color=BLEU, width=2), hovertemplate=eur("%{y:,.2f}") + "<extra></extra>"))
+    fig.add_trace(go.Scatter(x=suivi.index, y=suivi["pru"], name=t("PRU (prix de revient)"), mode="lines",
+                             line=dict(color=ORANGE, width=1.8, dash="dot", shape="hv"),
+                             hovertemplate=eur("%{y:,.2f}") + f"<extra>{t('PRU')}</extra>"))
+    for sens, symbole, couleur, nom in (("ACHAT", "triangle-up", "#0b7a33", t("Achat")),
+                                        ("VENTE", "triangle-down", "#c0392b", t("Vente"))):
+        o = operations[operations["type"] == sens]
+        if len(o):
+            fig.add_trace(go.Scatter(
+                x=o["date"], y=o["prix"], name=nom, mode="markers",
+                marker=dict(symbol=symbole, size=12, color=couleur, line=dict(width=1, color="white")),
+                customdata=o["quantite"],
+                hovertemplate=f"{nom} " + "%{customdata:g} × " + eur("%{y:,.2f}") + "<extra></extra>"))
+    _style(fig, hauteur=400)
+    fig.update_layout(hovermode="closest")
+    fig.update_yaxes(tickformat=",.2f", **_axe_euros("y"))
+    return _selecteur_periode(fig)
+
+
+def fig_ligne_performance(cours, indice, nom_indice):
+    """Évolution du cours depuis le premier achat (base 100), comparée à l'indice de référence."""
+    tableau = pd.concat({"ligne": cours, "indice": indice}, axis=1).ffill().dropna()
+    fig = go.Figure()
+    if tableau.empty:
+        return fig
+    base = tableau.iloc[0]
+    for colonne, nom, couleur in (("ligne", t("Le titre"), BLEU), ("indice", nom_indice, GRIS_FONCE)):
+        fig.add_trace(go.Scatter(x=tableau.index, y=tableau[colonne] / base[colonne] * 100, name=nom, mode="lines",
+                                 line=dict(color=couleur, width=2.2 if colonne == "ligne" else 1.8),
+                                 hovertemplate="%{y:.1f}<extra>" + nom + "</extra>"))
+    _style(fig, hauteur=400)
+    fig.update_layout(hovermode="x unified")
+    fig.add_hline(y=100, line=dict(color="#a3a39e", width=1, dash="dot"))
+    return _selecteur_periode(fig)

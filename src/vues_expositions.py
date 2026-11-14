@@ -107,7 +107,10 @@ def afficher(res, cle, code_indice):
         "secteurs": t("1er secteur : {secteur} {poids}", secteur=td(secteurs.index[0]), poids=_p0(secteurs.iloc[0]))
         if len(secteurs) else "—",
         "devises": t("Hors euro : {poids}", poids=_p0(devises.drop(["EUR", "Or"], errors="ignore").sum())),
-        "concentration": t("Plus grosse ligne : {poids}", poids=_p1(conc["poids"].iloc[0])),
+        # la plus grosse ACTION détenue en direct (un ETF large n'est pas une concentration)
+        "concentration": (t("Plus grosse action : {nom} {poids}", nom=positions.at[conc["plus_grosse_action"][0], "nom"],
+                            poids=_p1(conc["plus_grosse_action"][1])) if conc["plus_grosse_action"]
+                          else t("Aucune action en direct (ETF diversifiés)")),
         "taux": t("Duration : {d} ans", d=nombre(tx["duration"], 1)) if tx else t("Pas d'obligations"),
         "diversification": t("Corrélation moyenne : {rho}", rho=nombre(div["moyenne"])),
     }

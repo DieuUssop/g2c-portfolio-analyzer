@@ -26,7 +26,7 @@ The "Portfolio analysis" workspace has eight tabs, displayed at the top of the m
 - Correlations between holdings are not in the Risk tab: they are in the [[Exposures]] tab, [[Correlations]] sub-tab.
 
 ## What does the Overview tab show?
-<!-- fiche: analyse-vue-ensemble | questions: what does the overview show ; what are the coloured rings for ; where do i see the breakdown by asset class ; why is the region breakdown a percentage of the equity portion ; what is the others slice in the pie chart ; where do i see the percentages of the rings ; the four cards at the bottom of the overview ; i dont see the sector ring ; allocation by holding chart | mots: overview, allocation, ring, pie chart, asset class, region, sector, equity portion, summary, donut | aller: Analyse du portefeuille/Vue d'ensemble | chiffres: valeur_actuelle, gain_total, dividendes, frais_totaux -->
+<!-- fiche: analyse-vue-ensemble | questions: chart of a single holding ; chart of one etf or share ; see the price with my purchases ; what does the overview show ; what are the coloured rings for ; where do i see the breakdown by asset class ; why is the region breakdown a percentage of the equity portion ; what is the others slice in the pie chart ; where do i see the percentages of the rings ; the four cards at the bottom of the overview ; i dont see the sector ring ; allocation by holding chart | mots: overview, allocation, ring, pie chart, asset class, region, sector, equity portion, summary, donut | aller: Analyse du portefeuille/Vue d'ensemble | chiffres: valeur_actuelle, gain_total, dividendes, frais_totaux -->
 
 The [[Overview]] tab gives a snapshot of the portfolio in four blocks, from top to bottom.
 
@@ -50,6 +50,10 @@ The map colours each country according to its weight in the **equity portion** (
 The three rings are calculated **on a look-through basis**: an ETF is split between the countries and sectors of the index it tracks. They are all the same size; under each one, a legend gives every share with its percentage (one decimal place), from largest to smallest, and the centre of the ring shows the largest share. Hovering also gives the amount in euros.
 
 Shares below 3% are grouped into "Other (n)", n being the number of groups combined; a single small share keeps its own name (there is never "Other (1)"). Each ring shows at most eight named shares. Asset classes always have the same colours throughout the software: equities in blue, bonds in green, gold in golden yellow, money market in light blue, as in the "Allocations compared" chart of the [[Optimisation]] tab. A ring that would contain only one group (for example a 100% equity portfolio for asset classes) is not displayed.
+
+### Chart of one holding
+
+Above the "Portfolio value over time" chart, the **Whole portfolio** menu lets you choose a single holding (an ETF or a share, including a sold holding). Three views: **Value** (value of the holding and money invested at average cost), **Price and average cost** (security price, average cost dotted, purchases ▲ and sales ▼ at the price paid), **Compared with the index** (price since the first purchase, base 100, against the benchmark). Under the chart: unrealised gain, realised gain, dividends and fees of the holding. The same menu is at the bottom of the [[Holdings]] tab (« Chart of one holding »).
 
 ### 4. The cards at the bottom
 
@@ -1305,10 +1309,16 @@ For each rule, the first value turns it orange ("To monitor"), the second red ("
 | Emerging countries in the equity portion | 10% / 20% | 20% / 30% | 25% / 40% |
 | Largest directly held share | 5% / 10% | 7% / 10% | 10% / 15% |
 | Average duration of bonds | 5 / 8 years | 7 / 10 years | 8 / 12 years |
+| Country: gap to the world market | +10 / +20 points | +15 / +25 points | +20 / +35 points |
+| Country other than the United States (red above) | 35% | 40% | 50% |
+| Sector: gap to the world market | +6 / +12 points | +8 / +15 points | +12 / +25 points |
+| Sector: weight in the equity portion | 25% / 35% | 30% / 40% | 40% / 50% |
+| Defensive sectors (orange below) | 15% | 10% | 5% |
+| Direct + ETF duplicate (flagged above) | 3% | 4% | 5% |
 
 ### Rules identical for all profiles
 
-Geography (excluding emerging markets), sectors, the 5/10/40 rule, likely duplicates and correlations have the same thresholds whatever the profile (see the corresponding entries).
+The 5/10/40 rule and correlations have the same thresholds whatever the profile (see the corresponding entries). The « Concentration » card of the summary shows the largest **share** held directly: a diversified ETF is not a concentration.
 
 ### Example
 
@@ -1333,12 +1343,12 @@ They apply if equities weigh more than 5% of the portfolio. The top three countr
 
 - **To fix**: a country exceeds its world weight by more than 25 points, or a country other than the United States weighs more than 40%;
 - **To monitor**: it exceeds it by more than 15 points;
-- **Home bias** (to monitor): France weighs more than 15% **and** more than four times its world weight (about 2%);
+- **Home bias** (to monitor): France weighs more than 15% **and** more than four times its world weight (about 2%). It then replaces the France overweight finding: one finding for one fact;
 - **Emerging countries**: thresholds depend on the profile.
 
 ### The sector rules (equity portion)
 
-They apply under the same conditions. For the top three sectors: to fix above 40% or 15 points above the world market; to monitor above 30% or 8 points. A "few defensive sectors" finding appears if healthcare, consumer staples and utilities total less than 10%.
+They apply under the same conditions. For the top three sectors (Balanced profile): to fix above 40% or 15 points above the world market; to monitor above 30% or 8 points. A "few defensive sectors" finding appears if healthcare, consumer staples and utilities total less than 10%. With the Dynamic profile, a sector is « to fix » only above 50% or 25 points.
 
 ### Example
 
