@@ -29,14 +29,16 @@ def classeur(res, t=lambda x, **v: x.format(**v) if v else x, constats=None, td=
     ind = res["indicateurs"]
     lignes_resume = [
         (t("Valeur actuelle"), resume["valeur_actuelle"]),
-        (t("Investi au PRU"), resume["montant_investi"]),
+        (t("Coût d'achat des titres"), resume["montant_investi"]),
         (t("Gain total"), resume["gain_total"]),
         (t("Plus-values latentes"), resume["pv_latentes"]),
         (t("Plus-values réalisées"), resume["pv_realisees"]),
         (t("Dividendes et coupons"), resume["dividendes"]),
         (t("Frais de courtage"), resume["frais_totaux"]),
         (t("Solde espèces"), resume.get("solde_especes")),
-        (t("TWR annualisé"), ind["twr_annualise"]),
+        (t("Rendement (gain ÷ coût d'achat des titres)"), resume["gain_total"] / resume["montant_investi"]
+         if resume.get("montant_investi") else None),
+        (t("TRI annuel"), ind.get("tri_annuel")),
         (t("Volatilité"), ind["volatilite"]),
         ("Max drawdown", ind["max_drawdown"]),
         (t("Période"), f"{res['historique'].index[0]:%d/%m/%Y} → {res['historique'].index[-1]:%d/%m/%Y}"),

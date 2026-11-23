@@ -85,7 +85,7 @@ Il ignore l'effet du calendrier de vos apports : pour mesurer ce que votre argen
 ## Le TWR annualisé
 <!-- fiche: formule-twr-annualise | questions: comment est calculée la performance annualisée ; twr annualisé formule ; pourquoi base 365 jours ; rendement par an ; perf annualisée énorme sur 3 mois ; convertir une performance totale en annuelle ; 21 % en deux ans ça fait combien par an | mots: annualisation, TWR annualisé, performance annualisée, rendement annuel, base 365, composition | aller: Analyse du portefeuille/Performance | chiffres: twr_annualise, twr_total -->
 
-C'est le chiffre « Perf. annualisée » des chiffres clés et la carte « TWR annualisé » de l'onglet Performance.
+Il n'est plus affiché comme carte : l'onglet Performance montre la performance des titres année par année (« Performance des titres par année civile ») et la courbe comparée à l'indice, qui reposent sur la même méthode.
 
 ### La formule
 

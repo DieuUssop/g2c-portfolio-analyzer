@@ -1,5 +1,5 @@
 """
-livret_a.py — « Et si j'avais tout mis sur un Livret A ? »
+livret_a.py — « Et si j'avais tout mis sur un Livret A ? » (et dans l'indice de référence : dans_indice)
 
 Le même argent, versé et retiré aux mêmes dates que dans le portefeuille (flux de
 Portfolio.historique), placé sur un Livret A au taux en vigueur chaque jour.
@@ -49,6 +49,32 @@ def simuler(historique):
             capital, interets = capital + interets, 0.0
         valeurs.append(capital + interets)
     return pd.Series(valeurs, index=jours).reindex(historique.index)
+
+
+def dans_indice(historique, serie_indice):
+    """Valeur jour par jour du même argent placé dans l'indice de référence (mêmes versements et retraits,
+    aux mêmes dates : chaque flux achète ou vend des « parts » d'indice au cours du jour).
+
+    serie_indice : cours de l'indice (n'importe quelle base, par exemple base 100), indexé par date.
+    Renvoie une Series (euros) alignée sur l'historique."""
+    cours = pd.Series(serie_indice).sort_index()
+    cours = cours.reindex(cours.index.union(historique.index)).ffill().bfill().reindex(historique.index)
+    parts = (historique["flux"] / cours).cumsum()
+    return parts * cours
+
+
+def comparer_tout(historique, serie_indice, valeur_actuelle):
+    """Le même argent (mêmes dates) placé dans l'indice et sur un Livret A, comparé à la valeur actuelle du
+    portefeuille (une seule source : la valeur de la carte du haut). Écarts en euros."""
+    livret = simuler(historique)
+    indice = dans_indice(historique, serie_indice) if serie_indice is not None and len(serie_indice) else None
+    resultat = {"portefeuille": float(valeur_actuelle), "livret": float(livret.iloc[-1]), "serie_livret": livret,
+                "taux_actuel": float(taux_au([historique.index[-1]]).iloc[0]), "indice": None, "serie_indice": None}
+    resultat["ecart_livret"] = resultat["portefeuille"] - resultat["livret"]
+    if indice is not None and indice.notna().any():
+        resultat["indice"], resultat["serie_indice"] = float(indice.dropna().iloc[-1]), indice
+        resultat["ecart_indice"] = resultat["portefeuille"] - resultat["indice"]
+    return resultat
 
 
 def comparer(historique):

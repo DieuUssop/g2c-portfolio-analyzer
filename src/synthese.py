@@ -2,7 +2,8 @@
 synthese.py — L'encadré « Ce qu'il faut retenir » en haut de la Vue d'ensemble : trois phrases
 écrites par des règles simples (aucune IA), à partir des chiffres déjà calculés.
 
-    1. la performance : rendement annualisé et écart avec l'indice sur la même période ;
+    1. la performance réelle : gain en euros, gain ÷ coût d'achat des titres, et l'écart avec le même argent
+       placé dans l'indice aux mêmes dates (revue du 23/11/2026 : plus de TWR) ;
     2. le principal point de vigilance : le constat le plus grave du diagnostic des expositions
        (src/expositions.py), ou « rien d'anormal » ;
     3. ce qu'on peut faire : la première piste de ce constat, ou un rappel utile (solde espèces
@@ -19,28 +20,40 @@ def _pct(x, signe=True):
     return texte.replace(".", ",")
 
 
-def phrases(res, constats=None, nom_indice="l'indice", f_pct=None, f_eur=None):
+def phrases(res, constats=None, nom_indice="l'indice", f_pct=None, f_eur=None, meme_argent=None):
     """Liste de trois (niveau, prefixe, texte, valeurs) ; niveau : "positive", "negative", "neutre",
-    "alerte", "attention" ou "ok" (pastille de couleur) ; prefixe et texte sont des clés de traduction."""
+    "alerte", "attention" ou "ok" (pastille de couleur) ; prefixe et texte sont des clés de traduction.
+
+    Revue du 23/11/2026 : la première phrase parle de la performance RÉELLE (gain en euros, gain ÷ coût
+    d'achat des titres) et la compare au même argent placé dans l'indice aux mêmes dates (meme_argent :
+    résultat de livret_a.comparer_tout), jamais au TWR."""
     f_pct = f_pct or _pct
     f_eur = f_eur or (lambda x: f"{x:+,.0f} €".replace(",", " "))
-    ind, av, resume = res["indicateurs"], res["avances"], res["resume"]
+    resume = res["resume"]
     sortie = []
 
-    # 1. performance
+    # 1. performance réelle
+    gain = resume["gain_total"]
+    rendement = gain / resume["montant_investi"] if resume.get("montant_investi") else 0.0
+    valeurs = {"gain": f_eur(gain), "rendement": f_pct(rendement), "indice": nom_indice}
     if res.get("jours_de_cotation", 99) < JOURS_MIN:
-        sortie.append(("neutre", "", "Portefeuille récent : gain actuel {gain} ; la performance annualisée sera "
-                       "significative après quelques semaines.", {"gain": f_eur(resume["gain_total"])}))
-    else:
-        ecart = av["twr_portefeuille_meme_periode"] - av["twr_indice"]
-        if abs(ecart) < 0.005:
-            texte = "Votre portefeuille rapporte {perf} par an, au même rythme que {indice} sur la même période."
+        texte = ("Portefeuille récent : gain actuel {gain} ({rendement} du coût d'achat des titres) ; la comparaison "
+                 "sera significative après quelques semaines.")
+    elif meme_argent and meme_argent.get("indice") is not None:
+        ecart = meme_argent["ecart_indice"]
+        valeurs["ecart"] = f_eur(abs(ecart)).lstrip("+")
+        if abs(ecart) < 0.005 * max(abs(meme_argent["portefeuille"]), 1):
+            texte = ("Votre portefeuille a rapporté {gain} ({rendement} du coût d'achat des titres), autant que le "
+                     "même argent placé dans {indice}.")
         elif ecart > 0:
-            texte = "Votre portefeuille rapporte {perf} par an, mieux que {indice} ({ecart} sur la même période)."
+            texte = ("Votre portefeuille a rapporté {gain} ({rendement} du coût d'achat des titres), soit {ecart} de "
+                     "plus que le même argent placé dans {indice}.")
         else:
-            texte = "Votre portefeuille rapporte {perf} par an, moins que {indice} ({ecart} sur la même période)."
-        sortie.append(("positive" if ind["twr_annualise"] >= 0 else "negative", "", texte,
-                       {"perf": f_pct(ind["twr_annualise"]), "indice": nom_indice, "ecart": f_pct(ecart)}))
+            texte = ("Votre portefeuille a rapporté {gain} ({rendement} du coût d'achat des titres), soit {ecart} de "
+                     "moins que le même argent placé dans {indice}.")
+    else:
+        texte = "Votre portefeuille a rapporté {gain} ({rendement} du coût d'achat des titres)."
+    sortie.append(("positive" if gain >= 0 else "negative", "", texte, valeurs))
 
     # 2. vigilance et 3. action
     graves = [c for c in (constats or []) if c["niveau"] in ("alerte", "attention")]

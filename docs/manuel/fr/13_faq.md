@@ -224,7 +224,7 @@ Oui : chaque personne qui utilise l'ordinateur crée son propre compte, avec son
 
 ### Plusieurs portefeuilles par compte
 
-Oui : enregistrez autant de portefeuilles que vous voulez (par exemple un PEA et un compte-titres). Ils apparaissent dans la liste de la rubrique « Données », précédés de « Mon espace ». La page [[Mon compte]] permet de les renommer, télécharger ou supprimer.
+Oui : enregistrez autant de portefeuilles que vous voulez (par exemple un PEA et un compte-titres). Ils apparaissent dans la liste de la rubrique « Portefeuille », précédés de « Mon espace ». La page [[Mon compte]] permet de les renommer, télécharger ou supprimer.
 
 ### Une vue consolidée ?
 

@@ -38,7 +38,7 @@ améliorée par les promotions suivantes.
    ne pas la remplacer par une base de test.
 4. **Jamais de valeur fausse en silence.** En cas de doute à l'import, ouvrir le formulaire
    « Compléter l'opération » ou afficher un avertissement plutôt que deviner.
-5. **Tout doit passer les tests** : `python -m pytest` (362 tests au 14/11/2026). Toute
+5. **Tout doit passer les tests** : `python -m pytest` (368 tests au 23/11/2026). Toute
    correction ou fonctionnalité ajoute au moins un test.
 6. **Pas de code en double** : une amélioration de lecture doit profiter à tous les chemins
    (PDF texte, PDF image, photo, CSV, Excel).
@@ -83,7 +83,7 @@ python diagnostic_pdf.py relevé.pdf --anonyme    # ce que l'application lit dan
 |---|---|
 | `app.py` | Tableau de bord Streamlit : barre latérale, 4 espaces, aiguillage vers les vues |
 | `main.py` | Analyse complète en ligne de commande (terminal, graphiques, rapport PDF) |
-| `lanceur.py` | Ouvre le tableau de bord dans une fenêtre d'application (utilisé par l'installateur) |
+| `lanceur.py` | Ouvre le tableau de bord dans une fenêtre d'application (utilisé par l'installateur) ; `options_fenetre` : fenêtre agrandie sous Windows (le bouton Aide n'est plus caché par la barre des tâches) |
 | `construire_base_titres.py` | Remplit la base locale hors connexion (`data/base/`) : titres et cours depuis 2015 |
 | `mettre_a_jour_titres.py` | Télécharge les listes officielles Euronext et Xetra vers `data/base/titres.csv` |
 | `diagnostic_pdf.py` | Montre ce que l'application lit dans un PDF (option `--anonyme`) |
@@ -113,10 +113,10 @@ python diagnostic_pdf.py relevé.pdf --anonyme    # ce que l'application lit dan
 | `extensions.py` | Calcul groupé des analyses complémentaires |
 | `consolidation.py` | Vue « Tous mes comptes » : portefeuilles réunis, espèces = somme des soldes de chaque compte |
 | `dividendes.py` | Dividendes par année et estimation des 12 prochains mois (dernier an × quantité détenue) |
-| `allocation.py` | Allocation cible par poche (classe et zone) et répartition du prochain versement sans vente |
-| `simulation_achat.py` | Simulateur « Et si j'achetais… » : achat fictif, volatilité ex ante, constats avant / après |
-| `livret_a.py` | Le même argent sur un Livret A (taux officiels depuis 2008, `TAUX_LIVRET_A` à compléter) |
-| `synthese.py` | Les trois phrases de « Ce qu'il faut retenir » (règles simples, sans IA) |
+| `allocation.py` | Allocation cible par poche (classe et zone), répartition du prochain versement sans vente, `versement_necessaire` pour atteindre la cible |
+| `simulation_achat.py` | Simulateur « Et si j'achetais… » : achat fictif, volatilité ex ante, constats avant / après ; `res_avec_achat` = simulation instantanée d'un titre déjà détenu |
+| `livret_a.py` | Le même argent sur un Livret A (taux officiels depuis 2008, `TAUX_LIVRET_A` à compléter) et dans l'indice (`dans_indice`, `comparer_tout`) |
+| `synthese.py` | Les trois phrases de « Ce qu'il faut retenir » (règles simples, sans IA ; performance réelle comparée au même argent dans l'indice) |
 | `export_excel.py` | Bouton « Excel » : classeur Résumé, Positions, Performance mensuelle, Transactions, Dividendes, Diagnostic |
 | `indices.py` | Indices de référence (dont composites 20/80, 60/40, 80/20) |
 | `version.py` | Numéro de version (date) |
@@ -145,15 +145,15 @@ python diagnostic_pdf.py relevé.pdf --anonyme    # ce que l'application lit dan
 
 | Fichier | Rôle |
 |---|---|
-| `interface.py`, `theme.py`, `graphiques_interactifs.py`, `fond_de_carte.py` | Briques visuelles, mode clair / nuit, graphiques Plotly, carte du monde |
+| `interface.py`, `theme.py`, `graphiques_interactifs.py`, `fond_de_carte.py` | Briques visuelles (dont `heros` : le grand bloc valeur / coût d'achat / gain, `sous_ligne`), mode clair / nuit, graphiques Plotly, carte du monde |
 | `graphiques.py`, `rapport.py`, `lecture.py` | Graphiques matplotlib, rapport PDF, phrases de lecture des graphiques |
 | `langues.py`, `traductions.py` | Français / anglais |
 | `vues_conseil.py`, `vues_gestion.py`, `vues_expositions.py`, `vues_transactions.py` | Espaces et onglets du tableau de bord |
 | `vues_import.py`, `vues_mouvements.py`, `vues_pdf.py` | Assistant d'import, ajout d'opérations, formulaire « Compléter l'opération » |
-| `vues_ligne.py` | Courbe d'une seule ligne (valeur, cours et PRU, comparaison à l'indice) : `portfolio.suivi_ligne` ; Vue d'ensemble et Performance |
+| `vues_ligne.py` | Courbe d'une seule ligne (valeur, cours et PRU, comparaison à l'indice) : `portfolio.suivi_ligne` ; Vue d'ensemble et Performance (`bloc` est un `st.fragment`) |
 | `vues_bienvenue.py` | Carte « Bienvenue », bandeau d'exemple, « Ce qu'il faut retenir », mode Essentiel / Expert |
 | `vues_allocation.py` | Onglet « Allocation cible » et simulateur « Et si j'achetais… » |
-| `vues_revenus.py` | Encadrés « Dividendes et coupons » (Positions) et « Comparé au Livret A » (Performance) |
+| `vues_revenus.py` | Encadrés « Dividendes et coupons » (Positions) et « Le même argent ailleurs » (indice et Livret A, Performance) ; `meme_argent` |
 | `vues_compte.py`, `comptes.py`, `coffre.py` | Comptes utilisateurs, chiffrement (PBKDF2 + AES) ; type de compte (PEA, CTO…), versions et journal des modifications, sauvegardes hebdomadaires |
 | `manuel.py`, `vues_manuel.py` | Manuel et assistant « Poser une question » (hors connexion, sans IA générative) |
 | `signalement.py`, `vues_signalement.py` | « Signaler un problème » : diagnostic anonymisé (`CONTACT` = adresse du responsable) |
@@ -212,6 +212,18 @@ python diagnostic_pdf.py relevé.pdf --anonyme    # ce que l'application lit dan
   layout block created outside the function »). L'analyse principale est donc gardée en mémoire par
   `analyse.analyse_memorisee` (et non `@st.cache_data`), ce qui permet la barre de progression ; vider avec
   `analyse.oublier_resultats()` en même temps que `st.cache_data.clear()`.
+- **Mode nuit et Streamlit récent** : les listes, cases, boutons segmentés et menus sont des composants
+  react-aria (`.react-aria-ComboBox`, `stSelectboxVirtualDropdown`, `button[data-variant="segmented_control"]`
+  avec `aria-checked`, `stPopoverButton`, `kind="secondary"`) : `theme.CSS_NUIT` les vise ; vérifier le rendu réel.
+- **Pourcentages dans les tableaux** : le format `"percent"` de `st.column_config.NumberColumn`
+  (`langues.pct_colonne`) attend une FRACTION (0,153 → 15,3 %) : ne pas multiplier par 100 avant.
+- **Fragments** (`@st.fragment`) : allocation cible, simulateur, courbe d'une ligne et « Trouver un titre » se
+  recalculent seuls ; un fragment ne doit pas écrire ailleurs que dans son propre bloc.
+- **Plus de TWR à l'écran** (revue du 23/11/2026) : on affiche le rendement réel (gain ÷ coût d'achat des titres),
+  le TRI et l'écart en euros avec le même argent dans l'indice ; le TWR ne sert plus qu'aux courbes et aux
+  rendements annuels (« performance des titres »).
+- **Keyence (6861.T)** : la division par 5 de 2024 est déjà appliquée dans `data/transactions_diversifie.csv`
+  (quantités × 5, prix ÷ 5), pour ne pas afficher de division en attente.
 - **Livret A** : compléter `livret_a.TAUX_LIVRET_A` à chaque changement de taux (1er février, 1er août).
 - **Mac** : `installateur/compatibilite_mac.py` (lancé par `fabriquer_mac.sh`) remplace les bibliothèques
   compilées pour un macOS > 12 ; l'application doit s'ouvrir sur macOS 12 et plus (puces Apple).

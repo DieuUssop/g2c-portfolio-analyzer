@@ -10,23 +10,24 @@ L'écran est divisé en deux parties : la **barre latérale**, à gauche, qui re
 
 ### La barre latérale, de haut en bas
 
-1. **L'en-tête** : le monogramme « PT », le nom « Portfolio Tracker » et la mention « Master G2C ». Juste dessous, sur une même ligne, deux petits sélecteurs : la langue (FR · EN) à gauche et l'affichage (Clair · Nuit) à droite ; l'option active est en gras.
+1. **L'en-tête** : le monogramme « PT », le nom « Portfolio Tracker » et la mention « Master G2C ».
 2. **L'espace personnel** : la mention « Espace personnel chiffré » et le lien [[Se connecter]]. Une fois connecté, vos initiales, votre identifiant et les liens [[Mon compte]] et [[Déconnexion]].
-3. **Espace de travail** : le menu des quatre espaces (Analyse du portefeuille, Conseil patrimonial, Gestion d'actifs, Manuel et aide), chacun avec une ligne de description grise. L'espace affiché est surligné en bleu clair, avec un trait bleu à gauche. Juste dessous, le sélecteur **Expert · Essentiel** choisit les onglets affichés (voir la fiche sur le mode Essentiel).
-4. **Données** : la liste des portefeuilles, la zone [[Envoyer un fichier (CSV, Excel, PDF ou image)]] (bouton [[Parcourir]], ou glisser-déposer le fichier), puis le lien [[Ajouter des opérations]].
-5. **Outils et paramètres** : un menu qui contient le [[Modèle de fichier]], l'[[Ouvrir l'assistant d'import]] (quand un fichier est envoyé), l'indice de référence et le taux sans risque. Son titre résume les réglages en cours. (Le niveau de confiance de la VaR se règle dans l'onglet Risque, le seul où il sert.)
-6. **Les informations** sur le portefeuille analysé : fichier, période, nombre d'opérations, provenance des cours, et les taux de change repliés sous « Taux de change ».
-7. Le bouton **Signaler un problème** et le numéro de version.
+3. **Espace de travail** : le menu des quatre espaces (Analyse du portefeuille, Conseil patrimonial, Gestion d'actifs, Manuel et aide), chacun avec une ligne de description grise. L'espace affiché est surligné en bleu clair, avec un trait bleu à gauche. 
+4. **Portefeuille** : la liste des portefeuilles, puis la zone « Importer un relevé » (bouton [[Parcourir]], ou glisser-déposer le fichier : PDF, CSV, Excel ou photo), puis le lien [[Ajouter des opérations]].
+5. **Affichage** : sur une même ligne, la langue (FR · EN) et le fond (Clair · Nuit), puis le sélecteur **Expert · Essentiel** qui choisit les onglets affichés (voir la fiche sur le mode Essentiel). L'option active est surlignée.
+6. **Outils et paramètres** : un menu qui contient le [[Modèle de fichier]], l'[[Ouvrir l'assistant d'import]] (quand un fichier est envoyé), l'indice de référence et le taux sans risque. La petite ligne grise dessous résume les réglages en cours. (Le niveau de confiance de la VaR se règle dans l'onglet Risque, le seul où il sert.)
+7. **Détails du fichier** : un menu replié qui contient les informations sur le portefeuille analysé (fichier, période, provenance des cours, taux de change). La ligne grise dessous rappelle le nombre d'opérations et la période.
+8. Le bouton **Signaler un problème** et le numéro de version.
 
-Les boutons [[Rapport PDF]], [[Excel]] et [[Actualiser les cours]] sont en haut de la zone principale, juste sous le bandeau bleu.
+Les boutons [[Rapport PDF]], [[Excel]] et [[Actualiser les cours]] sont empilés en haut à droite de la zone principale, juste sous le bandeau bleu.
 
-Le bloc 6 n'apparaît qu'une fois un portefeuille analysé : ils sont absents dans l'espace « Manuel et aide » et sur les pages « Mon compte » et « Ajouter des opérations ».
+Le bloc 7 n'apparaît qu'une fois un portefeuille analysé : ils sont absents dans l'espace « Manuel et aide » et sur les pages « Mon compte » et « Ajouter des opérations ».
 
 En bas à droite de l'écran, sur toutes les pages, le bouton [[Aide]] ouvre un petit panneau pour poser une question au manuel (voir la fiche sur la bulle d'aide).
 
 ### La zone principale
 
-Dans les espaces d'analyse, elle commence par un bandeau bleu (titre, période, indice de référence, provenance des cours), la barre de boutons [[Rapport PDF]] · [[Excel]] · [[Actualiser les cours]], puis une ligne de chiffres clés (quatre en mode Essentiel), puis des onglets de l'espace choisi. Un pied de page rappelle les sources (Yahoo Finance pour les cours, BCE pour le taux sans risque) et que l'outil est pédagogique : il ne constitue pas un conseil en investissement.
+Dans les espaces d'analyse, elle commence par un bandeau bleu (titre, période, indice de référence, provenance des cours), un grand bloc avec les trois chiffres essentiels (valeur actuelle, coût d'achat des titres, gain total) et, à sa droite, les boutons [[Rapport PDF]] · [[Excel]] · [[Actualiser les cours]], puis une ligne de petites cartes (le solde espèces seul en mode Essentiel), puis des onglets de l'espace choisi. Un pied de page rappelle les sources (Yahoo Finance pour les cours, BCE pour le taux sans risque) et que l'outil est pédagogique : il ne constitue pas un conseil en investissement.
 
 ### Si la barre latérale est masquée
 
@@ -35,7 +36,7 @@ Sur un écran étroit, la barre latérale peut être repliée. Le petit bouton e
 ## Passer le logiciel en anglais (ou revenir au français)
 <!-- fiche: ecran-langue | questions: comment mettre le logiciel en anglais ; changer la langue ; switch to english ; le tableau de bord est en anglais comment remettre en francais ; ou est le bouton FR EN ; is there an english version ; le rapport pdf peut il etre en anglais ; pourquoi certains textes restent en français | mots: langue, anglais, français, English, traduction, language, FR, EN, bilingue -->
 
-Le sélecteur de langue se trouve en haut de la barre latérale, sous le nom du logiciel, à gauche : cliquez sur **EN** pour l'anglais, sur **FR** pour le français. Le changement est immédiat, sans perdre le portefeuille ni les réglages en cours. Le français est la langue de départ.
+Le sélecteur de langue se trouve dans la rubrique **Affichage** de la barre latérale, à gauche : cliquez sur **EN** pour l'anglais, sur **FR** pour le français. Le changement est immédiat, sans perdre le portefeuille ni les réglages en cours. Le français est la langue de départ.
 
 ### Ce qui change
 
@@ -59,7 +60,7 @@ La langue est gardée pendant toute la session. Elle n'est pas enregistrée dans
 ## Activer le mode nuit (fond sombre)
 <!-- fiche: ecran-mode-nuit | questions: comment mettre le mode sombre ; dark mode ; l'écran est trop blanc ça fait mal aux yeux ; passer en mode nuit ; revenir en mode clair ; le mode nuit n'est pas gardé ; pourquoi le pdf est blanc alors que je suis en mode nuit ; mettre le fond en noir | mots: mode nuit, mode sombre, dark mode, thème, fond noir, bleu nuit, clair, affichage -->
 
-Le sélecteur d'affichage se trouve en haut de la barre latérale, sous le nom du logiciel, à droite (sur la même ligne que la langue) : cliquez sur **Nuit** pour un fond bleu nuit, sur **Clair** pour revenir au fond blanc. Le mode clair est celui de départ.
+Le sélecteur de fond se trouve dans la rubrique **Affichage** de la barre latérale, à droite (sur la même ligne que la langue) : cliquez sur **Nuit** pour un fond bleu nuit, sur **Clair** pour revenir au fond blanc. Le mode clair est celui de départ.
 
 ### Ce qui change
 
@@ -91,7 +92,7 @@ Le menu **Espace de travail**, dans la barre latérale, propose quatre espaces. 
 
 ### Ce qui est commun
 
-Les trois premiers espaces analysent le même portefeuille avec les mêmes paramètres. Ils affichent tous le bandeau bleu et les six chiffres clés en haut de page. Le logiciel s'ouvre sur « Analyse du portefeuille ».
+Les trois premiers espaces analysent le même portefeuille avec les mêmes paramètres. Ils affichent tous le bandeau bleu et les chiffres clés en haut de page. Le logiciel s'ouvre sur « Analyse du portefeuille ».
 
 L'espace « Manuel et aide » s'ouvre même si aucun portefeuille n'a pu être chargé : vous pouvez toujours y chercher de l'aide.
 
@@ -105,7 +106,7 @@ Quand la page [[Mon compte]] ou la page [[Ajouter des opérations]] est ouverte,
 ## Choisir le portefeuille à analyser
 <!-- fiche: ecran-choisir-portefeuille | questions: comment changer de portefeuille ; ou choisir mon portefeuille ; c'est quoi les portefeuilles d'exemple ; je ne vois pas mon portefeuille dans la liste ; mon espace devant le nom ça veut dire quoi ; la liste ne change pas quand je choisis un autre portefeuille ; comment revenir à l'exemple après avoir envoyé un fichier ; portefeuille par défaut au démarrage | mots: portefeuille, sélection, liste déroulante, exemple, Mon espace, démonstration, fichier, choix du portefeuille -->
 
-Le portefeuille analysé se choisit dans le bloc **Données** de la barre latérale, avec la liste déroulante placée sous ce titre. Le logiciel analyse d'emblée le premier portefeuille de la liste.
+Le portefeuille analysé se choisit dans le bloc **Portefeuille** de la barre latérale, avec la liste déroulante placée sous ce titre. Le logiciel analyse d'emblée le premier portefeuille de la liste.
 
 ### Ce que contient la liste
 
@@ -128,7 +129,7 @@ L'envoi d'un fichier, l'assistant d'import et l'ajout de nouvelles opérations s
 ## Où régler les paramètres d'analyse ?
 <!-- fiche: ecran-parametres | questions: ou sont les parametres ; comment changer l'indice de référence ; je ne trouve pas le taux sans risque ; que veut dire la ligne parametres msci world 2,50 % ; les paramètres sont ils enregistrés ; pourquoi tous les chiffres changent quand je modifie un paramètre ; réglages de l'analyse | mots: paramètres, réglages, settings, options, indice de référence, taux sans risque, VaR, niveau de confiance -->
 
-Les paramètres d'analyse se trouvent dans le menu [[Outils et paramètres]] de la barre latérale, sous le bloc Données. Cliquez sur son titre pour l'ouvrir ; il contient aussi le modèle de fichier et l'assistant d'import.
+Les paramètres d'analyse se trouvent dans le menu [[Outils et paramètres]] de la barre latérale, sous le bloc Affichage. Cliquez sur son titre pour l'ouvrir ; il contient aussi le modèle de fichier et l'assistant d'import.
 
 ### Le résumé dans le titre
 
@@ -311,18 +312,28 @@ Les calculs restent justes, mais à la date des derniers cours connus. Vérifiez
 Les résultats d'une analyse sont gardés en mémoire pendant une heure. La pastille décrit la situation au moment de ce calcul : une pastille verte d'il y a quarante minutes ne garantit pas des cours de la dernière minute. Le bouton [[Actualiser les cours]] force un nouveau téléchargement.
 
 ## Les chiffres clés en haut de page
-<!-- fiche: ecran-chiffres-cles | questions: que veulent dire les chiffres en haut ; c'est quoi les six cartes ; valeur actuelle comment est elle calculée ; gain total ça comprend les dividendes ; perf annualisée c'est quoi ; à quoi sert le point d'interrogation sur les cartes ; le chiffre sous la volatilité c'est quoi ; max drawdown en haut de page | mots: chiffres clés, KPI, indicateurs, cartes, valeur actuelle, gain total, performance annualisée, volatilité, Sharpe, max drawdown, synthèse | aller: Analyse du portefeuille/Vue d'ensemble | chiffres: valeur_actuelle, montant_investi, gain_total, twr_annualise, volatilite, sharpe, max_drawdown -->
+<!-- fiche: ecran-chiffres-cles | questions: que veulent dire les chiffres en haut ; c'est quoi les cartes en haut ; c'est quoi le coût d'achat des titres ; c'est quoi investi au pru ; valeur actuelle comment est elle calculée ; gain total ça comprend les dividendes ; perf annualisée c'est quoi ; à quoi sert le point d'interrogation sur les cartes ; le chiffre sous la volatilité c'est quoi ; max drawdown en haut de page | mots: chiffres clés, KPI, indicateurs, cartes, valeur actuelle, gain total, performance annualisée, volatilité, Sharpe, max drawdown, synthèse | aller: Analyse du portefeuille/Vue d'ensemble | chiffres: valeur_actuelle, montant_investi, gain_total, twr_annualise, volatilite, sharpe, max_drawdown -->
 
-Sous le bandeau, six cartes résument le portefeuille. Elles restent affichées dans les trois espaces d'analyse. Survolez le petit **?** à côté d'un intitulé pour lire sa définition.
+Sous le bandeau, un grand bloc met en avant les trois chiffres qui comptent le plus ; une ligne de petites cartes complète. Ils restent affichés dans les trois espaces d'analyse. Survolez le petit **?** à côté d'un intitulé pour lire sa définition.
+
+### Le grand bloc
+
+| Chiffre | Contenu | Ligne du dessous |
+|---|---|---|
+| Valeur actuelle | Quantité × dernier cours, pour chaque ligne détenue, en euros | La valeur avec les espèces, si le solde est connu |
+| Coût d'achat des titres | Ce que vous ont coûté les titres détenus aujourd'hui : quantité × PRU, frais d'achat compris | « au PRU, frais d'achat compris » |
+| Gain total | Plus-values latentes + plus-values réalisées + dividendes − frais de compte | Pastille : gain ÷ coût d'achat des titres, puis le détail (latentes, réalisées, dividendes) |
+
+### Les petites cartes
 
 | Carte | Grand chiffre | Ligne du dessous |
 |---|---|---|
-| Valeur actuelle | Quantité × dernier cours, pour chaque ligne détenue, en euros | « Investi au PRU » : le capital encore investi, au prix de revient |
-| Gain total | Plus-values latentes + plus-values réalisées + dividendes | Pastille : gain rapporté au capital investi |
-| Perf. annualisée | TWR annualisé (rendement pondéré par le temps) | Pastille : TWR total depuis le début |
+| Solde espèces | Versements − retraits − achats + ventes + dividendes − frais (avec le crayon ✏️ pour le saisir) | D'où vient le solde |
 | Volatilité | Écart-type des rendements quotidiens × √252 | Volatilité de l'indice de référence |
 | Sharpe | (Rendement − taux sans risque) / volatilité | Sharpe de l'indice de référence |
 | Max drawdown | Pire baisse depuis un plus haut | Date du point le plus bas |
+
+En mode Essentiel, seule la carte Solde espèces est affichée.
 
 ### Lire les couleurs
 
@@ -330,11 +341,11 @@ Les pastilles sont vertes quand le chiffre est positif, rouges quand il est nég
 
 ### Exemple
 
-Un portefeuille dont le capital investi au PRU est de 10 000 € et dont le gain total est de 1 500 € affiche « +1 500 € » dans la carte Gain total, avec la pastille `1 500 / 10 000 = +15,00 %` sur le capital investi.
+Un portefeuille dont le coût d'achat des titres est de 10 000 € et dont le gain total est de 1 500 € affiche « +1 500 € » dans la carte Gain total, avec la pastille `1 500 / 10 000 = +15,00 %`.
 
-### Gain total et performance : pourquoi deux chiffres ?
+### Pourquoi pas de « performance annualisée » en haut ?
 
-Le gain total est un montant en euros, qui dépend de la somme investie et du moment des apports. La performance annualisée (TWR) neutralise les apports et retraits : elle mesure la qualité des choix de placement et se compare à l'indice. Les deux sont détaillés dans le chapitre sur la performance.
+Le haut de page montre ce que votre argent a réellement rapporté : le gain en euros et son pourcentage du coût d'achat des titres. La comparaison avec l'indice (le même argent placé dans l'indice, aux mêmes dates) et le TRI annuel sont dans l'onglet [[Performance]].
 
 ### Comparer avec l'indice
 
@@ -345,7 +356,7 @@ Pour la volatilité et le Sharpe, la ligne du dessous donne la valeur de l'indic
 
 Au premier lancement, une carte **Bienvenue dans Portfolio Tracker** s'affiche en haut de la page, au-dessus d'un portefeuille d'exemple. Elle donne les trois étapes pour analyser le vôtre :
 
-1. **Importer vos opérations** : glissez votre relevé de courtier (PDF, CSV, Excel ou photo) dans la zone « Données » de la barre latérale. Cette zone clignote doucement pour être repérée.
+1. **Importer vos opérations** : glissez votre relevé de courtier (PDF, CSV, Excel ou photo) dans la zone « Importer un relevé » (rubrique Portefeuille) de la barre latérale. Cette zone clignote doucement pour être repérée.
 2. **Vérifier le solde espèces** : sous la carte « Solde espèces », le crayon ✏️ permet de recopier le solde de votre relevé.
 3. **Lire la Vue d'ensemble** : l'encadré « Ce qu'il faut retenir » résume l'essentiel.
 
@@ -362,12 +373,12 @@ Une fois la carte fermée, tant qu'un portefeuille d'exemple est affiché, un ba
 ## Mode Essentiel ou mode Expert : choisir les onglets affichés
 <!-- fiche: ecran-mode-essentiel | questions: trop d'onglets je suis perdu ; c'est quoi le mode essentiel ; mode expert ; cacher les onglets compliqués ; ou sont passés les onglets risque et optimisation ; afficher moins de choses ; mode débutant ; simplifier l'écran | mots: mode Essentiel, mode Expert, débutant, simplifier, onglets, affichage, cacher -->
 
-Sous le menu « Espace de travail », le sélecteur **Expert · Essentiel** choisit ce qui est affiché.
+Dans la rubrique « Affichage » de la barre latérale, le sélecteur **Expert · Essentiel** choisit ce qui est affiché.
 
 | Mode | Ce qui est affiché |
 |---|---|
-| Expert (par défaut) | Tous les onglets et les quatre espaces de travail, et les sept chiffres clés en haut de page |
-| Essentiel | Les onglets du quotidien : Vue d'ensemble, Positions, Expositions, Allocation cible, Transactions ; les espaces Analyse du portefeuille et Manuel et aide ; quatre chiffres clés (valeur, solde espèces, gain total, performance annualisée) |
+| Expert (par défaut) | Tous les onglets et les quatre espaces de travail, et toutes les petites cartes en haut de page |
+| Essentiel | Les onglets du quotidien : Vue d'ensemble, Positions, Expositions, Allocation cible, Transactions ; les espaces Analyse du portefeuille et Manuel et aide ; le grand bloc (valeur, coût d'achat des titres, gain total) et la carte Solde espèces |
 
 ### Bon à savoir
 
@@ -381,7 +392,7 @@ Le bouton [[Excel]], en haut de la page entre [[Rapport PDF]] et [[Actualiser le
 
 | Feuille | Contenu |
 |---|---|
-| Résumé | Valeur, investi, gain total, plus-values, dividendes, frais, solde espèces, TWR annualisé, volatilité, max drawdown, période |
+| Résumé | Valeur, coût d'achat des titres, gain total, plus-values, dividendes, frais, solde espèces, rendement (gain ÷ coût d'achat), TRI annuel, volatilité, max drawdown, période |
 | Positions | Une ligne par titre détenu : classe, région, secteur, quantité, PRU, cours, valeur, plus-values, dividendes, frais, poids |
 | Performance mensuelle | Valeur et argent investi à chaque fin de mois, rendement du mois |
 | Transactions | Toutes les opérations, en euros |
@@ -429,7 +440,7 @@ Le rapport est un document A4, découpé en parties qui commencent chacune sur u
 
 ### Les parties
 
-1. **Synthèse** : bandeau avec la période, le nombre de lignes et l'indice de référence ; neuf chiffres clés (valeur actuelle, gain total, gain sur capital investi, TWR annualisé, TRI annuel, volatilité, Sharpe, max drawdown, VaR à 1 jour) ; graphique d'évolution ; montant investi, plus-values latentes et réalisées, dividendes, frais et source des cours.
+1. **Synthèse** : bandeau avec la période, le nombre de lignes et l'indice de référence ; neuf chiffres clés (valeur actuelle, gain total, rendement (gain / coût d'achat), coût d'achat des titres, TRI annuel, volatilité, Sharpe, max drawdown, VaR à 1 jour) ; graphique d'évolution ; montant investi, plus-values latentes et réalisées, dividendes, frais et source des cours.
 2. **Positions détenues** : tableau des lignes (ticker, titre, quantité, PRU, cours, valeur, plus ou moins-value, poids), puis répartitions par classe d'actifs, région et secteur, en transparence.
 3. **Expositions et diversification** : diagnostic par dimension (géographie, secteurs, devises, concentration, taux, diversification réelle), points à surveiller ou à corriger, corrélations entre les lignes.
 4. **Performance** : comparaison avec l'indice, rendement par année civile, bêta, alpha, corrélation, tracking error et ratio d'information.

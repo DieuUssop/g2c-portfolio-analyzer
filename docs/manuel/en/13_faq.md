@@ -224,7 +224,7 @@ Yes: each person using the computer creates their own account, with their own pa
 
 ### Several portfolios per account
 
-Yes: save as many portfolios as you like (for example a PEA (French equity savings plan) and a securities account). They appear in the list in the "Data" section, preceded by "My space". The [[My account]] page lets you rename, download or delete them.
+Yes: save as many portfolios as you like (for example a PEA (French equity savings plan) and a securities account). They appear in the list in the "Portfolio" section, preceded by "My space". The [[My account]] page lets you rename, download or delete them.
 
 ### A consolidated view?
 

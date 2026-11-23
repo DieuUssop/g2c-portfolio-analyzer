@@ -218,28 +218,33 @@ def fig_valeur_et_apports(histo):
 
 
 def fig_repartition(positions, max_lignes=15):
-    """Poids de chaque ligne (barres horizontales). Au-delà de 15 lignes,
-    les plus petites sont regroupées dans "Autres" pour rester lisible."""
+    """Poids de chaque ligne (barres horizontales). Au-delà de 15 lignes, les plus petites sont regroupées
+    dans « Autres », écrit SOUS le graphique (revue du 23/11/2026 : une barre « Autres » de 52 % écrasait les
+    vraies lignes)."""
     tableau = positions.sort_values("poids_pct", ascending=False)[["nom", "poids_pct", "valeur"]]
+    autres = None
     if len(tableau) > max_lignes:
         reste = tableau.iloc[max_lignes - 1:]
         tableau = tableau.iloc[:max_lignes - 1].copy()
-        tableau.loc["Autres"] = [t("Autres ({n} lignes)", n=len(reste)), reste["poids_pct"].sum(),
-                                 reste["valeur"].sum()]
+        autres = (len(reste), reste["poids_pct"].sum())
     tableau = tableau.iloc[::-1]                       # la plus grosse en haut
     fig = go.Figure(go.Bar(
         x=tableau["poids_pct"], y=tableau["nom"], orientation="h",
-        marker=dict(color=[GRIS if n == tableau["nom"].get("Autres") else BLEU for n in tableau["nom"]],
-                    cornerradius=4),
+        marker=dict(color=BLEU, cornerradius=4),
         text=tableau["poids_pct"].map(_p),
         textposition="outside", cliponaxis=False,
         customdata=tableau["valeur"],
         hovertemplate="%{y}<br>" + eur("%{customdata:,.0f}") + f" — %{{x:.1f}}{espace_pct()}%<extra></extra>",
     ))
-    _style(fig, hauteur=max(300, 30 * len(tableau) + 60), legende=False)
-    fig.update_layout(margin=dict(r=16))
-    fig.update_xaxes(visible=False, range=[0, tableau["poids_pct"].max() * 1.35])
+    _style(fig, hauteur=max(300, 30 * len(tableau) + (90 if autres else 60)), legende=False)
+    fig.update_layout(margin=dict(r=16, b=40 if autres else 10))
+    fig.update_xaxes(visible=False, range=[0, tableau["poids_pct"].max() * 1.45])
     fig.update_yaxes(showgrid=False)
+    if autres:
+        fig.add_annotation(text=t("+ {n} autres lignes : {poids} de la valeur", n=autres[0],
+                                  poids=_p(autres[1])),
+                           xref="paper", yref="paper", x=1, y=0, yshift=-28, showarrow=False,
+                           xanchor="right", font=dict(size=12, color=GRIS))
     return fig
 
 
@@ -433,17 +438,24 @@ def fig_drawdown(indicateurs):
     return _axe_dates(fig)
 
 
-def fig_rendements_annuels(indicateurs, avances, nom_indice):
-    """Rendement de chaque année civile : portefeuille et indice côte à côte."""
+def fig_rendements_annuels(indicateurs, avances, nom_indice, annee_en_cours=None):
+    """Rendement de chaque année civile : portefeuille et indice côte à côte. annee_en_cours : année non
+    terminée, écrite « 2026 (à date) ». Les valeurs sont affichées au survol (plus de chiffres serrés au-dessus
+    des barres quand il y a beaucoup d'années)."""
     annees_p = indicateurs["rendements_annuels"]
     annees_i = avances["rendements_annuels_indice"]
+
+    def etiquette(a):
+        return t("{annee} (à date)", annee=a) if annee_en_cours is not None and int(a) == int(annee_en_cours) \
+            else str(a)
+    peu = len(annees_p) <= 6
     fig = go.Figure()
     for serie, nom, couleur in [(annees_p, t("Mon portefeuille"), BLEU),
                                 (annees_i, nom_indice, GRIS_FONCE)]:
         fig.add_trace(go.Bar(
-            x=[str(a) for a in serie.index], y=serie, name=nom,
+            x=[etiquette(a) for a in serie.index], y=serie, name=nom,
             marker=dict(color=couleur, cornerradius=4),
-            text=[_p(v * 100, signe=True) for v in serie],
+            text=[_p(v * 100, signe=True) for v in serie] if peu else None,
             textposition="outside", cliponaxis=False,
             hovertemplate="%{x} : %{y:+.2%}<extra>" + nom + "</extra>",
         ))
@@ -934,7 +946,8 @@ def fig_fiscalite_horizon(tableau):
             hovertemplate=t("Sortie dans %{{x}} an(s) : {v}", v=eur("%{y:,.0f}")) + f"<extra>{td(colonne)}</extra>",
         ))
     _style(fig, hauteur=380)
-    fig.update_layout(hovermode="x unified")
+    # légende au-dessus (en dessous, elle chevauchait le titre de l'axe horizontal)
+    fig.update_layout(hovermode="x unified", legend=dict(yanchor="bottom", y=1.02), margin=dict(t=36))
     fig.update_xaxes(title_text=t("Années avant la sortie"), dtick=2)
     fig.update_yaxes(tickformat=",.0f", title_text=t("Gain net d'impôts"), **_axe_euros("y"))
     return fig
@@ -1050,25 +1063,40 @@ def fig_allocation(detail):
     return fig
 
 
-def fig_dividendes_annuels(annuel, estimation=None):
-    """Dividendes nets reçus chaque année (barres), et estimation des 12 prochains mois (barre hachurée)."""
+def fig_dividendes_annuels(annuel, estimation=None, annee_en_cours=False):
+    """Dividendes nets reçus chaque année (barres), et estimation des 12 prochains mois (barre hachurée).
+    annee_en_cours : la dernière année n'est pas finie (« 2026 (à date) »)."""
+    etiquettes = [str(a) for a in annuel.index]
+    if annee_en_cours and etiquettes:
+        etiquettes[-1] = t("{annee} (à date)", annee=etiquettes[-1])
     fig = go.Figure(go.Bar(
-        x=[str(a) for a in annuel.index], y=annuel.values, name=t("Reçus"),
+        x=etiquettes, y=annuel.values, name=t("Reçus"),
         marker=dict(color=BLEU, cornerradius=4), hovertemplate="%{x}<br>" + eur("%{y:,.0f}") + "<extra></extra>"))
     if estimation:
         fig.add_trace(go.Bar(
-            x=[t("12 prochains mois")], y=[estimation], name=t("Estimation"),
+            x=[t("12 mois à venir")], y=[estimation], name=t("Estimation"),
             marker=dict(color="rgba(42, 120, 214, 0.25)", line=dict(color=BLEU, width=1.5), pattern_shape="/",
                         cornerradius=4),
             hovertemplate="%{x}<br>" + eur("%{y:,.0f}") + f"<extra>{t('Estimation')}</extra>"))
     _style(fig, hauteur=320, legende=bool(estimation))
+    fig.update_xaxes(tickangle=0)                     # étiquettes horizontales : plus sur la légende
     fig.update_yaxes(tickformat=",.0f", **_axe_euros("y"))
     return fig
 
 
-def fig_livret_a(histo, livret):
-    """Valeur du portefeuille et du même argent placé sur un Livret A."""
+def escape_plotly(texte):
+    """Texte sûr dans un modèle de survol Plotly (les accolades sont réservées)."""
+    return str(texte).replace("{", "(").replace("}", ")")
+
+
+def fig_livret_a(histo, livret, indice=None, nom_indice=""):
+    """Valeur du portefeuille et du même argent placé sur un Livret A (et dans l'indice de référence)."""
     fig = go.Figure()
+    if indice is not None:
+        fig.add_trace(go.Scatter(x=indice.index, y=indice.values, name=t("Le même argent dans {indice}",
+                                                                         indice=nom_indice or t("l'indice")),
+                                 mode="lines", line=dict(color=VERT_FONCE, width=1.8, dash="dash"),
+                                 hovertemplate=eur("%{y:,.0f}") + f"<extra>{escape_plotly(nom_indice)}</extra>"))
     fig.add_trace(go.Scatter(x=histo.index, y=histo["apports_nets"], name=t("Argent investi (apports nets)"),
                              mode="lines", line=dict(color=ORANGE, width=1.5, shape="hv"),
                              hovertemplate=eur("%{y:,.0f}") + f"<extra>{t('Investi')}</extra>"))

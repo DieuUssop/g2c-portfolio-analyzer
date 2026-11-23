@@ -227,15 +227,8 @@ def _aller_espace(espace_choisi):
 
 
 with st.sidebar:
-    # En-tête : monogramme et nom, puis une ligne discrète « FR · EN » à gauche et « Clair · Nuit » à droite
+    # Barre latérale (revue du 23/11/2026) : en-tête, compte, espaces, PORTEFEUILLE, AFFICHAGE, outils, détails
     html(ui.marque("Portfolio Tracker", "Master G2C"))
-    reglage_langue, reglage_theme = st.columns(2, vertical_alignment="center")
-    with reglage_langue:
-        st.segmented_control("Langue / Language", list(langues.LANGUES), format_func=langues.LANGUES.get,
-                             default="fr", key="langue", label_visibility="collapsed", on_change=_choix_langue)
-    with reglage_theme:
-        st.segmented_control(t("Affichage"), list(theme.THEMES), format_func=lambda c: t(theme.THEMES[c]),
-                             default="clair", key="theme", label_visibility="collapsed", on_change=_choix_theme)
     html(ui.separateur())
 
     # Espace personnel (comptes chiffrés) : src/vues_compte.py
@@ -257,11 +250,11 @@ with st.sidebar:
     for numero, nom_espace in enumerate(ESPACES_VISIBLES):
         st.button(t(nom_espace), key=f"menu_{ESPACES.index(nom_espace)}", type="tertiary", width="stretch",
                   on_click=_aller_espace, args=(nom_espace,))
-    # Mode Essentiel (onglets du quotidien) / Expert (tout) : src/vues_bienvenue.py
-    mode = vues_bienvenue.choisir_mode(session_compte)
     html(ui.separateur())
 
-    html(ui.bloc_titre(t("Données")) + ui.style_depot(t("Parcourir"), t("ou glisser un fichier ici")))
+    html(ui.bloc_titre(t("Portefeuille")) + ui.style_depot(t("Importer un relevé"),
+                                                           t("ou glisser ici · PDF, CSV, Excel, photo"),
+                                                           t("Parcourir")))
     fichier_choisi = None
     # Les portefeuilles personnels (chiffrés) de l'utilisateur connecté, puis ceux du projet
     mes_portefeuilles = session_compte.lister() if session_compte else []
@@ -275,12 +268,12 @@ with st.sidebar:
             t("Portefeuille"), choix, label_visibility="collapsed",
             format_func=lambda f: (f[2] if f[0] == "tous" else t("Mon espace · {nom}", nom=f[2]))
             if isinstance(f, tuple) else
-            (t(NOMS_PORTEFEUILLES[f.name]) if f.name in NOMS_PORTEFEUILLES else f.name),
-            help=t("Vos portefeuilles enregistrés, puis les portefeuilles d'exemple du projet"),
+            (t("{nom} · exemple", nom=t(NOMS_PORTEFEUILLES[f.name])) if f.name in NOMS_PORTEFEUILLES
+             else f.name),
         )
     fichiers_envoyes = st.file_uploader(
         t("Envoyer un fichier (CSV, Excel, PDF ou image)"), type=["csv", "xlsx", "pdf"] + images.EXTENSIONS,
-        accept_multiple_files=True,
+        accept_multiple_files=True, label_visibility="collapsed",
         help=t("Colonnes : date, type (ACHAT, VENTE, DIVIDENDE), ticker (code Yahoo Finance), nom, "
                "quantite, prix, frais. CSV à virgules ou à points-virgules, fichier Excel, ou PDF "
                "(relevé d'opérations, avis d'opéré, relevé de portefeuille), ou photo / capture d'écran d'un avis "
@@ -318,14 +311,23 @@ with st.sidebar:
     zone_operations = liens.container()         # « Ajouter des opérations » (affiché une fois le portefeuille lu)
     html(ui.separateur())
 
+    # AFFICHAGE : langue, clair / nuit, puis onglets Expert / Essentiel (src/vues_bienvenue.py)
+    html(ui.bloc_titre(t("Affichage")))
+    with st.container(key="reglages_affichage", horizontal=True):
+        st.segmented_control("Langue / Language", list(langues.LANGUES), format_func=langues.LANGUES.get,
+                             default="fr", key="langue", label_visibility="collapsed", on_change=_choix_langue)
+        st.segmented_control(t("Affichage"), list(theme.THEMES), format_func=lambda c: t(theme.THEMES[c]),
+                             default="clair", key="theme", label_visibility="collapsed", on_change=_choix_theme)
+    mode = vues_bienvenue.choisir_mode(session_compte)
+    html(ui.separateur())
+
     # Outils : modèle de fichier, assistant d'import et paramètres d'analyse, regroupés dans un menu
     indice_choisi = st.session_state.get("indice_reference", config.INDICE_REFERENCE)
     resume_parametres = " · ".join([
         t(NOMS_COURTS.get(indice_choisi, "")) or t(INDICES.get(indice_choisi, "")),
         pct(st.session_state.get("taux_sans_risque_pct", config.TAUX_SANS_RISQUE * 100) / 100, signe=False),
     ])
-    with st.popover(t("Outils et paramètres") + "  ·  " + resume_parametres, icon=":material/settings:",
-                    width="stretch"):
+    with st.popover(t("Outils et paramètres"), icon=":material/settings:", width="stretch"):
         st.download_button(t("Modèle de fichier"), data=MODELE_CSV.encode("utf-8-sig"),
                            file_name="modele_transactions.csv", mime="text/csv", type="tertiary",
                            icon=":material/description:", key="modele_fichier",
@@ -348,6 +350,8 @@ with st.sidebar:
             value=config.TAUX_SANS_RISQUE * 100, step=0.25, format="%.2f",
             help=t("Taux de la facilité de dépôt de la BCE : 2,50 % depuis le 16/09/2026"),
         ) / 100
+    html(ui.sous_ligne(t("{indice} · taux sans risque {taux}", indice=resume_parametres.split(" · ")[0],
+                         taux=resume_parametres.split(" · ")[-1])))
 
 # Niveau de confiance de la VaR : il ne sert que dans l'onglet « Risque » (et le rapport PDF), c'est
 # donc là qu'il se règle ; la valeur est gardée pour la session (clé « niveau_var_choisi »).
@@ -556,19 +560,24 @@ date_debut, date_fin = langues.date(histo.index[0]), langues.date(histo.index[-1
 en_direct = "direct" in res["source_cours"].lower()
 
 with st.sidebar:
+    # Détails du fichier analysé (repliés : la source des cours est déjà dans le bandeau)
+    nb_operations = len(res["transactions"]) + len(res.get("especes", []))
+    with st.popover(t("Détails du fichier"), icon=":material/info:", width="stretch"):
+        html(ui.infos([
+            (t("Fichier"), nom_fichier),
+            (t("Période"), f"{date_debut} → {date_fin}"),
+            (t("Opérations"), str(len(res["transactions"]) + len(res.get("especes", [])))),
+            (t("Cours"), t("Sources de secours : {sources}", sources=res["source_cours"].split("(")[1].split(")")[0])
+             if en_direct and "secours" in res["source_cours"].lower()
+             else t("Yahoo Finance (en direct)") if en_direct
+             else t("Cache local du {date} (Yahoo Finance injoignable)", date=langues.date(res["date_cours"]))
+             if res.get("date_cours") is not None else t("Cache local (Yahoo Finance injoignable)")),
+        ], replie=(t("Taux de change ({n})", n=len(res["taux_actuels"])),
+                   [(t("1 € en {devise}", devise=devise), nombre(taux, 4))
+                    for devise, taux in res["taux_actuels"].items()])))
+    html(ui.sous_ligne(t("{n} opérations · {debut} → {fin}", n=f"{nb_operations:,}".replace(",", " "),
+                         debut=date_debut, fin=date_fin)))
     html(ui.separateur())
-    html(ui.infos([
-        (t("Fichier"), nom_fichier),
-        (t("Période"), f"{date_debut} → {date_fin}"),
-        (t("Opérations"), str(len(res["transactions"]) + len(res.get("especes", [])))),
-        (t("Cours"), t("Sources de secours : {sources}", sources=res["source_cours"].split("(")[1].split(")")[0])
-         if en_direct and "secours" in res["source_cours"].lower()
-         else t("Yahoo Finance (en direct)") if en_direct
-         else t("Cache local du {date} (Yahoo Finance injoignable)", date=langues.date(res["date_cours"]))
-         if res.get("date_cours") is not None else t("Cache local (Yahoo Finance injoignable)")),
-    ], replie=(t("Taux de change ({n})", n=len(res["taux_actuels"])),
-               [(t("1 € en {devise}", devise=devise), nombre(taux, 4))
-                for devise, taux in res["taux_actuels"].items()])))
 
     vues_signalement.bouton(fichier_envoye.getvalue() if fichier_envoye is not None else None,
                             fichier_envoye.name if fichier_envoye is not None else None, cle="barre", dans_barre=True)
@@ -578,8 +587,12 @@ with st.sidebar:
 # ======================================================================
 # EN-TÊTE ET CHIFFRES CLÉS
 # ======================================================================
+# Titre du bandeau : l'espace de travail affiché (revue du 23/11/2026)
+TITRES_ESPACES = {"Analyse du portefeuille": "Suivi de portefeuille", "Conseil patrimonial": "Conseil patrimonial",
+                  "Gestion d'actifs": "Gestion d'actifs"}
 html(ui.entete(
-    titre=t("Suivi de portefeuille") if comptes_reunis is None else t("Tous mes comptes"),
+    titre=t("Tous mes comptes") if comptes_reunis is not None and espace == "Analyse du portefeuille"
+    else t(TITRES_ESPACES.get(espace, "Suivi de portefeuille")),
     surtitre="Master G2C · " + t("Gestion de portefeuille"),
     sous_titre=t("Du {debut} au {fin}  ·  {n} lignes  ·  Référence : {indice}",
                  debut=date_debut, fin=date_fin, n=resume["nb_lignes"], indice=nom_court),
@@ -588,12 +601,33 @@ html(ui.entete(
     date_cours=res.get("date_cours"),
 ))
 
-# Barre d'actions : rapport PDF, export Excel, actualisation des cours (juste sous le bandeau)
+# ----------------------------------------------------------------------
+# Les chiffres essentiels (revue du 23/11/2026, proposition A) : un grand bloc à gauche (valeur actuelle,
+# coût d'achat des titres, gain total), les boutons empilés à droite, puis une ligne de petites cartes
+# ----------------------------------------------------------------------
 cle_calculs = (hash(contenu), code_indice, taux_sans_risque, niveau_var)
-_, zone_pdf, zone_excel, zone_cours = st.columns([4, 1.25, 1.1, 1.4], vertical_alignment="center")
+rendement_investi = resume["gain_total"] / resume["montant_investi"] if resume["montant_investi"] else 0.0
+colonne_heros, colonne_boutons = st.columns([5, 1.25], vertical_alignment="center", gap="medium")
+with colonne_heros:
+    html(ui.heros(
+        valeur=(t("Valeur actuelle"), euros(resume["valeur_actuelle"]),
+                t("Avec les espèces : {montant}", montant=euros(resume["valeur_compte"]))
+                if resume.get("solde_especes") is not None else t("Quantité × dernier cours de chaque ligne")),
+        cout=(t("Coût d'achat des titres"), euros(resume["montant_investi"]), t("au PRU, frais d'achat compris")),
+        gain=(t("Gain total"), euros(resume["gain_total"], signe=True), pct(rendement_investi),
+              tendance(resume["gain_total"]),
+              [(t("Latentes"), resume["pv_latentes"], True), (t("Réalisées"), resume["pv_realisees"], True),
+               (t("Dividendes"), resume["dividendes"], bool(resume["dividendes"])),
+               (t("Frais compte"), -resume.get("frais_compte", 0.0), bool(resume.get("frais_compte")))]),
+        format_euros=euros,
+        aides=(t("Quantité × dernier cours, pour chaque ligne détenue"),
+               t("Ce que vous ont coûté les titres détenus aujourd'hui : quantité × prix de revient unitaire (PRU)"),
+               t("Plus-values latentes (titres détenus) + réalisées (titres vendus) + dividendes − frais de compte. "
+                 "Le pourcentage : gain ÷ coût d'achat des titres")),
+    ))
 cle_rapport = (hash(contenu), code_indice, taux_sans_risque, niveau_var,
                tuple(sorted(vues_conseil.taux_choisis(session_compte).items())))
-with zone_pdf:
+with colonne_boutons, st.container(key="boutons_actions"):
     if st.session_state.get("rapport", (None,))[0] == cle_rapport:
         # On ne propose le téléchargement que si le rapport correspond aux réglages actuels.
         st.download_button(
@@ -612,7 +646,6 @@ with zone_pdf:
             st.rerun()
         except ImportError:
             st.error(t("Installer reportlab : python -m pip install reportlab"))
-with zone_excel:
     try:
         classeur_excel = fichier_excel(cle_calculs, res, langues.langue(),
                                        st.session_state.get("profil_expositions") or "Équilibré")
@@ -623,55 +656,39 @@ with zone_excel:
                            file_name=f"portefeuille_{histo.index[-1]:%Y%m%d}.xlsx", key="telecharger_excel",
                            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                            help=t("Positions, performance mensuelle, transactions, dividendes et diagnostic"))
-with zone_cours:
     if st.button(t("Actualiser les cours"), type="secondary", key="actualiser_cours", width="stretch",
                  icon=":material/refresh:", help=t("Télécharge à nouveau les cours (Internet nécessaire)")):
         st.cache_data.clear()   # on oublie les résultats en mémoire...
         module_analyse.oublier_resultats()
         st.rerun()              # ... et on relance la page
 
-rendement_investi = resume["gain_total"] / resume["montant_investi"]
-html(ui.grille([
-    ui.carte(t("Valeur actuelle"), euros(resume["valeur_actuelle"]),
-             detail=t("Investi au PRU : {montant}", montant=euros(resume["montant_investi"])),
-             aide=t("Quantité × dernier cours, pour chaque ligne détenue")),
-    ui.carte(t("Solde espèces"), euros(resume["solde_especes"]) if resume.get("solde_especes") is not None else "—",
-             detail=(t("Négatif : versements manquants ? ✏️ ci-dessous")
-                     if (resume.get("solde_especes") or 0) < -0.005
-                     else t("Saisi le {date} · compte : {montant}", date=langues.date(res["solde_saisi"][0]),
-                            montant=euros(resume["valeur_compte"])) if res.get("solde_saisi")
-                     else t("Valeur du compte : {montant}", montant=euros(resume["valeur_compte"]))
-                     if resume.get("solde_especes") is not None else t("À saisir ✏️ ci-dessous")),
-             aide=t("Versements − retraits − achats + ventes + dividendes − frais. Connu seulement si les "
-                    "versements d'espèces sont dans le fichier (relevés ou avis d'opération du compte).")),
-    ui.carte(t("Gain total"), euros(resume["gain_total"], signe=True),
-             detail=ui.decomposition_gain([
-                 (t("Latentes"), resume["pv_latentes"], True),
-                 (t("Réalisées"), resume["pv_realisees"], True),
-                 (t("Dividendes"), resume["dividendes"], bool(resume["dividendes"])),
-                 (t("Frais compte"), -resume.get("frais_compte", 0.0), bool(resume.get("frais_compte"))),
-             ], euros) + ui.pastille(pct(rendement_investi), tendance(rendement_investi)) + t(" sur le capital investi"),
-             aide=t("Plus-values latentes (titres détenus, non encaissées) + plus-values réalisées (titres vendus) "
-                    "+ dividendes − frais de compte")),
-    ui.carte(t("Perf. annualisée"), pct(ind["twr_annualise"]),
-             detail=ui.pastille(t("TWR total {valeur}", valeur=pct(ind["twr_total"])), tendance(ind["twr_total"])),
-             aide=t("Rendement pondéré par le temps (TWR) : mesure la qualité des choix, hors effet des apports")),
-] + ([] if mode == "essentiel" else [
-    ui.carte(t("Volatilité"), pct(ind["volatilite"], signe=False),
-             detail=f"{nom_court} : {pct(av['volatilite_indice'], signe=False)}",
-             aide=t("Écart-type des rendements quotidiens × √252")),
-    ui.carte("Sharpe", nombre(av["sharpe"]),
-             detail=f"{nom_court} : {nombre(av['sharpe_indice'])}",
-             aide=t("Ratio de Sharpe : (rendement − taux sans risque) / volatilité")),
-    ui.carte("Max drawdown", pct(ind["max_drawdown"]),
-             detail=t("Le {date}", date=langues.date(ind["date_creux"])),
-             aide=t("Pire baisse depuis un plus haut")),
-])))
-# Crayon du solde espèces : saisir soi-même le solde disponible (point de départ des calculs suivants)
-_, colonne_crayon, _ = st.columns([1, 1, 5] if mode == "expert" else [1, 1, 2])   # sous la carte « Solde espèces »
-if not lecture_seule:
-    with colonne_crayon:
-        vues_transactions.crayon_solde(res, contenu, cible_portefeuille, session_compte)
+# Petites cartes : solde espèces (avec son crayon), puis volatilité, Sharpe et max drawdown (mode Expert)
+petites = [("solde", ui.carte(
+    t("Solde espèces"), euros(resume["solde_especes"]) if resume.get("solde_especes") is not None else "—",
+    detail=(t("Négatif : versements manquants ?") if (resume.get("solde_especes") or 0) < -0.005
+            else t("Saisi le {date}", date=langues.date(res["solde_saisi"][0])) if res.get("solde_saisi")
+            else t("Calculé d'après les versements") if resume.get("solde_especes") is not None
+            else t("À saisir avec le crayon")),
+    aide=t("Versements − retraits − achats + ventes + dividendes − frais. Connu seulement si les "
+           "versements d'espèces sont dans le fichier (relevés ou avis d'opération du compte).")))]
+if mode != "essentiel":
+    petites += [
+        ("vol", ui.carte(t("Volatilité"), pct(ind["volatilite"], signe=False),
+                         detail=f"{nom_court} : {pct(av['volatilite_indice'], signe=False)}",
+                         aide=t("Écart-type des rendements quotidiens × √252"))),
+        ("sharpe", ui.carte("Sharpe", nombre(av["sharpe"]), detail=f"{nom_court} : {nombre(av['sharpe_indice'])}",
+                            aide=t("Ratio de Sharpe : (rendement − taux sans risque) / volatilité"))),
+        ("dd", ui.carte("Max drawdown", pct(ind["max_drawdown"]),
+                        detail=t("Le {date}", date=langues.date(ind["date_creux"])),
+                        aide=t("Pire baisse depuis un plus haut"))),
+    ]
+with st.container(key="petites_cartes"):
+    for (nom_carte, carte), colonne in zip(petites, st.columns(4, gap="small")):
+        with colonne:
+            html(ui.grille([carte]))
+            if nom_carte == "solde" and not lecture_seule:
+                # Crayon du solde espèces : saisir soi-même le solde disponible (point de départ des calculs)
+                vues_transactions.crayon_solde(res, contenu, cible_portefeuille, session_compte)
 
 # ======================================================================
 # ONGLETS
@@ -720,7 +737,8 @@ if "Vue d'ensemble" in onglets:
         vues_transactions.operations_appliquees(res.get("operations_appliquees"))
         # « Ce qu'il faut retenir » : performance, principal point de vigilance, piste (src/synthese.py)
         try:
-            vues_bienvenue.retenir(res, vues_expositions.constats_du_portefeuille(res, cle_calculs), nom_court)
+            vues_bienvenue.retenir(res, vues_expositions.constats_du_portefeuille(res, cle_calculs), nom_court,
+                                   vues_revenus.meme_argent(res))
         except Exception:
             pass                                 # l'encadré ne doit jamais empêcher l'affichage de la page
         if comptes_reunis is not None:
@@ -728,6 +746,7 @@ if "Vue d'ensemble" in onglets:
                 html(ui.titre_section(t("Mes comptes"), t("Chaque compte analysé séparément · les espèces sont la "
                                                           "somme des soldes des comptes")))
                 detail_comptes = consolidation.tableau_par_compte(par_compte)
+                detail_comptes["part"] = detail_comptes["part"] / 100                 # fraction (format « percent »)
                 st.dataframe(detail_comptes.assign(enveloppe=detail_comptes["enveloppe"].map(lambda e: t(e) if e else "—")),
                              hide_index=True, width="stretch", column_config={
                     "compte": st.column_config.TextColumn(t("Compte")),
@@ -736,26 +755,16 @@ if "Vue d'ensemble" in onglets:
                     "investi": st.column_config.NumberColumn(t("Investi au PRU"), format=langues.eur_colonne("%.0f")),
                     "gain": st.column_config.NumberColumn(t("Gain total"), format=langues.eur_colonne("%+.0f")),
                     "especes": st.column_config.NumberColumn(t("Espèces"), format=langues.eur_colonne("%.0f")),
-                    "part": st.column_config.ProgressColumn(t("Part"), format=langues.pct_colonne("%.0f"),
-                                                            min_value=0, max_value=100),
+                    "part": st.column_config.ProgressColumn(t("Part"), format=langues.pct_colonne(),
+                                                            min_value=0.0, max_value=1.0),
                 })
                 st.caption(t("Vue en lecture seule : pour ajouter ou corriger des opérations, choisissez le compte "
                              "concerné dans la liste des portefeuilles."))
         vues_transactions.valeurs_incoherentes(res.get("valeurs_incoherentes"))
         gauche, droite = st.columns([2, 1], gap="medium")
-        with gauche, st.container(border=True):
-            tete, menu = st.columns([3, 2], vertical_alignment="center")
-            with menu:
-                ligne_choisie = vues_ligne.choisir_ligne(res, "vue_ensemble")       # tout le portefeuille ou une ligne
-            if ligne_choisie is None:
-                with tete:
-                    html(ui.titre_section(t("Évolution du portefeuille"),
-                                          t("Valeur de marché et capital investi (apports nets)")))
-                graphique(gi.fig_valeur_et_apports(histo))
-            else:
-                with tete:
-                    html(ui.titre_section(t("Évolution d'une ligne"), t("Valeur, cours et PRU, ou comparaison à l'indice")))
-                vues_ligne.afficher_ligne(res, ligne_choisie, nom_court, code_indice, "vue_ensemble", graphique)
+        with gauche:              # tout le portefeuille, ou une seule ligne (fragment : src/vues_ligne.py)
+            vues_ligne.bloc(res, "vue_ensemble", nom_court, code_indice, graphique, t("Évolution du portefeuille"),
+                            t("Valeur de marché et capital investi (apports nets)"), gi.fig_valeur_et_apports(histo))
         with droite, st.container(border=True):
             html(ui.titre_section(t("Répartition"), t("Poids de chaque ligne dans la valeur totale")))
             graphique(gi.fig_repartition(positions))
@@ -813,25 +822,41 @@ if "Vue d'ensemble" in onglets:
 # ----------------------------------------------------------------------
 if "Positions" in onglets:
     with onglets["Positions"]:
-        # Plus-values : latente (titres encore détenus, non encaissée) et réalisée (titres vendus, encaissée)
+        # Quatre repères sur les lignes (les plus-values latentes / réalisées sont déjà dans le bloc du haut)
         toutes = res.get("toutes_positions", positions)
-        html(ui.grille([
-            ui.carte(t("Plus-values latentes"), euros(resume["pv_latentes"], signe=True),
-                     detail=ui.pastille(t("titres détenus · non encaissées"), tendance(resume["pv_latentes"])),
-                     aide=t("Quantité détenue × (cours − PRU) : ce que rapporterait une vente aujourd'hui")),
-            ui.carte(t("Plus-values réalisées"), euros(resume["pv_realisees"], signe=True),
-                     detail=ui.pastille(t("titres vendus · encaissées"), tendance(resume["pv_realisees"])),
-                     aide=t("Pour chaque vente : quantité vendue × (prix de vente − PRU) − frais de vente")),
-            ui.carte(t("Total des plus-values"), euros(resume["pv_latentes"] + resume["pv_realisees"], signe=True),
-                     detail=t("Latentes + réalisées (hors dividendes)")),
-            ui.carte(t("Frais de transaction"), euros(resume["frais_totaux"]),
-                     detail=t("Courtage des achats et ventes")),
-        ]))
+        detenues = positions[positions["quantite"] > 1e-9]
+        if len(detenues):
+            grosse = detenues["poids_pct"].idxmax()
+            meilleure, pire = detenues["pv_latente_pct"].idxmax(), detenues["pv_latente_pct"].idxmin()
+            html(ui.grille([
+                ui.carte(t("Lignes détenues"), str(len(detenues)),
+                         detail=t("{n} classe(s) d'actifs", n=detenues["classe"].nunique())),
+                ui.carte(t("Plus grosse ligne"), pct(detenues.at[grosse, "poids_pct"] / 100, signe=False, decimales=1),
+                         detail=str(detenues.at[grosse, "nom"]),
+                         aide=t("Part de la ligne dans la valeur des titres")),
+                ui.carte(t("Meilleure ligne"), pct(detenues.at[meilleure, "pv_latente_pct"] / 100),
+                         detail=str(detenues.at[meilleure, "nom"]),
+                         aide=t("Plus-value latente en % du prix de revient")),
+                ui.carte(t("Moins bonne ligne"), pct(detenues.at[pire, "pv_latente_pct"] / 100),
+                         detail=str(detenues.at[pire, "nom"]),
+                         aide=t("Plus-value latente en % du prix de revient")),
+            ]))
         with st.container(border=True):
-            html(ui.titre_section(t("Positions détenues"), t("Cliquer sur un titre de colonne pour trier")))
-            tableau = positions[["nom", "classe", "region", "secteur", "devise", "quantite", "pru", "cours", "valeur",
-                                 "pv_latente", "pv_latente_pct", "pv_realisee", "frais_totaux", "poids_pct",
-                                 "dividendes"]].reset_index()
+            tete, recherche = st.columns([3, 2], vertical_alignment="bottom")
+            with tete:
+                html(ui.titre_section(t("Positions détenues"), t("Cliquer sur un titre de colonne pour trier")))
+            filtre = recherche.text_input(t("Rechercher"), placeholder=t("Nom ou ticker…"), key="recherche_positions",
+                                          label_visibility="collapsed")
+            # Colonnes essentielles d'abord ; la classe, la région, le secteur et les frais ensuite
+            tableau = positions[["nom", "valeur", "poids_pct", "pv_latente", "pv_latente_pct", "quantite", "pru",
+                                 "cours", "classe", "region", "secteur", "devise", "pv_realisee", "dividendes",
+                                 "frais_totaux"]].reset_index()
+            if filtre:
+                garde = (tableau["nom"].astype(str).str.contains(filtre, case=False, regex=False)
+                         | tableau["ticker"].astype(str).str.contains(filtre, case=False, regex=False))
+                tableau = tableau[garde]
+            tableau["poids_pct"] = tableau["poids_pct"] / 100              # fractions : format « percent »
+            tableau["pv_latente_pct"] = tableau["pv_latente_pct"] / 100
             for colonne in ["classe", "region", "secteur"]:          # données traduites à l'affichage
                 tableau[colonne] = tableau[colonne].map(td)
             # Lignes colorées selon la plus-value latente : vert pastel (gain), rouge pastel (perte)
@@ -840,18 +865,19 @@ if "Positions" in onglets:
             style = tableau.style.apply(
                 lambda ligne: [f"background-color: {fond_gain if ligne['pv_latente'] > 0 else fond_perte}"
                                if ligne["pv_latente"] != 0 else ""] * len(ligne), axis=1)
-            # column_config : nom affiché et format de chaque colonne.
+            # column_config : nom affiché et format de chaque colonne. Hauteur = toutes les lignes (pas de
+            # deuxième barre de défilement dans la page), au plus 25 lignes visibles.
             st.dataframe(
-                style, hide_index=True, width="stretch",
+                style, hide_index=True, width="stretch", height=min(len(tableau), 25) * 35 + 38,
                 column_config={
-                    "ticker": st.column_config.TextColumn("Ticker", width="small"),
-                    "nom": st.column_config.TextColumn(t("Titre"), width="medium"),
+                    "ticker": st.column_config.TextColumn("Ticker", width="small", pinned=True),
+                    "nom": st.column_config.TextColumn(t("Titre"), width="medium", pinned=True),
                     "classe": st.column_config.TextColumn(t("Classe")),
                     "region": st.column_config.TextColumn(t("Région")),
                     "secteur": st.column_config.TextColumn(t("Secteur")),
                     "devise": st.column_config.TextColumn(t("Devise"), width="small",
                                                           help=t("Devise de cotation (montants convertis en euros)")),
-                    "quantite": st.column_config.NumberColumn(t("Quantité"), format="%d"),
+                    "quantite": st.column_config.NumberColumn(t("Quantité"), format=langues.nombre_colonne("%g")),
                     "pru": st.column_config.NumberColumn(t("PRU"), format=langues.eur_colonne("%.2f")),
                     "cours": st.column_config.NumberColumn(t("Cours"), format=langues.eur_colonne("%.2f")),
                     "valeur": st.column_config.NumberColumn(t("Valeur"), format=langues.eur_colonne("%.0f")),
@@ -859,7 +885,7 @@ if "Positions" in onglets:
                         t("+/- value latente"), format=langues.eur_colonne("%+.0f"),
                         help=t("Non encaissée : quantité détenue × (cours − PRU)")),
                     "pv_latente_pct": st.column_config.NumberColumn(t("+/- value latente %"),
-                                                                    format=langues.pct_colonne("%+.2f")),
+                                                                    format=langues.pct_colonne()),
                     "pv_realisee": st.column_config.NumberColumn(
                         t("+/- value réalisée"), format=langues.eur_colonne("%+.0f"),
                         help=t("Encaissée sur les ventes déjà faites de ce titre (frais de vente déduits)")),
@@ -867,8 +893,8 @@ if "Positions" in onglets:
                         t("Frais de transaction"), format=langues.eur_colonne("%.2f"),
                         help=t("Courtage et frais payés sur les achats et ventes de ce titre, depuis l'origine")),
                     "poids_pct": st.column_config.ProgressColumn(
-                        t("Poids"), format=langues.pct_colonne("%.1f"), min_value=0,
-                        max_value=float(tableau["poids_pct"].max())),
+                        t("Poids"), format=langues.pct_colonne(), min_value=0.0,
+                        max_value=float(max(tableau["poids_pct"].max(), 0.01)) if len(tableau) else 1.0),
                     "dividendes": st.column_config.NumberColumn(t("Dividendes"), format=langues.eur_colonne("%.0f")),
                 },
             )
@@ -913,40 +939,48 @@ if "Positions" in onglets:
 # ----------------------------------------------------------------------
 if "Performance" in onglets:
     with onglets["Performance"]:
+        # Revue du 23/11/2026 : la performance RÉELLE du portefeuille d'abord (gain ÷ capital investi, TRI, même
+        # argent dans l'indice) ; la comparaison des titres à l'indice (cours seuls, hors versements) ensuite.
         ecart = av["twr_portefeuille_meme_periode"] - av["twr_indice"]
-        html(ui.grille([
-            ui.carte(t("TWR total"), pct(ind["twr_total"]), detail=t("Depuis le {date}", date=date_debut)),
-            ui.carte(t("TWR annualisé"), pct(ind["twr_annualise"]), detail=t("Base 365 jours")),
-            ui.carte(t("TRI annuel"), pct(ind["tri_annuel"]), detail=t("Rendement de l'argent investi"),
-                     aide=t("Taux de rendement interne : dépend du calendrier des apports")),
-            ui.carte(t("Écart avec {indice}", indice=nom_court), pct(ecart),
-                     detail=ui.pastille(t("surperformance") if ecart >= 0 else t("sous-performance"), tendance(ecart)),
-                     aide=t("TWR du portefeuille − TWR de l'indice, sur la même période")),
-        ]))
+        comparaison = vues_revenus.meme_argent(res)
+        cartes_perf = [
+            ui.carte(t("Rendement"), pct(rendement_investi),
+                     detail=t("Gain total {montant}", montant=euros(resume["gain_total"], signe=True)),
+                     aide=t("Gain total ÷ coût d'achat des titres détenus")),
+            ui.carte(t("TRI annuel"), pct(ind["tri_annuel"]), detail=t("Rendement de votre argent, par an"),
+                     aide=t("Taux de rendement interne : tient compte des dates et des montants de vos versements")),
+        ]
+        if comparaison["indice"] is not None:
+            cartes_perf.append(ui.carte(
+                t("Comparé à {indice}", indice=nom_court), euros(comparaison["ecart_indice"], signe=True),
+                detail=ui.pastille(t("mieux que l'indice") if comparaison["ecart_indice"] >= 0
+                                   else t("moins bien que l'indice"), tendance(comparaison["ecart_indice"])),
+                aide=t("Valeur du portefeuille − valeur du même argent placé dans l'indice, aux mêmes dates")))
+        cartes_perf.append(ui.carte(
+            t("Titres contre {indice}", indice=nom_court), t("{n} pts", n=nombre(ecart * 100, 1)),
+            detail=t("Variation des cours depuis le {date}, sans l'effet des versements", date=date_debut),
+            aide=t("Performance des titres − performance de l'indice, sur la même période (méthode pondérée par "
+                   "le temps, celle des gérants)")))
+        html(ui.grille(cartes_perf))
+
+        # Le même argent placé dans l'indice et sur un Livret A (src/vues_revenus.py, src/livret_a.py)
+        vues_revenus.comparaison_livret_a(res, graphique, nom_court)
 
         with st.container(border=True):
-            html(ui.titre_section(t("Portefeuille et {indice}", indice=nom_court),
-                                  t("Base 100 à la première date commune")))
+            html(ui.titre_section(t("Performance des titres comparée à {indice}", indice=nom_court),
+                                  t("Base 100 à la première date commune · variation des cours, sans l'effet des "
+                                    "versements")))
             graphique(gi.fig_comparaison_indice(av, nom_indice))
 
-        # Courbe d'une seule ligne (un ETF ou une action) : src/vues_ligne.py
-        with st.container(border=True):
-            tete, menu = st.columns([3, 2], vertical_alignment="center")
-            with tete:
-                html(ui.titre_section(t("Courbe d'une ligne"), t("Choisissez un ETF ou une action : valeur, cours et PRU, "
-                                                                "ou comparaison à l'indice")))
-            with menu:
-                ligne_choisie = vues_ligne.choisir_ligne(res, "performance")
-            if ligne_choisie is not None:
-                vues_ligne.afficher_ligne(res, ligne_choisie, nom_court, code_indice, "performance", graphique)
-
-        # Le même argent sur un Livret A (src/vues_revenus.py, src/livret_a.py)
-        vues_revenus.comparaison_livret_a(res, graphique)
+        # Courbe d'une seule ligne (un ETF ou une action) : src/vues_ligne.py (fragment)
+        vues_ligne.bloc(res, "performance", nom_court, code_indice, graphique, t("Courbe d'une ligne"),
+                        t("Choisissez un ETF ou une action : valeur, cours et PRU, ou comparaison à l'indice"))
 
         gauche, droite = st.columns(2, gap="medium")
         with gauche, st.container(border=True):
-            html(ui.titre_section(t("Rendement par année civile"), t("TWR du portefeuille et de l'indice")))
-            graphique(gi.fig_rendements_annuels(ind, av, nom_court))
+            html(ui.titre_section(t("Rendement par année civile"),
+                                  t("Performance des titres et de l'indice · année en cours : à date")))
+            graphique(gi.fig_rendements_annuels(ind, av, nom_court, annee_en_cours=histo.index[-1].year))
         with droite, st.container(border=True):
             recup = ind["date_recuperation"]
             html(ui.titre_section(
@@ -992,10 +1026,10 @@ if "Risque" in onglets:
             ui.carte(t("Ratio de Sharpe"), nombre(av["sharpe"]), detail=f"{nom_court} : {nombre(av['sharpe_indice'])}",
                      aide=t("(Rendement − taux sans risque) / volatilité")),
             ui.carte(t("Ratio de Sortino"), nombre(av["sortino"]), detail=t("Ne pénalise que les baisses")),
-            ui.carte(t("VaR {niveau} · 1 jour", niveau=niveau), euros(av["var_euros"]),
+            ui.carte(t("VaR {niveau} · 1 jour", niveau=niveau), euros(av["var_historique"] * resume["valeur_actuelle"]),
                      detail=ui.pastille(pct(-av["var_historique"]), "negative") + t(" méthode historique"),
                      aide=t("Dans {niveau} des jours, la perte ne dépasse pas ce montant", niveau=niveau)),
-            ui.carte("CVaR · Expected Shortfall", euros(av["cvar_euros"]),
+            ui.carte("CVaR · Expected Shortfall", euros(av["cvar"] * resume["valeur_actuelle"]),
                      detail=ui.pastille(pct(-av["cvar"]), "negative") + t(" au-delà de la VaR"),
                      aide=t("Perte moyenne les jours où la VaR est dépassée")),
         ]))
@@ -1016,9 +1050,10 @@ if "Risque" in onglets:
                              aide=t("Positive : « queues épaisses », davantage de journées extrêmes que prévu.")),
                 ]))
                 html(ui.grille([
-                    ui.carte(t("Jours à plus de 3 écarts-types"), pct(av["jours_extremes"], signe=False),
+                    ui.carte(t("Jours extrêmes (> 3 σ)"), pct(av["jours_extremes"], signe=False),
                              detail=t("{theo} selon la loi normale", theo=pct(av["jours_extremes_normale"], signe=False))),
-                    ui.carte(t("Test de Jarque-Bera"), f"p = {lecture._p_value(av['p_jarque_bera'])}",
+                    ui.carte(t("Test de Jarque-Bera"), ("p " + lecture._p_value(av['p_jarque_bera']) if av['p_jarque_bera'] < 0.001
+                                  else f"p = {lecture._p_value(av['p_jarque_bera'])}"),
                              detail=ui.pastille(t("Normalité rejetée"), "negative") if av["p_jarque_bera"] < 0.05
                              else ui.pastille(t("Normalité non rejetée"), "positive"),
                              aide=t("JB = n/6 × (S² + K²/4). Sous la loi normale, p-value = exp(−JB/2).")),
@@ -1134,7 +1169,7 @@ if "Optimisation" in onglets:
                     if notes:
                         st.caption(" ".join(notes))
                     with st.expander(t("Détail des ajustements (montants à acheter / vendre)")):
-                        detail = comparaison.assign(actuel=comparaison["actuel"] * 100, cible=comparaison["cible"] * 100,
+                        detail = comparaison.assign(actuel=comparaison["actuel"], cible=comparaison["cible"],
                                                     sens=comparaison["sens"].map({
                                                         "renforcer": t("Renforcer"), "alleger": t("Alléger"),
                                                         "sortir": t("Vendre entièrement"), "inchange": t("Inchangé")}),
@@ -1145,8 +1180,8 @@ if "Optimisation" in onglets:
                             column_config={
                                 "nom": st.column_config.TextColumn(t("Titre")),
                                 "classe": st.column_config.TextColumn(t("Classe")),
-                                "actuel": st.column_config.NumberColumn(t("Actuel"), format=langues.pct_colonne("%.1f")),
-                                "cible": st.column_config.NumberColumn(t("Conseillé"), format=langues.pct_colonne("%.1f")),
+                                "actuel": st.column_config.NumberColumn(t("Actuel"), format=langues.pct_colonne()),
+                                "cible": st.column_config.NumberColumn(t("Conseillé"), format=langues.pct_colonne()),
                                 "euros": st.column_config.NumberColumn(t("Acheter / vendre"),
                                                                        format=langues.eur_colonne("%+.0f")),
                                 "sens": st.column_config.TextColumn(t("Action")),
@@ -1186,13 +1221,19 @@ if "Projection" in onglets:
                               format_func=lambda m: t("Loi normale") if m == "normale" else t("Historique (bootstrap)"),
                               help=t("Historique : tire au hasard de vrais jours de bourse du portefeuille, "
                                      "ce qui conserve les krachs réels."))
-            mu = b.slider(t("Rendement annuel supposé (%)"), -5.0, 20.0,
-                          float(min(max(round(mu_hist * 200) / 2, -5.0), 20.0)), 0.5,
-                          help=t("Par défaut : rendement historique. Le réduire donne une projection plus prudente.")) / 100
-            sigma = c.slider(t("Volatilité annuelle (%)"), 1.0, 50.0,
-                             float(min(max(round(sigma_hist * 200) / 2, 1.0), 50.0)), 0.5,
-                             disabled=(methode == "historique"),
-                             help=t("Avec la méthode historique, la volatilité réelle est utilisée.")) / 100
+            # curseurs à valeurs écrites à la française (« 11,5 % ») : select_slider sur des pas de 0,5 point
+            pas_mu = [x / 2 for x in range(-10, 41)]
+            pas_sigma = [x / 2 for x in range(2, 101)]
+            mu = b.select_slider(t("Rendement annuel supposé"), options=pas_mu,
+                                 value=float(min(max(round(mu_hist * 200) / 2, -5.0), 20.0)),
+                                 format_func=lambda v: pct(v / 100, signe=False, decimales=1),
+                                 help=t("Par défaut : rendement historique. Le réduire donne une projection plus "
+                                        "prudente.")) / 100
+            sigma = c.select_slider(t("Volatilité annuelle"), options=pas_sigma,
+                                    value=float(min(max(round(sigma_hist * 200) / 2, 1.0), 50.0)),
+                                    format_func=lambda v: pct(v / 100, signe=False, decimales=1),
+                                    disabled=(methode == "historique"),
+                                    help=t("Avec la méthode historique, la volatilité réelle est utilisée.")) / 100
 
         with st.spinner(t("Simulation de Monte-Carlo...")):
             sim = projeter(resume["valeur_actuelle"], mu, sigma, annees, float(versement), methode,

@@ -47,6 +47,14 @@ def _enregistrer(cible, session_compte, objectifs):
 # Allocation cible
 # ----------------------------------------------------------------------
 def afficher(res, contenu, cible, session_compte, analyser, graphique, profil="Équilibré"):
+    """L'onglet entier. Chaque bloc est un « fragment » Streamlit : modifier une cible ou lancer une simulation
+    ne recalcule que ce bloc, pas toute la page (revue du 23/11/2026)."""
+    _allocation(res, cible, session_compte, graphique)
+    _simulateur(res, contenu, analyser, profil)
+
+
+@st.fragment
+def _allocation(res, cible, session_compte, graphique):
     positions = res["positions"]
     actuelle = allocation.repartition_actuelle(positions)
     enregistres = _objectifs_enregistres(cible, session_compte)
@@ -64,16 +72,16 @@ def afficher(res, contenu, cible, session_compte, analyser, graphique, profil="�
         gauche, droite = st.columns([3, 2], gap="medium")
         with gauche:
             tableau = pd.DataFrame({"poche": [td(p) for p in poches],
-                                    "actuel": [float(actuelle["poids"].get(p, 0.0)) for p in poches],
+                                    "actuel": [round(float(actuelle["poids"].get(p, 0.0)), 1) for p in poches],
                                     "cible": objectifs.values})
             edite = st.data_editor(
                 tableau, hide_index=True, width="stretch", num_rows="fixed", key=f"editeur_{_cle(cible)}",
                 disabled=["poche", "actuel"],
                 column_config={
                     "poche": st.column_config.TextColumn(t("Poche")),
-                    "actuel": st.column_config.NumberColumn(t("Actuel"), format=langues.pct_colonne("%.1f")),
-                    "cible": st.column_config.NumberColumn(t("Cible"), min_value=0.0, max_value=100.0, step=5.0,
-                                                           format=langues.pct_colonne("%.0f")),
+                    "actuel": st.column_config.NumberColumn(t("Actuel (%)"), format=langues.nombre_colonne("%.1f")),
+                    "cible": st.column_config.NumberColumn(t("Cible (%)"), min_value=0.0, max_value=100.0, step=5.0,
+                                                           format=langues.nombre_colonne("%.0f")),
                 })
             nouveaux = pd.Series(pd.DataFrame(edite)["cible"].astype(float).values, index=poches)
             total = float(nouveaux.sum())
@@ -98,6 +106,10 @@ def afficher(res, contenu, cible, session_compte, analyser, graphique, profil="�
                     ui.carte(t("Écart après le versement"),
                              t("{n} points", n=nombre(float((detail["apres"] - detail["cible"]).clip(lower=0).sum()), 1))),
                 ]))
+                necessaire = allocation.versement_necessaire(actuelle["valeur"], nouveaux)
+                html(ui.note(t("Pour atteindre exactement la cible sans rien vendre, il faudrait verser {montant}.",
+                               montant=euros(necessaire)) if necessaire > 0.5
+                             else t("Votre portefeuille est déjà sur la cible.")))
         if abs(total - 100) <= 0.05:
             achats = detail[detail["a_investir"] > 0.5].sort_values("a_investir", ascending=False)
             if len(achats) and montant > 0:
@@ -115,12 +127,12 @@ def afficher(res, contenu, cible, session_compte, analyser, graphique, profil="�
                            "celles en avance (pas de frais de vente, pas d'impôt sur une plus-value). Exercice "
                            "pédagogique, pas un conseil en investissement.")))
 
-    _simulateur(res, contenu, analyser, profil)
 
 
 # ----------------------------------------------------------------------
 # Simulateur « Et si j'achetais… »
 # ----------------------------------------------------------------------
+@st.fragment
 def _simulateur(res, contenu, analyser, profil):
     positions = res["positions"]
     with st.container(border=True):
@@ -148,11 +160,22 @@ def _simulateur(res, contenu, analyser, profil):
             st.session_state["simulation_demandee"] = cle
         if st.session_state.get("simulation_demandee") != cle:
             return
+        if ticker in positions.index:
+            # titre déjà détenu : simulation instantanée avec les données déjà chargées
+            try:
+                apres_res, quantite = simulation_achat.res_avec_achat(res, ticker, montant)
+                avant = simulation_achat.resume_exposition(res, profil)
+                apres = simulation_achat.resume_exposition(apres_res, profil)
+            except Exception as erreur:
+                st.error(t("Simulation impossible : {erreur}", erreur=erreur))
+                return
+            _resultat(res, avant, apres, quantite, nom)
+            return
         prix = simulation_achat.prix_en_devise(res, ticker)
         if prix is None:
             try:
                 from .market_data import obtenir_cours
-                prix = (obtenir_cours([ticker]) or {}).get(ticker)
+                prix = (obtenir_cours([ticker])[0] or {}).get(ticker)
             except Exception:
                 prix = None
         if not prix or prix != prix:
@@ -167,31 +190,41 @@ def _simulateur(res, contenu, analyser, profil):
         except Exception as erreur:
             st.error(t("Simulation impossible : {erreur}", erreur=erreur))
             return
-        st.caption(t("Achat fictif de {q} × {nom} au dernier cours, le {date}.", q=nombre(quantite, 4), nom=nom,
-                     date=langues.date(res["historique"].index[-1])))
+        _resultat(res, avant, apres, quantite, nom)
 
-        def ligne(libelle, f, cle_):
-            return {t("Indicateur"): libelle, t("Avant"): f(avant[cle_]), t("Après l'achat"): f(apres[cle_])}
 
-        def part(v):
-            return f"{td(v[0])} {pct(v[1], signe=False, decimales=0)}" if v[0] else "—"
+def _resultat(res, avant, apres, quantite, nom):
+    """Tableau avant / après l'achat fictif, avec la variation, et les constats qui changent."""
+    st.caption(t("Achat fictif de {q} × {nom} au dernier cours, le {date}.", q=nombre(quantite, 4), nom=nom,
+                 date=langues.date(res["historique"].index[-1])))
 
-        st.dataframe(pd.DataFrame([
-            ligne(t("Valeur des titres"), euros, "valeur"),
-            ligne(t("Volatilité de la répartition (3 ans)"), lambda v: pct(v, signe=False) if v == v else "—",
-                  "volatilite"),
-            ligne(t("Plus grosse ligne"), lambda v: f"{v[0]} {pct(v[1], signe=False, decimales=0)}", "plus_grosse_ligne"),
-            ligne(t("Premier pays (actions)"), part, "pays"),
-            ligne(t("Premier secteur (actions)"), part, "secteur"),
-            ligne(t("Alertes du diagnostic"), str, "alertes"),
-            ligne(t("Points d'attention"), str, "attentions"),
-        ]), hide_index=True, width="stretch")
-        nouveaux, disparus = simulation_achat.nouveaux_constats(avant, apres)
-        for c_ in nouveaux:
-            html(ui.note(t("Nouveau : {texte}", texte=t(c_["titre"], **c_["valeurs"])), attention=True))
-        for c_ in disparus:
-            html(ui.note(t("Réglé par cet achat : {texte}", texte=t(c_["titre"], **c_["valeurs"]))))
-        if not nouveaux and not disparus:
-            html(ui.note(t("Cet achat ne change aucun constat du diagnostic.")))
-        html(ui.note(t("Volatilité de la répartition : celle qu'aurait eue la nouvelle répartition sur les 3 dernières "
-                       "années. L'achat n'a pas d'histoire : la volatilité passée du portefeuille ne bougerait pas.")))
+    def ligne(libelle, f, cle_, variation=None):
+        return {t("Indicateur"): libelle, t("Avant"): f(avant[cle_]), t("Après l'achat"): f(apres[cle_]),
+                t("Variation"): variation(avant[cle_], apres[cle_]) if variation else ""}
+
+    def part(v):
+        return f"{td(v[0])} {pct(v[1], signe=False, decimales=0)}" if v[0] else "—"
+
+    def points(a, b):
+        return t("{n} pts", n=nombre((b - a) * 100, 2)) if a == a and b == b else ""
+
+    st.dataframe(pd.DataFrame([
+        ligne(t("Valeur des titres"), euros, "valeur", lambda a, b: euros(b - a, signe=True)),
+        ligne(t("Volatilité de la répartition (3 ans)"), lambda v: pct(v, signe=False) if v == v else "—",
+              "volatilite", points),
+        ligne(t("Plus grosse ligne"), lambda v: f"{v[0]} {pct(v[1], signe=False, decimales=1)}",
+              "plus_grosse_ligne", lambda a, b: points(a[1], b[1])),
+        ligne(t("Premier pays (actions)"), part, "pays", lambda a, b: points(a[1], b[1])),
+        ligne(t("Premier secteur (actions)"), part, "secteur", lambda a, b: points(a[1], b[1])),
+        ligne(t("Alertes du diagnostic"), str, "alertes", lambda a, b: f"{b - a:+d}" if b != a else "="),
+        ligne(t("Points d'attention"), str, "attentions", lambda a, b: f"{b - a:+d}" if b != a else "="),
+    ]), hide_index=True, width="stretch")
+    nouveaux, disparus = simulation_achat.nouveaux_constats(avant, apres)
+    for c_ in nouveaux:
+        html(ui.note(t("Nouveau : {texte}", texte=t(c_["titre"], **c_["valeurs"])), attention=True))
+    for c_ in disparus:
+        html(ui.note(t("Réglé par cet achat : {texte}", texte=t(c_["titre"], **c_["valeurs"]))))
+    if not nouveaux and not disparus:
+        html(ui.note(t("Cet achat ne change aucun constat du diagnostic.")))
+    html(ui.note(t("Volatilité de la répartition : celle qu'aurait eue la nouvelle répartition sur les 3 dernières "
+                   "années. L'achat n'a pas d'histoire : la volatilité passée du portefeuille ne bougerait pas.")))

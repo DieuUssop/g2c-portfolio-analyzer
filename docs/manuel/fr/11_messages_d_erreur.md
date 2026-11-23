@@ -12,7 +12,7 @@ Aucun portefeuille n'est disponible : pas de fichier envoyé, aucun portefeuille
 
 ### Solution
 
-1. Dans la barre latérale, rubrique « Données », utilisez [[Envoyer un fichier (CSV, Excel, PDF ou image)]] pour charger vos opérations.
+1. Dans la barre latérale, rubrique « Portefeuille », utilisez la zone « Importer un relevé » pour charger vos opérations.
 2. Ou connectez-vous avec [[Se connecter]] : vos portefeuilles enregistrés apparaissent alors dans la liste.
 3. Si vous n'avez pas encore de fichier, téléchargez le [[Modèle de fichier]], remplissez-le et envoyez-le.
 

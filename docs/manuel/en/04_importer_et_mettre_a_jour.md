@@ -37,7 +37,7 @@ The file may have its own column names, in French or English, header lines above
 
 ### Where to upload the file
 
-In the sidebar, under "Data", use the [[Upload a file (CSV, Excel, PDF or image)]] area: drag the file onto it or click to choose it. You can drop several files at once: their transactions are combined (see the fiche "Uploading several files at once"). The uploaded file takes **priority** over the portfolio selected in the list just above: as long as it is present in the upload area, it is the one being analysed.
+In the sidebar, under "Portfolio", use the "Import a statement" area: drag the file onto it or click to choose it. You can drop several files at once: their transactions are combined (see the fiche "Uploading several files at once"). The uploaded file takes **priority** over the portfolio selected in the list just above: as long as it is present in the upload area, it is the one being analysed.
 
 ### What the software does
 
@@ -57,7 +57,7 @@ An uploaded file is kept only for the session. To find it again next time:
 
 ### Going back to another portfolio
 
-Remove the file from the upload area (small cross to the right of its name): the portfolio selected in the "Data" list is analysed again.
+Remove the file from the upload area (small cross to the right of its name): the portfolio selected in the "Portfolio" list is analysed again.
 
 ## The project format: which columns should my file have?
 <!-- fiche: import-format-projet | questions: what is the format of the transactions file ; which columns are needed ; how do I prepare my csv file ; date type ticker nom quantite prix frais ; which currency should I put the price in ; are fees in euros or dollars ; what is the yahoo ticker ; which date format should I use ; can I put decimals in the quantity | mots: project format, columns, header, date, type, ticker, nom, quantite, prix, frais, trading currency, file structure -->
@@ -1309,7 +1309,7 @@ There is no need to resend the whole history with every new order: send only the
 
 ### Where the page is
 
-- in the sidebar, under "Data", the [[Add transactions]] link below the upload area: it applies to the portfolio displayed;
+- in the sidebar, under "Portfolio", the [[Add transactions]] link below the upload area: it applies to the portfolio displayed;
 - in [[My account]], under each portfolio in [[My portfolios]], the [[Add transactions]] button.
 
 The page shows which portfolio it concerns. [[Back to the dashboard]] closes it without changing anything.
@@ -1409,6 +1409,10 @@ The cost price of the original company must be **split** between the two securit
 <!-- fiche: import-saisie-manuelle | questions: how do I enter a purchase by hand ; add a transaction manually ; manual entry of a dividend ; I have no file I want to type my order ; which price do I put in manual entry ; security not found in manual entry ; enter an order with the isin ; is the price in euros or dollars in the entry form | mots: manual entry, form, order, manual addition, ticker, ISIN, Bloomberg code, Add to the list -->
 
 Manual entry is found on the [[Add transactions]] page, [[Manual entry]] tab.
+
+### Find a security
+
+Above the form, the [[Find a security]] box accepts a name, a ticker or an ISIN (e.g. LVMH, MSCI World, FR0000121014). The securities known on this computer are suggested with their full name; a click fills in the [[Security]] field and suggests the latest price (if the Internet responds). Check the price before adding: the price of your order is what counts.
 
 ### The fields
 
@@ -1586,7 +1590,7 @@ Create an account: your portfolios are saved encrypted, additions and correction
 
 ### What they are
 
-The software comes with example portfolios, offered in the "Data" list, after your personal portfolios. Depending on the files present in the `data` folder:
+The software comes with example portfolios, offered in the "Portfolio" list, after your personal portfolios. Depending on the files present in the `data` folder:
 
 | Displayed name | File |
 |---|---|

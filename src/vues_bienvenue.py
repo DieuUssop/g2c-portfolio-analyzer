@@ -121,12 +121,13 @@ def afficher(session, exemple, fichiers_envoyes, modele_csv):
 # ----------------------------------------------------------------------
 # « Ce qu'il faut retenir »
 # ----------------------------------------------------------------------
-def retenir(res, constats, nom_indice):
+def retenir(res, constats, nom_indice, meme_argent=None):
     """Trois phrases en haut de la Vue d'ensemble (src/synthese.py)."""
     from .interface import euros, pct
     lignes = []
     for niveau, prefixe, texte, valeurs in synthese.phrases(
-            res, constats, nom_indice, f_pct=lambda x: pct(x), f_eur=lambda x: euros(x, signe=True)):
+            res, constats, nom_indice, f_pct=lambda x: pct(x), f_eur=lambda x: euros(x, signe=True),
+            meme_argent=meme_argent):
         phrase = t(texte, **valeurs)
         lignes.append((niveau, (t(prefixe) + " " if prefixe else "") + phrase))
     html(ui.retenir(t("Ce qu'il faut retenir"), lignes))

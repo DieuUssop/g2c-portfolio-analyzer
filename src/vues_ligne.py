@@ -2,7 +2,7 @@
 vues_ligne.py — Courbe d'une seule ligne du portefeuille (un ETF ou une action).
 
 Un menu « Tout le portefeuille / une ligne » au-dessus du graphique d'évolution (Vue d'ensemble) et dans
-l'onglet Positions. Pour une ligne :
+l'onglet Performance. Le bloc est un « fragment » Streamlit : changer de ligne ne recalcule que lui. Pour une ligne :
     - « Valeur » : valeur de la ligne et argent investi dans la ligne (quantité × PRU) ;
     - « Cours et PRU » : cours du titre, PRU en pointillé, achats ▲ et ventes ▼ au prix payé ;
     - « Comparée à l'indice » : cours depuis le premier achat (base 100) face à l'indice de référence ;
@@ -67,3 +67,22 @@ def afficher_ligne(res, ticker, nom_indice, code_indice, cle, graphique):
         (t("Dividendes"), float(ligne.get("dividendes", 0.0)), bool(ligne.get("dividendes", 0.0))),
         (t("Frais"), -float(ligne.get("frais_totaux", 0.0)), bool(ligne.get("frais_totaux", 0.0))),
     ], euros))
+
+
+@st.fragment
+def bloc(res, cle, nom_indice, code_indice, graphique, titre_tout, sous_titre_tout, figure_tout=None):
+    """Encadré complet : menu, puis le graphique du portefeuille entier (figure_tout) ou celui d'une ligne.
+    Fragment Streamlit (revue du 23/11/2026) : choisir une autre ligne ne recalcule pas toute la page."""
+    with st.container(border=True):
+        tete, menu = st.columns([3, 2], vertical_alignment="center")
+        with menu:
+            choisie = choisir_ligne(res, cle)
+        if choisie is None:
+            with tete:
+                html(ui.titre_section(titre_tout, sous_titre_tout))
+            if figure_tout is not None:
+                graphique(figure_tout)
+        else:
+            with tete:
+                html(ui.titre_section(t("Évolution d'une ligne"), t("Valeur, cours et PRU, ou comparaison à l'indice")))
+            afficher_ligne(res, choisie, nom_indice, code_indice, cle, graphique)

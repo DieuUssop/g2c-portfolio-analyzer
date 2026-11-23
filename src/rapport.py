@@ -231,8 +231,8 @@ def generer_rapport(res, destination, nom_indice, taux_sans_risque, niveau_var,
     story.append(_cartes([
         ("Valeur actuelle", euros(resume["valeur_actuelle"])),
         ("Gain total", euros(resume["gain_total"], signe=True), _couleur(resume["gain_total"])),
-        ("Gain / capital investi", pct(rendement_investi), _couleur(rendement_investi)),
-        ("Performance annualisée (TWR)", pct(ind["twr_annualise"]), _couleur(ind["twr_annualise"])),
+        ("Rendement (gain / coût d'achat)", pct(rendement_investi), _couleur(rendement_investi)),
+        ("Coût d'achat des titres", euros(resume["montant_investi"])),
         ("TRI annuel", pct(ind["tri_annuel"]), _couleur(ind["tri_annuel"])),
         ("Volatilité annuelle", pct(ind["volatilite"], signe=False)),
         ("Ratio de Sharpe", nombre(av["sharpe"])),
@@ -356,7 +356,7 @@ def generer_rapport(res, destination, nom_indice, taux_sans_risque, niveau_var,
                pct(annuels_p[a] - annuels_i[a]) if a in annuels_i.index else "-"]
               for a in annuels_p.index]
     story.append(KeepTogether([
-        Paragraph("Rendement par année civile (TWR)", st["h2"]),
+        Paragraph("Performance des titres par année civile (hors effet des versements)", st["h2"]),
         _tableau(["Année", "Portefeuille", indice_court, "Écart"], lignes),
     ]))
     story.append(Spacer(1, 6))
@@ -563,7 +563,8 @@ def generer_rapport(res, destination, nom_indice, taux_sans_risque, niveau_var,
         "en euros au taux de change du jour (transactions converties au taux du jour de l'opération).",
         "<b>Rendement quotidien</b> : r(t) = (valeur(t) - flux(t)) / valeur(t-1) - 1, les flux "
         "étant supposés intervenir en fin de journée.",
-        "<b>TWR</b> : produit des (1 + r) - 1, indépendant du calendrier des apports (norme GIPS). "
+        "<b>Performance des titres</b> (comparaison à l'indice) : produit des (1 + r) - 1, indépendant du "
+        "calendrier des versements (méthode pondérée par le temps, norme GIPS). "
         "<b>TRI</b> : taux annuel annulant la valeur actuelle nette des flux de l'investisseur.",
         "<b>Volatilité</b> : écart-type des rendements quotidiens multiplié par racine de 252.",
         "<b>Sharpe / Sortino</b> : rendement excédentaire annualisé divisé par la volatilité "

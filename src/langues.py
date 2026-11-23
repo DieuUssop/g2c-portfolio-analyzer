@@ -94,19 +94,23 @@ def eur(format_nombre):
 
 
 def eur_colonne(format_nombre):
-    """Format d'une colonne de tableau Streamlit : '%.2f €' ou '€%.2f'.
-    En français, un montant avec décimales prend le format « euro » de Streamlit (séparateurs de la langue
-    du navigateur : « 32,27 € ») : le format « %.2f » afficherait « 32.27 € » avec un point."""
+    """Format d'une colonne de tableau Streamlit : '€%.2f' en anglais ; en français, le format « euro » de
+    Streamlit (séparateurs de la langue du navigateur : « 1 234,56 € ») : un format « %.2f » afficherait
+    « 1234.56 € » avec un point (revue du 23/11/2026 : plus jamais de point décimal en français)."""
     if anglais():
         return f"€{format_nombre}"
-    if "+" not in format_nombre and ".0f" not in format_nombre:
-        return "euro"
-    return f"{format_nombre} €"
+    return "euro"
 
 
-def pct_colonne(format_nombre):
-    """Format de pourcentage d'une colonne de tableau : '%.1f %%' ou '%.1f%%'."""
-    return f"{format_nombre}%%" if anglais() else f"{format_nombre} %%"
+def pct_colonne(format_nombre=None):
+    """Format de pourcentage d'une colonne de tableau : le format « percent » de Streamlit (« 34,3 % » en
+    français). ATTENTION : la colonne doit contenir une FRACTION (0,343), pas des points (34,3)."""
+    return "percent"
+
+
+def nombre_colonne(format_nombre="%.2f"):
+    """Nombre sans unité : séparateurs de la langue du navigateur en français (« 1 234,5 »)."""
+    return format_nombre if anglais() else "localized"
 
 
 def espace_pct():

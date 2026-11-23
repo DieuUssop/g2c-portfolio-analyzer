@@ -85,7 +85,7 @@ It ignores the effect of the timing of your contributions: to measure what your 
 ## The annualised TWR
 <!-- fiche: formule-twr-annualise | questions: how is annualised performance calculated ; annualised twr formula ; why a 365-day basis ; return per year ; annualised perf huge over 3 months ; convert a total performance into an annual one ; 21% in two years how much is that per year | mots: annualisation, annualised TWR, annualised performance, annual return, 365 basis, compounding | aller: Analyse du portefeuille/Performance | chiffres: twr_annualise, twr_total -->
 
-This is the "Annualised return" figure in the key figures and the "Annualised TWR" card in the Performance tab.
+It is no longer shown as a card: the Performance tab shows the performance of the securities year by year ("Performance of the securities by calendar year") and the curve compared with the index, which rely on the same method.
 
 ### The formula
 

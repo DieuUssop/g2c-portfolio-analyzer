@@ -12,7 +12,7 @@ No portfolio is available: no file uploaded, no portfolio saved in your space, a
 
 ### Solution
 
-1. In the sidebar, under "Data", use [[Upload a file (CSV, Excel, PDF or image)]] to load your transactions.
+1. In the sidebar, under "Portfolio", use the "Import a statement" area to load your transactions.
 2. Or sign in with [[Sign in]]: your saved portfolios then appear in the list.
 3. If you do not have a file yet, download the [[File template]], fill it in and upload it.
 

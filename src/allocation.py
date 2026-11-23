@@ -98,3 +98,15 @@ def tableau(positions, cible_pct, montant):
 def ecart_total(t):
     """Écart total à la cible (somme des écarts positifs, en points) : 0 = parfaitement aligné."""
     return float(t["ecart"].clip(lower=0).sum())
+
+
+def versement_necessaire(valeurs, cible_pct):
+    """Versement minimal pour atteindre exactement la cible SANS RIEN VENDRE : la poche la plus en avance
+    sur sa cible fixe le total à atteindre (valeur ÷ cible). Les poches visées à 0 % sont ignorées (on ne
+    peut les ramener à 0 qu'en vendant). Renvoie un montant en euros (0 si la cible est déjà atteinte)."""
+    c = cible_pct.reindex(valeurs.index).fillna(0.0) / 100
+    utiles = c > 0
+    if not utiles.any():
+        return 0.0
+    total_vise = float((valeurs[utiles] / c[utiles]).max())
+    return max(0.0, total_vise - float(valeurs.sum()))

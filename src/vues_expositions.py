@@ -174,7 +174,8 @@ def afficher(res, cle, code_indice):
                     t("Pays"): [td(x) for x in e.index],
                     t("Portefeuille"): [_p1(v) for v in e["portefeuille"]],
                     nom_ref: [_p1(v) for v in e["indice"]],
-                    t("Écart"): [pct(v, decimales=1) for v in e["ecart"]],
+                    t("Écart"): [t("{n} pts", n=nombre(v * 100, 1) if v < 0 else "+" + nombre(v * 100, 1))
+                                 for v in e["ecart"]],
                 }), hide_index=True, width="stretch")
         if part_risque is not None:
             with st.container(border=True):

@@ -44,6 +44,39 @@ def fermer():
 _resoudre_titre = vues_pdf.resoudre_titre       # ticker et nom d'un titre saisi à la main
 
 
+@st.fragment
+def _trouver_titre():
+    """Aide à la saisie manuelle (revue du 23/11/2026) : on tape un nom, un ticker ou un ISIN ; les titres
+    connus sur cet ordinateur sont proposés, avec leur nom complet ; un clic remplit le champ « Titre » du
+    formulaire et propose le dernier cours comme prix (si Internet répond)."""
+    from . import base_titres
+    recherche = st.text_input(t("Trouver un titre"), placeholder=t("Ex. LVMH, MSCI World, FR0000121014…"),
+                              key="recherche_titre_saisie")
+    if not recherche or len(recherche.strip()) < 2:
+        return
+    try:
+        resultats = base_titres.chercher_localement(recherche.strip())[:5]
+    except Exception:
+        resultats = []
+    if not resultats:
+        st.caption(t("Aucun titre connu sur cet ordinateur pour « {texte} » : il sera cherché sur Yahoo Finance à "
+                     "l'ajout.", texte=recherche.strip()))
+        return
+    for i, r in enumerate(resultats):
+        nom = r.get("longname") or r.get("shortname") or r["symbol"]
+        if st.button(f"{nom} · {r['symbol']}", key=f"suggestion_titre_{i}", type="tertiary",
+                     icon=":material/check_circle:"):
+            st.session_state["saisie_titre_propose"] = r["symbol"]
+            try:
+                from .market_data import obtenir_cours
+                cours = (obtenir_cours([r["symbol"]])[0] or {}).get(r["symbol"])
+                if cours and cours == cours:
+                    st.session_state["saisie_prix_propose"] = round(float(cours), 4)
+            except Exception:
+                pass
+            st.rerun()
+
+
 def _avis_ost(brut):
     """Avis de division / regroupement d'actions (src/lecture_pdf.lire_ost), ou None."""
     if import_fichier.nature_fichier(brut) != "pdf":
@@ -141,17 +174,21 @@ def page(session_compte, importer):
                 st.caption(t("Pour un format inhabituel, envoyez le fichier depuis la barre latérale : "
                              "l'assistant d'import vous guidera."))
     with saisie_tab:
+        if "saisie_titre_propose" in st.session_state:          # titre choisi dans les suggestions
+            st.session_state["saisie_titre"] = st.session_state.pop("saisie_titre_propose")
+        _trouver_titre()                            # suggestions, titre reconnu, cours du jour (revue du 23/11)
         with st.form("saisie_operation", clear_on_submit=True, border=False):
             a, b, c = st.columns(3)
             date = a.date_input(t("Date"), value=pd.Timestamp.today(), format="DD/MM/YYYY")
             sens = b.selectbox(t("Type"), ["ACHAT", "VENTE", "DIVIDENDE", "VERSEMENT", "RETRAIT", "FRAIS"],
                                format_func=td, help=t("Versement, retrait, frais : mouvements d'espèces du compte "
                                                       "(sans titre : le montant va dans « prix »)"))
-            titre = c.text_input(t("Titre"), placeholder=t("Ticker, ISIN, nom ou code Bloomberg"))
+            titre = c.text_input(t("Titre"), placeholder=t("Ticker, ISIN, nom ou code Bloomberg"),
+                                 key="saisie_titre")
             a, b, c = st.columns(3)
             quantite = a.number_input(t("Quantité"), min_value=0.0, value=1.0, step=1.0)
             prix = b.number_input(t("Prix unitaire (devise du titre) ou montant du dividende"), min_value=0.0,
-                                  value=0.0, step=1.0)
+                                  value=float(st.session_state.pop("saisie_prix_propose", 0.0)), step=1.0)
             frais = c.number_input(t("Frais (€)"), min_value=0.0, value=0.0, step=0.5)
             if st.form_submit_button(t("Ajouter à la liste"), icon=":material/add:"):
                 try:

@@ -37,7 +37,7 @@ Le fichier peut avoir ses propres noms de colonnes, en français ou en anglais, 
 
 ### Où envoyer le fichier
 
-Dans la barre latérale, rubrique « Données », utilisez la zone [[Envoyer un fichier (CSV, Excel, PDF ou image)]] : glissez-y le fichier ou cliquez pour le choisir. Vous pouvez y déposer plusieurs fichiers à la fois : leurs opérations sont réunies (voir la fiche « Envoyer plusieurs fichiers d'un coup »). Le fichier envoyé est **prioritaire** sur le portefeuille choisi dans la liste juste au-dessus : tant qu'il est présent dans la zone d'envoi, c'est lui qui est analysé.
+Dans la barre latérale, rubrique « Portefeuille », utilisez la zone « Importer un relevé » : glissez-y le fichier ou cliquez pour le choisir. Vous pouvez y déposer plusieurs fichiers à la fois : leurs opérations sont réunies (voir la fiche « Envoyer plusieurs fichiers d'un coup »). Le fichier envoyé est **prioritaire** sur le portefeuille choisi dans la liste juste au-dessus : tant qu'il est présent dans la zone d'envoi, c'est lui qui est analysé.
 
 ### Ce que fait le logiciel
 
@@ -57,7 +57,7 @@ Un fichier envoyé n'est gardé que pendant la session. Pour le retrouver la pro
 
 ### Revenir à un autre portefeuille
 
-Retirez le fichier de la zone d'envoi (petite croix à droite de son nom) : le portefeuille choisi dans la liste de la rubrique « Données » est de nouveau analysé.
+Retirez le fichier de la zone d'envoi (petite croix à droite de son nom) : le portefeuille choisi dans la liste de la rubrique « Portefeuille » est de nouveau analysé.
 
 ## Le format du projet : quelles colonnes mettre dans mon fichier ?
 <!-- fiche: import-format-projet | questions: quel est le format du fichier de transactions ; quelles colonnes faut il ; comment préparer mon fichier csv ; date type ticker nom quantite prix frais ; dans quelle devise mettre le prix ; les frais sont en euros ou en dollars ; c'est quoi le ticker yahoo ; format de date à utiliser ; je peux mettre des décimales dans la quantité | mots: format du projet, colonnes, en-tête, date, type, ticker, nom, quantite, prix, frais, devise de cotation, structure du fichier -->
@@ -1309,7 +1309,7 @@ Inutile de renvoyer tout l'historique à chaque nouvel ordre : envoyez seulement
 
 ### Où se trouve la page
 
-- dans la barre latérale, rubrique « Données », lien [[Ajouter des opérations]] sous la zone d'envoi : il s'applique au portefeuille affiché ;
+- dans la barre latérale, rubrique « Portefeuille », lien [[Ajouter des opérations]] sous la zone d'envoi : il s'applique au portefeuille affiché ;
 - dans [[Mon compte]], sous chaque portefeuille de [[Mes portefeuilles]], bouton [[Ajouter des opérations]].
 
 La page indique le portefeuille concerné. [[Retour au tableau de bord]] la referme sans rien changer.
@@ -1409,6 +1409,10 @@ Le prix de revient de la société d'origine doit être **réparti** entre les d
 <!-- fiche: import-saisie-manuelle | questions: comment saisir un achat à la main ; ajouter une opération manuellement ; saisie manuelle d'un dividende ; je n'ai pas de fichier je veux taper mon ordre ; quel prix mettre dans la saisie manuelle ; titre introuvable en saisie manuelle ; saisir un ordre avec l'isin ; le prix est en euros ou en dollars dans la saisie | mots: saisie manuelle, formulaire, ordre, ajout manuel, ticker, ISIN, code Bloomberg, Ajouter à la liste -->
 
 La saisie manuelle se trouve dans la page [[Ajouter des opérations]], onglet [[Saisie manuelle]].
+
+### Trouver un titre
+
+Au-dessus du formulaire, la case [[Trouver un titre]] accepte un nom, un ticker ou un ISIN (ex. LVMH, MSCI World, FR0000121014). Les titres connus sur cet ordinateur sont proposés avec leur nom complet ; un clic remplit le champ [[Titre]] et propose le dernier cours comme prix (si Internet répond). Vérifiez le prix avant d'ajouter : c'est celui de votre ordre qui compte.
 
 ### Les champs
 
@@ -1586,7 +1590,7 @@ Créez un compte : vos portefeuilles sont enregistrés chiffrés, les ajouts et 
 
 ### Ce qu'ils sont
 
-Le logiciel est livré avec des portefeuilles d'exemple, proposés dans la liste de la rubrique « Données », après vos portefeuilles personnels. Selon les fichiers présents dans le dossier `data` :
+Le logiciel est livré avec des portefeuilles d'exemple, proposés dans la liste de la rubrique « Portefeuille », après vos portefeuilles personnels. Selon les fichiers présents dans le dossier `data` :
 
 | Nom affiché | Fichier |
 |---|---|

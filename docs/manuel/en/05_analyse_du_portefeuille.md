@@ -73,7 +73,7 @@ At the top of the [[Overview]], three sentences sum up the portfolio. They are w
 
 | Sentence | Where it comes from |
 |---|---|
-| 1. Performance | The annualised TWR, and the gap with the benchmark index over the same period ("better than", "at the same pace as" within half a point, "less than") |
+| 1. Performance | The real gain in euros and its percentage of the cost of the securities, and the gap in euros with the same money placed in the benchmark index on the same dates ("more", "less", or "as much" within 0.5%) |
 | 2. Point to watch | The most serious finding of the [[Exposures]] tab diagnosis (alert, then caution), with the profile chosen in that tab; otherwise "No point to watch" |
 | 3. Suggestion | If the cash balance is negative: add the deposits or enter the balance; otherwise the first suggestion of the finding of sentence 2; otherwise "Nothing urgent" |
 
@@ -215,7 +215,7 @@ The software replays all your transactions in date order, using the weighted ave
 
 `Amount invested = Σ quantity held × PRU`
 
-This is the cost basis of the securities still in the portfolio. It appears under the Current value card ("Invested at average cost"). It falls after a sale, because the securities sold drop out of the calculation.
+This is the cost basis of the securities still in the portfolio. It appears in the large block at the top of the page, under the name "Cost of the securities" (formerly "Invested at average cost"). It falls after a sale, because the securities sold drop out of the calculation.
 
 ### Example
 
@@ -354,7 +354,7 @@ In the [[Holdings]] tab, the **Dividends and coupons** box shows the **net** amo
 
 ### The three cards
 
-- **Received in** (last year) and **Total since inception**;
+- **Received since 1 January** (current year, or "Received in" the last year) and **Total since inception**;
 - **12-month estimate**, with the yield on the current value.
 
 ### How the estimate is made
@@ -363,7 +363,7 @@ For each holding still held: the dividends received over the last 12 months, **p
 
 > Example: €150 gross received in April for 20 shares, of which €30 withheld, i.e. €6 net per share. With 20 shares today, the estimate is €120.
 
-A holding that has paid nothing for a year (**accumulating** ETF, recent purchase, share without dividend) counts as 0: nothing is guessed. The table on the right details each paying holding.
+A holding that has paid nothing for a year (**accumulating** ETF, recent purchase, share without dividend) counts as 0: nothing is guessed. The chart shows each year and the "Next 12 months" bar; the table below details each paying holding (estimate, yield, amount per unit).
 
 ### Limits
 
@@ -452,7 +452,7 @@ Correct the erroneous transactions in the [[Transactions]] tab (see the chapter 
 ## The holdings table, column by column
 <!-- fiche: analyse-positions | questions: what do the columns of the holdings table mean ; how do i sort the holdings table ; what is the weight column ; the blue bar in the weight column ; why is the region of my etf world ; unclassified in the sector column ; is the price in euros or dollars ; table of my holdings | mots: holdings, table, columns, weight, PRU, price, quantity, ticker, class, sector, region, sorting | aller: Analyse du portefeuille/Positions | chiffres: nb_titres, valeur_actuelle -->
 
-The [[Holdings]] tab shows one row per security **still held**, from the largest value to the smallest. Click a column header to sort.
+The [[Holdings]] tab starts with four cards: Holdings, Largest holding (its weight), Best holding and Weakest holding (their gain in %). The table then shows one row per security **still held**, from the largest value to the smallest. Click a column header to sort; the "Search" box filters by name or ticker. The ticker and the name stay visible when you scroll the table to the right.
 
 | Column | Content |
 |---|---|
@@ -494,11 +494,11 @@ The [[Performance]] tab answers two questions: how much have you earned, and hav
 
 ### From top to bottom
 
-1. **Four cards**: Total TWR ("Since" + start date), Annualised TWR ("365-day basis"), Annual IRR ("Money-weighted return") and Difference vs the index (an "outperformance" or "underperformance" badge).
-2. **Portfolio and index**: the two curves rebased to 100 at the first common date.
-3. **Calendar-year returns**: the TWR for each year, portfolio and index side by side.
+1. **Four cards**: Return (total gain ÷ cost of the securities), Annual IRR ("Return on your money, per year"), Compared with the index (in euros: your portfolio minus the same money placed in the index on the same dates) and Securities vs the index (gap in points of the price change, without the effect of deposits).
+2. **The same money elsewhere**: what your deposits would be worth placed in the index or in a Livret A, on the same dates (dedicated entry).
+3. **Performance of the securities compared with the index**: the two curves rebased to 100 at the first common date.
 4. **Chart of one holding**: a single ETF or share (same menu as in the Overview).
-5. **Compared with a Livret A**: the same money placed in a Livret A (dedicated entry).
+5. **Calendar-year returns**: the performance of the securities for each year, portfolio and index side by side; the current year is marked "(to date)".
 6. **Drawdown**: the fall from the last peak, with, in the subtitle, the dates of the peak, the trough and the return to the peak.
 7. **Five cards** comparing with the index: Beta, Jensen's alpha, Correlation, Tracking error and Information ratio.
 
@@ -508,18 +508,18 @@ If the index chosen in [[Benchmark index]] is a bond or money-market index, a bo
 
 ### Suggested reading order
 
-Start with the annualised TWR and the difference vs the index, look at the curve to see **when** the gap opened up, then the drawdown to measure the worst ordeal endured. The following entries detail each indicator.
+Start with the return and the Compared with the index card, look at the curve to see **when** the gap opened up, then the drawdown to measure the worst ordeal endured. The following entries detail each indicator.
 
-## Compared with a Livret A
-<!-- fiche: analyse-livret-a | questions: would I have done better putting everything in a livret a ; compare my portfolio with the livret a ; livret a or stock market ; how much would I have in a livret a ; livret a rate used ; does the stock market pay more than the livret a | mots: Livret A, regulated savings, comparison, risk-free, Livret A rate, Banque de France -->
+## The same money elsewhere (index and Livret A)
+<!-- fiche: analyse-livret-a | questions: would I have done better putting everything in a livret a ; would I have done better buying the index ; the same money in a world etf ; compared with the index in euros ; compare my portfolio with the livret a ; livret a or stock market ; how much would I have in a livret a ; livret a rate used ; does the stock market pay more than the livret a | mots: Livret A, regulated savings, comparison, risk-free, Livret A rate, Banque de France -->
 
-In the [[Performance]] tab, the **Compared with a Livret A** box answers the question: "what if I had put the same money in a Livret A?" (the French tax-free savings account).
+In the [[Performance]] tab, the **The same money elsewhere** box answers the question: "what if I had put the same money in the benchmark index, or in a Livret A?" (the French tax-free savings account).
 
 ### The calculation
 
-The Livret A receives **the same deposits and the same withdrawals, on the same dates**, as the portfolio (purchases, sales, dividends cashed). Each day it earns the official rate in force that day: 3% in 2023 and 2024, 2.4% in February 2025, 1.7% in August 2025, 1.5% in February 2026, 1.7% since 1 August 2026 (Banque de France, info.gouv.fr; table since 2008).
+The index and the Livret A receive **the same deposits and the same withdrawals, on the same dates**, as the portfolio (purchases, sales, dividends cashed). In the index, each deposit buys index "units" at that day's price; their value then follows the index. Each day the Livret A earns the official rate in force that day: 3% in 2023 and 2024, 2.4% in February 2025, 1.7% in August 2025, 1.5% in February 2026, 1.7% since 1 August 2026 (Banque de France, info.gouv.fr; table since 2008).
 
-Three cards: the value of the portfolio, that of the Livret A (with the current rate) and the **difference**. The chart shows both curves and the money invested.
+Three cards: My portfolio, In the index and In a Livret A (with the current rate), each with the **difference** from your portfolio. The chart shows the three curves and the money invested. The "Compared with" index card, at the top of the tab, and the first sentence of "Key takeaways" repeat the difference with the index.
 
 ### Simplifications
 
@@ -528,7 +528,7 @@ Three cards: the value of the portfolio, that of the Livret A (with the current 
 
 ### How to read it
 
-The Livret A is **risk-free** and available at any time: the difference is what the risk taken on the stock market has earned (or cost) over the period. Over a few months it can be negative even for a good portfolio.
+The Livret A is **risk-free** and available at any time: the difference is what the risk taken on the stock market has earned (or cost) over the period. The index shows what a simple ETF on the index would have given, with the same deposit dates: the difference measures your choice of securities **and** of timing, in euros. Over a few months it can be negative even for a good portfolio.
 
 ## "Contribution-neutral" daily returns
 <!-- fiche: analyse-rendements-quotidiens | questions: how are daily returns calculated ; why does a purchase not count as a gain ; what does neutralising contributions mean ; my deposit makes the line go up but not the performance ; why is the first day return negative ; basis of calculation of the indicators ; daily return | mots: daily return, cash flows, contributions, withdrawals, neutralisation, base 100, end of day | aller: Analyse du portefeuille/Performance -->
@@ -589,7 +589,7 @@ Why 365 and not 252? Return is annualised in **calendar** days; 252 trading days
 
 ### Where to see it
 
-"Total TWR" and "Annualised TWR" cards in the [[Performance]] tab; the annualised TWR is also the "Annualised return" card in the key figures.
+The TWR is no longer shown as a card (November 2026 review). The screen calls it "performance of the securities": it is the "Performance of the securities compared with the index" curve, the calendar-year chart and the "Securities vs the index" card of the [[Performance]] tab.
 
 ### Limits
 
@@ -1688,7 +1688,7 @@ Enter the [[Amount of the next contribution (€)]]. The buckets **behind** thei
 
 > Example: €10,000 of which €7,000 in World equities, target 60% World, 20% emerging, 20% bonds. With €2,000 more (€12,000 in total), the shortfalls are €200 (World), €1,400 (emerging) and €1,400 (bonds): the €2,000 is split pro rata, €133, €933 and €933.
 
-The "Where to invest" table suggests, for each bucket, the largest holding already held. The chart compares the current weight, the target and the weight after the contribution; the **Gap to target** card adds up the excess points.
+The "Where to invest" table suggests, for each bucket, the largest holding already held. The chart compares the current weight, the target and the weight after the contribution; the **Gap to target** card adds up the excess points. Finally, a note gives the contribution needed to reach the target **exactly** without selling anything ("To reach the target exactly without selling anything, you would need to pay in …"), or says that the portfolio is already on target.
 
 ## The "What if I bought…" simulator
 <!-- fiche: analyse-simulateur | questions: test a purchase before making it ; what if I bought ; simulate a purchase ; effect of a new etf on my portfolio ; does this purchase diversify ; purchase simulation ; what happens if I add a share | mots: simulator, simulation, hypothetical purchase, what if, test, before buying, effect, diversification -->
@@ -1700,7 +1700,7 @@ At the bottom of the [[Target allocation]] tab, the simulator shows the effect o
 1. Choose a security you already hold, or **Other security (Yahoo Finance ticker)…** then type its ticker (CW8.PA, AAPL, PAEJ.PA…).
 2. Enter the **Amount (€)**, then click [[Simulate]].
 
-The purchase is hypothetical, at the last known price, on the portfolio's last date.
+The purchase is hypothetical, at the last known price, on the portfolio's last date. For a security already held, the result is instant; a new security requires downloading its prices.
 
 ### What is compared
 
@@ -1711,7 +1711,7 @@ The purchase is hypothetical, at the last known price, on the portfolio's last d
 | Largest holding, top country, top sector | Concentration, on a look-through basis |
 | Alerts and points to watch | Number of findings of the diagnosis (profile of the Exposures tab) |
 
-The **new** findings and those **solved by this purchase** are listed below.
+The **Change** column gives the difference between before and after. The **new** findings and those **solved by this purchase** are listed below.
 
 ### Why an "allocation" volatility?
 
@@ -1726,6 +1726,8 @@ The [[Transactions]] tab shows all the portfolio's transactions, from most recen
 
 - [[Type]]: remove or add ACHAT (purchase), VENTE (sale) and DIVIDENDE (dividend) (all are selected at the start).
 - [[Securities]]: choose one or more securities; left empty, it shows "All securities".
+- **Period**: the first and last dates to display.
+- **Search**: a name, a ticker or an amount.
 
 A line gives the number of transactions displayed out of the total.
 

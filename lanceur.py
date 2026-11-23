@@ -69,12 +69,22 @@ def navigateur_application():
     return None
 
 
+def options_fenetre():
+    """Options de la fenêtre d'application : agrandie sous Windows (elle s'arrête au-dessus de la barre des
+    tâches) ; ailleurs 1280 × 800, qui tient sur l'écran d'un MacBook (1440 × 900 moins la barre des menus)."""
+    if os.name == "nt":
+        return ["--start-maximized"]
+    return ["--window-size=1280,800"]
+
+
 def ouvrir(adresse):
     """Ouvre le tableau de bord dans une fenêtre d'application, sinon dans le navigateur."""
     navigateur = navigateur_application()
     if navigateur:
         try:
-            subprocess.Popen([navigateur, f"--app={adresse}", "--window-size=1440,900"])
+            # Fenêtre AGRANDIE : Windows l'ajuste à l'espace au-dessus de la barre des tâches (une taille fixe
+            # de 1440 × 900 passait sous la barre des tâches d'un portable et cachait la bulle d'aide)
+            subprocess.Popen([navigateur, f"--app={adresse}"] + options_fenetre())
             return
         except OSError:
             pass

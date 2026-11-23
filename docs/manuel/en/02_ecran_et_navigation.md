@@ -10,23 +10,24 @@ The screen is split into two parts: the **sidebar**, on the left, which groups a
 
 ### The sidebar, from top to bottom
 
-1. **The header**: the "PT" monogram, the name "Portfolio Tracker" and the label "Master G2C". Just below, on a single line, two small selectors: language (FR · EN) on the left and display (Light · Dark) on the right; the active option is in bold.
+1. **The header**: the "PT" monogram, the name "Portfolio Tracker" and the label "Master G2C".
 2. **The personal space**: the label "Encrypted personal space" and the [[Sign in]] link. Once signed in, your initials, your username and the [[My account]] and [[Sign out]] links.
-3. **Workspace**: the menu of the four workspaces (Portfolio analysis, Wealth advisory, Asset management, Manual and help), each with a grey line of description. The workspace on screen is highlighted in light blue, with a blue bar on the left. Just below, the **Expert · Essential** selector chooses the tabs shown (see the entry on Essential mode).
-4. **Data**: the list of portfolios, the [[Upload a file (CSV, Excel, PDF or image)]] area ([[Browse]] button, or drag and drop the file), then the [[Add transactions]] link.
-5. **Tools and settings**: a menu that contains the [[File template]], the [[Open the import assistant]] button (when a file has been uploaded), the benchmark index and the risk-free rate. Its title summarises the current settings. (The VaR confidence level is set in the Risk tab, the only place where it is used.)
-6. **Information** about the portfolio being analysed: file, period, number of transactions, source of prices, and the exchange rates folded under "Exchange rates".
-7. The **Report a problem** button and the version number.
+3. **Workspace**: the menu of the four workspaces (Portfolio analysis, Wealth advisory, Asset management, Manual and help), each with a grey line of description. The workspace on screen is highlighted in light blue, with a blue bar on the left. 
+4. **Portfolio**: the list of portfolios, then the "Import a statement" area ([[Browse]] button, or drag and drop the file: PDF, CSV, Excel or photo), then the [[Add transactions]] link.
+5. **Display**: on a single line, the language (FR · EN) and the background (Light · Dark), then the **Expert · Essential** selector, which chooses the tabs shown (see the entry on Essential mode). The active option is highlighted.
+6. **Tools and settings**: a menu that contains the [[File template]], the [[Open the import assistant]] button (when a file has been uploaded), the benchmark index and the risk-free rate. The small grey line below summarises the current settings. (The VaR confidence level is set in the Risk tab, the only place where it is used.)
+7. **File details**: a folded menu with the information about the portfolio being analysed (file, period, source of prices, exchange rates). The grey line below recalls the number of transactions and the period.
+8. The **Report a problem** button and the version number.
 
-The [[PDF report]], [[Excel]] and [[Refresh prices]] buttons are at the top of the main area, just under the blue banner.
+The [[PDF report]], [[Excel]] and [[Refresh prices]] buttons are stacked at the top right of the main area, just under the blue banner.
 
-Block 6 only appears once a portfolio has been analysed: they are absent in the "Manual and help" space and on the "My account" and "Add transactions" pages.
+Block 7 only appears once a portfolio has been analysed: they are absent in the "Manual and help" space and on the "My account" and "Add transactions" pages.
 
 At the bottom right of the screen, on every page, the [[Help]] button opens a small panel to ask the manual a question (see the article on the help bubble).
 
 ### The main area
 
-In the analysis spaces, it begins with a blue banner (title, period, benchmark index, source of prices), followed by a row of six key figures, then the tabs of the chosen space. A footer recalls the sources (Yahoo Finance for prices, ECB for the risk-free rate) and that the tool is educational: it does not constitute investment advice.
+In the analysis spaces, it begins with a blue banner (title, period, benchmark index, source of prices), followed by a large block with the three essential figures (current value, cost of the securities, total gain) and, to its right, the [[PDF report]] · [[Excel]] · [[Refresh prices]] buttons, then a row of small cards (only the cash balance in Essential mode), then the tabs of the chosen space. A footer recalls the sources (Yahoo Finance for prices, ECB for the risk-free rate) and that the tool is educational: it does not constitute investment advice.
 
 ### If the sidebar is hidden
 
@@ -35,7 +36,7 @@ On a narrow screen, the sidebar may be collapsed. The small arrow-shaped button 
 ## Switching the software to English (or back to French)
 <!-- fiche: ecran-langue | questions: how do I put the software in english ; change the language ; switch to english ; the dashboard is in english how do I put it back in french ; where is the FR EN button ; is there an english version ; can the pdf report be in english ; why do some texts stay in french | mots: language, English, French, translation, FR, EN, bilingual -->
 
-The language selector is at the top of the sidebar, under the software's name, on the left: click **EN** for English, **FR** for French. The change is immediate, without losing the current portfolio or settings. French is the starting language.
+The language selector is in the **Display** section of the sidebar, on the left: click **EN** for English, **FR** for French. The change is immediate, without losing the current portfolio or settings. French is the starting language.
 
 ### What changes
 
@@ -59,7 +60,7 @@ The language is kept for the whole session. It is not saved in your account: the
 ## Turning on night mode (dark background)
 <!-- fiche: ecran-mode-nuit | questions: how do I turn on dark mode ; dark mode ; the screen is too white it hurts my eyes ; switch to night mode ; go back to light mode ; night mode is not remembered ; why is the pdf white when I'm in night mode ; make the background black | mots: night mode, dark mode, theme, black background, midnight blue, light, display -->
 
-The display selector is at the top of the sidebar, under the software's name, on the right (on the same line as the language): click **Dark** for a midnight-blue background, **Light** to return to the white background. Light mode is the starting mode.
+The background selector is in the **Display** section of the sidebar, on the right (on the same line as the language): click **Dark** for a midnight-blue background, **Light** to return to the white background. Light mode is the starting mode.
 
 ### What changes
 
@@ -91,7 +92,7 @@ The **Workspace** menu, in the sidebar, offers four workspaces. Click one to dis
 
 ### What they have in common
 
-The first three workspaces analyse the same portfolio with the same settings. They all display the blue banner and the six key figures at the top of the page. The software opens on "Portfolio analysis".
+The first three workspaces analyse the same portfolio with the same settings. They all display the blue banner and the key figures at the top of the page. The software opens on "Portfolio analysis".
 
 The "Manual and help" workspace opens even if no portfolio could be loaded: you can always look for help there.
 
@@ -105,7 +106,7 @@ When the [[My account]] page or the [[Add transactions]] page is open, no worksp
 ## Choosing the portfolio to analyse
 <!-- fiche: ecran-choisir-portefeuille | questions: how do I change portfolio ; where do I choose my portfolio ; what are the sample portfolios ; I can't see my portfolio in the list ; what does my space in front of the name mean ; the list doesn't change when I pick another portfolio ; how do I go back to the sample after uploading a file ; default portfolio at startup | mots: portfolio, selection, drop-down list, sample, My space, demo, file, portfolio choice -->
 
-The portfolio to analyse is chosen in the **Data** block of the sidebar, with the drop-down list placed under that title. The software immediately analyses the first portfolio in the list.
+The portfolio to analyse is chosen in the **Portfolio** block of the sidebar, with the drop-down list placed under that title. The software immediately analyses the first portfolio in the list.
 
 ### What the list contains
 
@@ -128,7 +129,7 @@ Uploading a file, the import wizard and adding new transactions are explained in
 ## Where do I set the analysis settings?
 <!-- fiche: ecran-parametres | questions: where are the settings ; how do I change the benchmark index ; I can't find the risk-free rate ; what does the line settings msci world 2.50% mean ; are the settings saved ; why do all the figures change when I change a setting ; analysis settings | mots: settings, options, benchmark index, risk-free rate, VaR, confidence level -->
 
-The analysis settings are in the [[Tools and settings]] menu of the sidebar, under the Data block. Click its title to open it; it also contains the file template and the import assistant.
+The analysis settings are in the [[Tools and settings]] menu of the sidebar, under the Display block. Click its title to open it; it also contains the file template and the import assistant.
 
 ### The summary in the title
 
@@ -311,18 +312,28 @@ The calculations remain correct, but as of the date of the latest known prices. 
 The results of an analysis are kept in memory for one hour. The badge describes the situation at the time of that calculation: a green badge from forty minutes ago does not guarantee up-to-the-minute prices. The [[Refresh prices]] button forces a new download.
 
 ## The key figures at the top of the page
-<!-- fiche: ecran-chiffres-cles | questions: what do the figures at the top mean ; what are the six cards ; how is the current value calculated ; does total gain include dividends ; what is annualised performance ; what is the question mark on the cards for ; what is the figure under volatility ; max drawdown at the top of the page | mots: key figures, KPI, indicators, cards, current value, total gain, annualised performance, volatility, Sharpe, max drawdown, summary | aller: Analyse du portefeuille/Vue d'ensemble | chiffres: valeur_actuelle, montant_investi, gain_total, twr_annualise, volatilite, sharpe, max_drawdown -->
+<!-- fiche: ecran-chiffres-cles | questions: what do the figures at the top mean ; what are the cards at the top ; what is the cost of the securities ; what is invested at average cost ; how is the current value calculated ; does total gain include dividends ; what is annualised performance ; what is the question mark on the cards for ; what is the figure under volatility ; max drawdown at the top of the page | mots: key figures, KPI, indicators, cards, current value, total gain, annualised performance, volatility, Sharpe, max drawdown, summary | aller: Analyse du portefeuille/Vue d'ensemble | chiffres: valeur_actuelle, montant_investi, gain_total, twr_annualise, volatilite, sharpe, max_drawdown -->
 
-Under the banner, six cards summarise the portfolio. They stay displayed in the three analysis workspaces. Hover over the small **?** next to a label to read its definition.
+Under the banner, a large block highlights the three figures that matter most; a row of small cards completes it. They stay displayed in the three analysis workspaces. Hover over the small **?** next to a label to read its definition.
+
+### The large block
+
+| Figure | Content | Line below |
+|---|---|---|
+| Current value | Quantity × latest price, for each line held, in euros | The value including cash, if the balance is known |
+| Cost of the securities | What the securities held today cost you: quantity × average cost, purchase fees included | "at average cost, purchase fees included" |
+| Total gain | Unrealised gains + realised gains + dividends − account fees | Badge: gain ÷ cost of the securities, then the breakdown (unrealised, realised, dividends) |
+
+### The small cards
 
 | Card | Big figure | Line below |
 |---|---|---|
-| Current value | Quantity × latest price, for each line held, in euros | "Invested at average cost": the capital still invested, at cost basis |
-| Total gain | Unrealised gains + realised gains + dividends | Badge: gain relative to the capital invested |
-| Annualised return | Annualised TWR (time-weighted return) | Badge: total TWR since the start |
+| Cash balance | Deposits − withdrawals − purchases + sales + dividends − fees (with the ✏️ pencil to enter it) | Where the balance comes from |
 | Volatility | Standard deviation of daily returns × √252 | Volatility of the benchmark index |
 | Sharpe | (Return − risk-free rate) / volatility | Sharpe of the benchmark index |
 | Max drawdown | Worst fall from a peak | Date of the lowest point |
+
+In Essential mode, only the Cash balance card is shown.
 
 ### Reading the colours
 
@@ -330,11 +341,11 @@ The badges are green when the figure is positive, red when it is negative, grey 
 
 ### Example
 
-A portfolio whose capital invested at cost basis is €10,000 and whose total gain is €1,500 shows "+€1,500" in the Total gain card, with the badge `1,500 / 10,000 = +15.00%` on the capital invested.
+A portfolio whose cost of the securities is €10,000 and whose total gain is €1,500 shows "+€1,500" in the Total gain card, with the badge `1,500 / 10,000 = +15.00%`.
 
-### Total gain and performance: why two figures?
+### Why no "annualised performance" at the top?
 
-The total gain is an amount in euros, which depends on the sum invested and the timing of contributions. The annualised performance (TWR) neutralises contributions and withdrawals: it measures the quality of the investment choices and can be compared with the index. Both are detailed in the chapter on performance.
+The top of the page shows what your money has really earned: the gain in euros and its percentage of the cost of the securities. The comparison with the index (the same money placed in the index, on the same dates) and the annual IRR are in the [[Performance]] tab.
 
 ### Comparing with the index
 
@@ -345,7 +356,7 @@ For volatility and Sharpe, the line below gives the value of the benchmark index
 
 On first launch, a **Welcome to Portfolio Tracker** card appears at the top of the page, above a sample portfolio. It gives the three steps to analyse yours:
 
-1. **Import your transactions**: drop your broker statement (PDF, CSV, Excel or photo) in the "Data" area of the sidebar. This area flashes gently so it is easy to spot.
+1. **Import your transactions**: drop your broker statement (PDF, CSV, Excel or photo) in the "Import a statement" area (Portfolio section) of the sidebar. This area flashes gently so it is easy to spot.
 2. **Check the cash balance**: under the "Cash balance" card, the ✏️ pencil lets you copy the balance from your statement.
 3. **Read the Overview**: the "Key takeaways" box sums up the essentials.
 
@@ -362,12 +373,12 @@ Once the card is closed, as long as a sample portfolio is displayed, an orange b
 ## Essential or Expert mode: choosing the tabs shown
 <!-- fiche: ecran-mode-essentiel | questions: too many tabs I am lost ; what is essential mode ; expert mode ; hide the complicated tabs ; where did the risk and optimisation tabs go ; show fewer things ; beginner mode ; simplify the screen | mots: Essential mode, Expert mode, beginner, simplify, tabs, display, hide -->
 
-Under the "Workspace" menu, the **Expert · Essential** selector chooses what is shown.
+In the "Display" section of the sidebar, the **Expert · Essential** selector chooses what is shown.
 
 | Mode | What is shown |
 |---|---|
-| Expert (default) | All tabs and the four workspaces, and the seven key figures at the top of the page |
-| Essential | The everyday tabs: Overview, Holdings, Exposures, Target allocation, Transactions; the Portfolio analysis and Manual and help workspaces; four key figures (value, cash balance, total gain, annualised performance) |
+| Expert (default) | All tabs and the four workspaces, and all the small cards at the top of the page |
+| Essential | The everyday tabs: Overview, Holdings, Exposures, Target allocation, Transactions; the Portfolio analysis and Manual and help workspaces; the large block (value, cost of the securities, total gain) and the Cash balance card |
 
 ### Good to know
 
@@ -381,7 +392,7 @@ The [[Excel]] button, at the top of the page between [[PDF report]] and [[Refres
 
 | Sheet | Content |
 |---|---|
-| Summary | Value, invested, total gain, gains, dividends, fees, cash balance, annualised TWR, volatility, max drawdown, period |
+| Summary | Value, cost of the securities, total gain, gains, dividends, fees, cash balance, return (gain ÷ cost), annual IRR, volatility, max drawdown, period |
 | Holdings | One row per security held: class, region, sector, quantity, average cost, price, value, gains, dividends, fees, weight |
 | Monthly performance | Value and money invested at each month end, monthly return |
 | Transactions | All transactions, in euros |
@@ -429,7 +440,7 @@ The report is an A4 document, divided into parts that each start on a new page. 
 
 ### The parts
 
-1. **Summary**: banner with the period, the number of lines and the benchmark index; nine key figures (current value, total gain, gain on capital invested, annualised TWR, annual IRR, volatility, Sharpe, max drawdown, 1-day VaR); evolution chart; amount invested, unrealised and realised gains, dividends, fees and source of prices.
+1. **Summary**: banner with the period, the number of lines and the benchmark index; nine key figures (current value, total gain, return (gain / purchase cost), cost of the securities, annual IRR, volatility, Sharpe, max drawdown, 1-day VaR); evolution chart; amount invested, unrealised and realised gains, dividends, fees and source of prices.
 2. **Holdings**: table of lines (ticker, security, quantity, cost basis, price, value, gain or loss, weight), then breakdowns by asset class, region and sector, on a look-through basis.
 3. **Exposures and diversification**: diagnosis by dimension (geography, sectors, currencies, concentration, interest rates, real diversification), points to monitor or fix, correlations between lines.
 4. **Performance**: comparison with the index, return by calendar year, beta, alpha, correlation, tracking error and information ratio.

@@ -75,27 +75,27 @@ def _tableau_groupes(tableau, intitule):
     lignes = pd.DataFrame({
         intitule: [td(g) for g in tableau.index],
         t("Lignes"): tableau["lignes"].astype(int),
-        t("Poids actuel"): tableau["poids"] * 100,
+        t("Poids actuel"): tableau["poids"],                 # fractions : format « percent »
         t("Valeur"): tableau["valeur"],
         t("Gain"): tableau["gain"],
-        t("Rendement"): tableau["rendement"] * 100,
-        t("Contribution"): tableau["contribution"] * 100,
+        t("Rendement"): tableau["rendement"],
+        t("Contribution"): tableau["contribution"],
     })
     fond_gain, fond_perte = (("rgba(76, 175, 80, 0.18)", "rgba(229, 115, 115, 0.20)") if theme.nuit()
                              else ("#EAF6EC", "#FCEBEA"))
     style = lignes.style.apply(lambda l: [f"background-color: {fond_gain if l[t('Gain')] > 0 else fond_perte}"
                                           if l[t("Gain")] != 0 else ""] * len(l), axis=1)
     st.dataframe(style, hide_index=True, width="stretch", column_config={
-        t("Poids actuel"): st.column_config.NumberColumn(format=langues.pct_colonne("%.1f")),
+        t("Poids actuel"): st.column_config.NumberColumn(format=langues.pct_colonne()),
         t("Valeur"): st.column_config.NumberColumn(format=langues.eur_colonne("%.0f")),
         t("Gain"): st.column_config.NumberColumn(format=langues.eur_colonne("%+.0f"),
                                                  help=t("Plus-values latentes et réalisées, dividendes nets, frais "
                                                         "déduits")),
-        t("Rendement"): st.column_config.NumberColumn(format=langues.pct_colonne("%+.1f"),
+        t("Rendement"): st.column_config.NumberColumn(format=langues.pct_colonne(),
                                                       help=t("Gain rapporté au capital moyen engagé dans le groupe "
                                                              "(méthode de Dietz modifiée)")),
         t("Contribution"): st.column_config.NumberColumn(
-            format=langues.pct_colonne("%+.2f"),
+            format=langues.pct_colonne(),
             help=t("Part de la performance du portefeuille apportée par le groupe : les contributions "
                    "s'additionnent")),
     })

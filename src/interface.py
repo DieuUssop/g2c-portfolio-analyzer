@@ -219,7 +219,7 @@ def style_menu(legendes, actif):
     return "<style>" + "\n".join(regles) + "</style>"
 
 
-def style_depot(bouton, consigne):
+def style_depot(bouton, consigne, bouton_principal=None):
     """Textes de la zone d'envoi de fichier (ceux de Streamlit sont en anglais et ne se traduisent pas)."""
     # « Parcourir » seulement sur le bouton d'ouverture : les boutons de suppression des fichiers déjà
     # envoyés (dans la même zone) gardent leur croix (assets/style.css)
@@ -230,6 +230,19 @@ def style_depot(bouton, consigne):
             f'{{ content: "{_texte_css(bouton)}"; }}'
             f'section[data-testid="stSidebar"] [data-testid="stFileUploaderDropzone"]::after '
             f'{{ content: "{_texte_css(consigne)}"; }}'
+            # zones d'envoi de la page principale (« Ajouter des opérations », « Mon compte ») : textes de
+            # Streamlit (« Upload », « 200MB per file ») remplacés aussi (revue du 23/11/2026)
+            f'[data-testid="stMain"] [data-testid="stFileUploaderDropzone"] > button,'
+            f'[data-testid="stMain"] [data-testid="stFileUploaderDropzone"] > span > button'
+            f'{{ font-size: 0 !important; }}'
+            f'[data-testid="stMain"] [data-testid="stFileUploaderDropzone"] > button::after,'
+            f'[data-testid="stMain"] [data-testid="stFileUploaderDropzone"] > span > button::after'
+            f'{{ content: "{_texte_css(bouton_principal or bouton)}"; font-size: 0.85rem; }}'
+            f'[data-testid="stMain"] [data-testid="stFileUploaderDropzone"] > button svg,'
+            f'[data-testid="stMain"] [data-testid="stFileUploaderDropzone"] > span > button svg {{ display: none; }}'
+            f'[data-testid="stMain"] [data-testid="stFileUploaderDropzoneInstructions"] {{ display: none !important; }}'
+            f'[data-testid="stMain"] [data-testid="stFileUploaderDropzone"]::after'
+            f'{{ content: "{_texte_css(consigne)}"; font-size: 0.8rem; color: var(--texte-3); }}'
             "</style>")
 
 
@@ -298,3 +311,33 @@ def surligner_depot():
     """Fait clignoter doucement la zone d'envoi de fichier de la barre latérale (premier lancement)."""
     return ('<style>section[data-testid="stSidebar"] [data-testid="stFileUploaderDropzone"]'
             '{ animation: depot-pulse 1.8s ease-in-out 4; outline: 2px solid var(--primaire); }</style>')
+
+
+def heros(valeur, cout, gain, format_euros, aides=("", "", "")):
+    """Grand bloc du haut de page (revue du 23/11/2026, proposition A) : valeur actuelle (très grande), coût
+    d'achat des titres, gain total en couleur avec son pourcentage et sa décomposition.
+    valeur, cout : (libellé, montant mis en forme, ligne de détail) ;
+    gain : (libellé, montant, pourcentage, sens « positive / negative / neutre », lignes de décomposition)."""
+    def bulle(texte):
+        return f'<span class="kpi-aide" title="{escape(texte)}">?</span>' if texte else ""
+    libelle_g, montant_g, pct_g, sens, lignes = gain
+    decomposition = " · ".join(
+        f'{escape(l)} <b class="{tendance(m)}">{escape(format_euros(m, signe=True))}</b>'
+        for l, m, afficher in lignes if afficher)
+    return (
+        '<div class="heros">'
+        f'<div class="heros-case"><div class="heros-libelle">{escape(valeur[0])}{bulle(aides[0])}</div>'
+        f'<div class="heros-grand">{escape(valeur[1])}</div><div class="heros-detail">{escape(valeur[2])}</div></div>'
+        f'<div class="heros-case heros-sep"><div class="heros-libelle">{escape(cout[0])}{bulle(aides[1])}</div>'
+        f'<div class="heros-moyen">{escape(cout[1])}</div><div class="heros-detail">{escape(cout[2])}</div></div>'
+        f'<div class="heros-case heros-sep"><div class="heros-libelle">{escape(libelle_g)}{bulle(aides[2])}</div>'
+        f'<div class="heros-moyen {sens}">{escape(montant_g)} '
+        f'<span class="pastille {sens} heros-pct">{escape(pct_g)}</span></div>'
+        f'<div class="heros-detail">{decomposition}</div></div>'
+        '</div>'
+    )
+
+
+def sous_ligne(texte):
+    """Petite ligne grise sous un bouton de la barre latérale (résumé de « Outils et paramètres »…)."""
+    return f'<div class="sous-ligne">{escape(texte)}</div>'

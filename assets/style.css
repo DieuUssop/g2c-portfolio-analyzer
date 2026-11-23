@@ -437,3 +437,69 @@ table.tableau-simple tr:last-child td { border-bottom: none; }
 .retenir-point.negative { background: var(--negatif); }
 .retenir-point.attention { background: var(--attention); }
 @keyframes depot-pulse { 0%, 100% { outline-color: var(--primaire); } 50% { outline-color: transparent; } }
+
+/* ---------- Grand bloc du haut (revue du 23/11/2026, proposition A) ---------- */
+.heros { display: grid; grid-template-columns: 1.25fr 1fr 1.35fr; gap: 0 26px; align-items: center;
+         background: var(--fond-carte); border: 1px solid var(--bordure); border-left: 5px solid var(--primaire);
+         border-radius: 14px; padding: 18px 24px; }
+.heros-sep { border-left: 1px solid var(--bordure); padding-left: 24px; }
+.heros-libelle { font-size: 0.74rem; letter-spacing: 0.08em; text-transform: uppercase; font-weight: 600;
+                 color: var(--texte-2); display: flex; align-items: center; gap: 6px; }
+.heros-grand { font-size: 2.6rem; font-weight: 800; line-height: 1.12; margin-top: 4px; color: var(--texte);
+               white-space: nowrap; }
+.heros-moyen { font-size: 1.85rem; font-weight: 700; line-height: 1.15; margin-top: 4px; color: var(--texte);
+               white-space: nowrap; }
+.heros-moyen.positive { color: var(--positif); } .heros-moyen.negative { color: var(--negatif); }
+.heros-pct { font-size: 1rem; vertical-align: middle; }
+.heros-detail { font-size: 0.82rem; color: var(--texte-2); margin-top: 6px; }
+.heros-detail b.positive { color: var(--positif); } .heros-detail b.negative { color: var(--negatif); }
+/* écran plus étroit : les trois chiffres passent l'un sous l'autre */
+@media (max-width: 1250px) {
+  .heros { grid-template-columns: 1fr; gap: 12px; }
+  .heros-sep { border-left: none; padding-left: 0; border-top: 1px solid var(--bordure); padding-top: 12px; }
+}
+/* boutons empilés à droite du bloc */
+.st-key-boutons_actions [data-testid="stVerticalBlock"] { gap: 0.55rem; }
+/* petites cartes : plus compactes que les cartes de chiffres clés */
+.st-key-petites_cartes .kpi { padding: 10px 14px; min-height: 0; }
+.st-key-petites_cartes .kpi-valeur { font-size: 1.25rem; }
+.st-key-petites_cartes .kpi-grille { margin-bottom: 0.2rem; }
+
+/* ---------- Barre latérale (revue du 23/11/2026) ---------- */
+/* AFFICHAGE : FR · EN, Clair · Nuit et Expert · Essentiel en vrais petits boutons segmentés */
+section[data-testid="stSidebar"] .st-key-reglages_affichage { gap: 0.5rem; flex-wrap: wrap; }
+section[data-testid="stSidebar"] .st-key-langue [data-testid="stButtonGroup"],
+section[data-testid="stSidebar"] .st-key-theme [data-testid="stButtonGroup"] { justify-content: flex-start; gap: 0; }
+section[data-testid="stSidebar"] :is(.st-key-langue, .st-key-theme, .st-key-mode_affichage) button {
+    background: var(--fond-carte) !important; border: 1px solid var(--bordure) !important; box-shadow: none !important;
+    height: 1.9rem !important; min-height: 1.9rem !important; padding: 0 0.75rem !important; border-radius: 0;
+}
+section[data-testid="stSidebar"] :is(.st-key-langue, .st-key-theme, .st-key-mode_affichage) button:first-child {
+    border-radius: 7px 0 0 7px; padding-left: 0.75rem !important; }
+section[data-testid="stSidebar"] :is(.st-key-langue, .st-key-theme, .st-key-mode_affichage) button:last-child {
+    border-radius: 0 7px 7px 0; padding-right: 0.75rem !important; }
+section[data-testid="stSidebar"] :is(.st-key-langue, .st-key-theme) button + button::before { content: none !important; }
+section[data-testid="stSidebar"] :is(.st-key-langue, .st-key-theme, .st-key-mode_affichage) button p {
+    font-size: 0.78rem !important; font-weight: 500 !important; color: var(--texte-2) !important; }
+section[data-testid="stSidebar"] :is(.st-key-langue, .st-key-theme, .st-key-mode_affichage)
+  :is(button[aria-checked="true"], button[data-testid="stBaseButton-segmented_controlActive"]) {
+    background: var(--fond-actif) !important; border-color: var(--primaire) !important; }
+section[data-testid="stSidebar"] :is(.st-key-langue, .st-key-theme, .st-key-mode_affichage)
+  :is(button[aria-checked="true"], button[data-testid="stBaseButton-segmented_controlActive"]) p {
+    color: var(--primaire) !important; font-weight: 600 !important; }
+section[data-testid="stSidebar"] .st-key-mode_affichage label { display: none; }
+/* « Outils et paramètres », « Détails du fichier » : lignes discrètes alignées à gauche, résumé gris dessous */
+section[data-testid="stSidebar"] [data-testid="stPopoverButton"] {
+    background: transparent !important; border: none !important; box-shadow: none !important;
+    justify-content: flex-start !important; padding: 0.25rem 0.4rem !important; min-height: 0 !important;
+}
+section[data-testid="stSidebar"] [data-testid="stPopoverButton"]:hover { background: var(--fond-survol) !important; }
+section[data-testid="stSidebar"] [data-testid="stPopoverButton"] p { font-size: 0.86rem; color: var(--texte); text-align: left; }
+section[data-testid="stSidebar"] [data-testid="stPopoverButton"] > div { justify-content: flex-start; }
+.sous-ligne { font-size: 0.72rem; color: var(--texte-3); margin: -0.7rem 0 0.1rem 2.1rem; line-height: 1.3; }
+/* « Signaler un problème » : discret, en bas de la barre */
+section[data-testid="stSidebar"] [data-testid="stExpander"] details { border: none; background: transparent; }
+section[data-testid="stSidebar"] [data-testid="stExpander"] summary p { font-size: 0.84rem; color: var(--primaire); }
+
+/* La bulle d'aide reste au-dessus de la barre des tâches (revue du 23/11/2026) */
+.st-key-bulle_aide { bottom: 40px !important; }

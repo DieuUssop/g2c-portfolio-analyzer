@@ -73,7 +73,7 @@ En haut de la [[Vue d'ensemble]], trois phrases résument le portefeuille. Elles
 
 | Phrase | D'où elle vient |
 |---|---|
-| 1. La performance | Le TWR annualisé, et l'écart avec l'indice de référence sur la même période (« mieux que », « au même rythme que » à moins d'un demi-point près, « moins que ») |
+| 1. La performance | Le gain réel en euros et son pourcentage du coût d'achat des titres, et l'écart en euros avec le même argent placé dans l'indice de référence aux mêmes dates (« de plus », « de moins », ou « autant » à 0,5 % près) |
 | 2. Le point de vigilance | Le constat le plus grave du diagnostic de l'onglet [[Expositions]] (alerte, puis attention), avec le profil choisi dans cet onglet ; sinon « Aucun point de vigilance » |
 | 3. La piste | Si le solde espèces est négatif : ajouter les versements ou saisir le solde ; sinon la première piste du constat de la phrase 2 ; sinon « Rien d'urgent » |
 
@@ -215,7 +215,7 @@ Le logiciel rejoue toutes vos opérations dans l'ordre des dates, selon la méth
 
 `Montant investi = Σ quantité détenue × PRU`
 
-C'est le coût de revient des titres encore en portefeuille. Il apparaît sous la carte Valeur actuelle (« Investi au PRU »). Il baisse après une vente, puisque les titres vendus sortent du calcul.
+C'est le coût de revient des titres encore en portefeuille. Il apparaît dans le grand bloc en haut de page, sous le nom « Coût d'achat des titres » (l'ancien « Investi au PRU »). Il baisse après une vente, puisque les titres vendus sortent du calcul.
 
 ### Exemple
 
@@ -354,7 +354,7 @@ Dans l'onglet [[Positions]], l'encadré **Dividendes et coupons** montre les mon
 
 ### Les trois cartes
 
-- **Reçus en** (dernière année) et **Total depuis l'origine** ;
+- **Reçus depuis le 1er janvier** (année en cours, ou « Reçus en » la dernière année) et **Total depuis l'origine** ;
 - **Estimation sur 12 mois**, avec le rendement sur la valeur actuelle.
 
 ### Comment est faite l'estimation
@@ -363,7 +363,7 @@ Pour chaque ligne encore détenue : les dividendes reçus pendant les 12 dernier
 
 > Exemple : 150 € bruts reçus en avril pour 20 actions, dont 30 € de retenue, soit 6 € nets par action. Avec 20 actions aujourd'hui, l'estimation est de 120 €.
 
-Une ligne qui n'a rien versé depuis un an (ETF **capitalisant**, achat récent, action sans dividende) compte pour 0 : rien n'est deviné. Le tableau à droite détaille chaque ligne qui verse.
+Une ligne qui n'a rien versé depuis un an (ETF **capitalisant**, achat récent, action sans dividende) compte pour 0 : rien n'est deviné. Le graphique montre chaque année et la barre « 12 mois à venir » ; le tableau en dessous détaille chaque ligne qui verse (estimation, rendement, montant par part).
 
 ### Limites
 
@@ -452,7 +452,7 @@ Corrigez les opérations erronées dans l'onglet [[Transactions]] (voir le chapi
 ## Le tableau des positions, colonne par colonne
 <!-- fiche: analyse-positions | questions: que veulent dire les colonnes du tableau des positions ; comment trier le tableau des positions ; c'est quoi la colonne poids ; la barre bleue dans la colonne poids ; pourquoi la région de mon etf est monde ; non classé dans la colonne secteur ; le cours est en euros ou en dollars ; tableau de mes lignes | mots: positions, tableau, colonnes, poids, PRU, cours, quantité, ticker, classe, secteur, région, tri | aller: Analyse du portefeuille/Positions | chiffres: nb_titres, valeur_actuelle -->
 
-L'onglet [[Positions]] présente une ligne par titre **encore détenu**, de la plus grosse valeur à la plus petite. Cliquez sur un titre de colonne pour trier.
+L'onglet [[Positions]] commence par quatre cartes : Lignes détenues, Plus grosse ligne (son poids), Meilleure ligne et Moins bonne ligne (leur plus-value en %). Le tableau présente ensuite une ligne par titre **encore détenu**, de la plus grosse valeur à la plus petite. Cliquez sur un titre de colonne pour trier ; la case « Rechercher » filtre par nom ou ticker. Le ticker et le nom restent visibles quand on fait défiler le tableau vers la droite.
 
 | Colonne | Contenu |
 |---|---|
@@ -494,11 +494,11 @@ L'onglet [[Performance]] répond à deux questions : combien avez-vous gagné, e
 
 ### De haut en bas
 
-1. **Quatre cartes** : TWR total (« Depuis le » + date de début), TWR annualisé (« Base 365 jours »), TRI annuel (« Rendement de l'argent investi ») et Écart avec l'indice (pastille « surperformance » ou « sous-performance »).
-2. **Portefeuille et indice** : les deux courbes en base 100 à la première date commune.
-3. **Rendement par année civile** : le TWR de chaque année, portefeuille et indice côte à côte.
+1. **Quatre cartes** : Rendement (gain total ÷ coût d'achat des titres), TRI annuel (« Rendement de votre argent, par an »), Comparé à l'indice (en euros : votre portefeuille moins le même argent placé dans l'indice aux mêmes dates) et Titres contre l'indice (écart en points de la variation des cours, sans l'effet des versements).
+2. **Le même argent ailleurs** : ce que vaudraient vos versements placés dans l'indice ou sur un Livret A, aux mêmes dates (fiche dédiée).
+3. **Performance des titres comparée à l'indice** : les deux courbes en base 100 à la première date commune.
 4. **Courbe d'une ligne** : un ETF ou une action seul (même menu que dans la Vue d'ensemble).
-5. **Comparé au Livret A** : le même argent placé sur un Livret A (fiche dédiée).
+5. **Rendement par année civile** : la performance des titres de chaque année, portefeuille et indice côte à côte ; l'année en cours est marquée « (à date) ».
 6. **Drawdown** : la baisse depuis le dernier plus haut, avec, dans le sous-titre, les dates du plus haut, du plus bas et du retour au plus haut.
 7. **Cinq cartes** de comparaison avec l'indice : Bêta, Alpha de Jensen, Corrélation, Tracking error et Ratio d'information.
 
@@ -508,18 +508,18 @@ Si l'indice choisi dans [[Indice de référence]] est obligataire ou monétaire,
 
 ### Ordre de lecture conseillé
 
-Commencez par le TWR annualisé et l'écart avec l'indice, regardez la courbe pour voir **quand** l'écart s'est creusé, puis le drawdown pour mesurer la pire épreuve traversée. Les fiches suivantes détaillent chaque indicateur.
+Commencez par le rendement et la carte Comparé à l'indice, regardez la courbe pour voir **quand** l'écart s'est creusé, puis le drawdown pour mesurer la pire épreuve traversée. Les fiches suivantes détaillent chaque indicateur.
 
-## Comparé au Livret A
-<!-- fiche: analyse-livret-a | questions: aurais-je mieux fait de tout mettre sur un livret a ; comparer mon portefeuille au livret a ; livret a ou bourse ; combien j'aurais sur un livret a ; taux du livret a utilisé ; la bourse rapporte-t-elle plus que le livret a | mots: Livret A, épargne réglementée, comparaison, sans risque, taux du Livret A, Banque de France -->
+## Le même argent ailleurs (indice et Livret A)
+<!-- fiche: analyse-livret-a | questions: aurais-je mieux fait de tout mettre sur un livret a ; aurais-je mieux fait d'acheter l'indice ; le même argent dans un etf monde ; comparé à l'indice en euros ; comparer mon portefeuille au livret a ; livret a ou bourse ; combien j'aurais sur un livret a ; taux du livret a utilisé ; la bourse rapporte-t-elle plus que le livret a | mots: Livret A, épargne réglementée, comparaison, sans risque, taux du Livret A, Banque de France -->
 
-Dans l'onglet [[Performance]], l'encadré **Comparé au Livret A** répond à la question : « et si j'avais mis le même argent sur un Livret A ? »
+Dans l'onglet [[Performance]], l'encadré **Le même argent ailleurs** répond à la question : « et si j'avais mis le même argent dans l'indice de référence, ou sur un Livret A ? »
 
 ### Le calcul
 
-Le Livret A reçoit **les mêmes versements et les mêmes retraits, aux mêmes dates**, que le portefeuille (achats, ventes, dividendes encaissés). Il rapporte chaque jour le taux officiel en vigueur ce jour-là : 3 % en 2023 et 2024, 2,4 % en février 2025, 1,7 % en août 2025, 1,5 % en février 2026, 1,7 % depuis le 1er août 2026 (Banque de France, info.gouv.fr ; table depuis 2008).
+L'indice et le Livret A reçoivent **les mêmes versements et les mêmes retraits, aux mêmes dates**, que le portefeuille (achats, ventes, dividendes encaissés). Dans l'indice, chaque versement achète des « parts » d'indice au cours du jour ; leur valeur suit ensuite l'indice. Le Livret A rapporte chaque jour le taux officiel en vigueur ce jour-là : 3 % en 2023 et 2024, 2,4 % en février 2025, 1,7 % en août 2025, 1,5 % en février 2026, 1,7 % depuis le 1er août 2026 (Banque de France, info.gouv.fr ; table depuis 2008).
 
-Trois cartes : la valeur du portefeuille, celle du Livret A (avec le taux actuel) et la **différence**. Le graphique montre les deux courbes et l'argent investi.
+Trois cartes : Mon portefeuille, Dans l'indice et Sur un Livret A (avec le taux actuel), chacune avec la **différence** par rapport à votre portefeuille. Le graphique montre les trois courbes et l'argent investi. La carte « Comparé à » l'indice, en haut de l'onglet, et la première phrase de « Ce qu'il faut retenir » reprennent la différence avec l'indice.
 
 ### Simplifications
 
@@ -528,7 +528,7 @@ Trois cartes : la valeur du portefeuille, celle du Livret A (avec le taux actuel
 
 ### Comment le lire
 
-Le Livret A est **sans risque** et disponible à tout moment : la différence est ce que le risque pris en bourse a rapporté (ou coûté) sur la période. Sur quelques mois, elle peut être négative même pour un bon portefeuille.
+Le Livret A est **sans risque** et disponible à tout moment : la différence est ce que le risque pris en bourse a rapporté (ou coûté) sur la période. L'indice montre ce qu'aurait donné un simple ETF sur l'indice, avec les mêmes dates de versement : la différence mesure vos choix de titres **et** de calendrier, en euros. Sur quelques mois, elle peut être négative même pour un bon portefeuille.
 
 ## Les rendements quotidiens « neutres aux apports »
 <!-- fiche: analyse-rendements-quotidiens | questions: comment sont calculés les rendements quotidiens ; pourquoi un achat ne compte pas comme un gain ; neutraliser les apports ça veut dire quoi ; mon versement fait monter la courbe mais pas la performance ; rendement du premier jour négatif pourquoi ; base de calcul des indicateurs ; rendement journalier | mots: rendement quotidien, rendement journalier, flux, apports, retraits, neutralisation, base 100, fin de journée | aller: Analyse du portefeuille/Performance -->
@@ -589,7 +589,7 @@ Pourquoi 365 et non 252 ? Le rendement s'annualise en jours **calendaires** ; 25
 
 ### Où le voir
 
-Cartes « TWR total » et « TWR annualisé » de l'onglet [[Performance]] ; le TWR annualisé est aussi la carte « Perf. annualisée » des chiffres clés.
+Le TWR n'est plus affiché comme carte (revue de novembre 2026). L'écran l'appelle « performance des titres » : c'est la courbe « Performance des titres comparée à l'indice », le graphique par année civile et la carte « Titres contre l'indice » de l'onglet [[Performance]].
 
 ### Limites
 
@@ -1688,7 +1688,7 @@ Indiquez le [[Montant du prochain versement (€)]]. Les poches **en retard** su
 
 > Exemple : 10 000 € dont 7 000 € en Actions Monde, cible 60 % Monde, 20 % émergents, 20 % obligations. Avec 2 000 € de plus (12 000 € au total), les retards sont 200 € (Monde), 1 400 € (émergents) et 1 400 € (obligations) : les 2 000 € sont répartis au prorata, 133 €, 933 € et 933 €.
 
-Le tableau « Où investir » propose, pour chaque poche, la plus grosse ligne déjà détenue. Le graphique compare le poids actuel, la cible et le poids après le versement ; la carte **Écart à la cible** totalise les points en trop.
+Le tableau « Où investir » propose, pour chaque poche, la plus grosse ligne déjà détenue. Le graphique compare le poids actuel, la cible et le poids après le versement ; la carte **Écart à la cible** totalise les points en trop. Une note indique enfin le versement qu'il faudrait pour atteindre **exactement** la cible sans rien vendre (« Pour atteindre exactement la cible sans rien vendre, il faudrait verser … »), ou que le portefeuille est déjà sur la cible.
 
 ## Le simulateur « Et si j'achetais… »
 <!-- fiche: analyse-simulateur | questions: tester un achat avant de le faire ; et si j'achetais ; simuler un achat ; effet d'un nouvel etf sur mon portefeuille ; est ce que cet achat diversifie ; simulation d'achat ; que se passe-t-il si j'ajoute une action | mots: simulateur, simulation, achat fictif, et si, tester, avant d'acheter, effet, diversification -->
@@ -1700,7 +1700,7 @@ En bas de l'onglet [[Allocation cible]], le simulateur montre l'effet d'un achat
 1. Choisissez un titre déjà détenu, ou **Autre titre (ticker Yahoo Finance)…** puis tapez son ticker (CW8.PA, AAPL, PAEJ.PA…).
 2. Indiquez le **Montant (€)**, puis cliquez sur [[Simuler]].
 
-L'achat est fictif, au dernier cours connu, à la dernière date du portefeuille.
+L'achat est fictif, au dernier cours connu, à la dernière date du portefeuille. Pour un titre déjà détenu, le résultat est instantané ; un nouveau titre demande de télécharger ses cours.
 
 ### Ce qui est comparé
 
@@ -1711,7 +1711,7 @@ L'achat est fictif, au dernier cours connu, à la dernière date du portefeuille
 | Plus grosse ligne, premier pays, premier secteur | Concentration, en transparence |
 | Alertes et points d'attention | Nombre de constats du diagnostic (profil de l'onglet Expositions) |
 
-Les constats **nouveaux** et ceux **réglés par cet achat** sont listés dessous.
+La colonne **Variation** donne l'écart entre avant et après. Les constats **nouveaux** et ceux **réglés par cet achat** sont listés dessous.
 
 ### Pourquoi une volatilité « de la répartition » ?
 
@@ -1726,6 +1726,8 @@ L'onglet [[Transactions]] affiche toutes les opérations du portefeuille, de la 
 
 - [[Type]] : retirez ou ajoutez ACHAT, VENTE et DIVIDENDE (tous sont sélectionnés au départ).
 - [[Titres]] : choisissez un ou plusieurs titres ; laissé vide, il affiche « Tous les titres ».
+- **Période** : la première et la dernière date à afficher.
+- **Rechercher** : un nom, un ticker ou un montant.
 
 Une ligne indique le nombre d'opérations affichées sur le total.
 

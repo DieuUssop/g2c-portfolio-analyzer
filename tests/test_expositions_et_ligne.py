@@ -82,4 +82,7 @@ def test_suivi_d_une_ligne():
 def test_format_euros_des_colonnes():
     from src import langues
     assert langues.eur_colonne("%.2f") == "euro"                # « 32,27 € » en français
-    assert langues.eur_colonne("%+.0f") == "%+.0f €"
+    # revue du 23/11/2026 : plus jamais de point décimal en français (« +280.08 € » s'affichait)
+    assert langues.eur_colonne("%+.0f") == "euro"
+    assert langues.pct_colonne("%.1f") == "percent"             # colonne en fraction : « 34,3 % »
+    assert langues.nombre_colonne("%.2f") == "localized"

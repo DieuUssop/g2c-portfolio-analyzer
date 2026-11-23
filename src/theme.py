@@ -149,6 +149,42 @@ button[data-testid="stBaseButton-tertiary"], button[data-testid="stBaseButton-te
 /* Nos éléments aux couleurs fixes */
 .pastille.attention { color: #f5c07a; background: rgba(240, 169, 91, 0.14); }
 .bandeau-exemple { color: #f5c07a; background: rgba(240, 169, 91, 0.10); border-color: rgba(240, 169, 91, 0.35); }
+
+/* Revue du 23/11/2026 : composants récents de Streamlit (« react-aria ») — listes déroulantes, boutons
+   segmentés et menus déroulants n'ont plus les anciens noms (data-baseweb, stBaseButton-segmented_control) */
+[data-testid="stSelectbox"] .react-aria-ComboBox > div, [data-testid="stMultiSelect"] .react-aria-ComboBox > div,
+[data-testid="stSelectbox"] div:has(> input), [data-testid="stMultiSelect"] div:has(> input),
+[data-testid="stDateInput"] div:has(> input), [data-testid="stTextInput"] div:has(> input),
+[data-testid="stTextArea"] textarea {
+    background-color: #16243a !important; border-color: var(--bordure) !important; color: var(--texte) !important;
+}
+[data-testid="stSelectbox"] input, [data-testid="stMultiSelect"] input, [data-testid="stDateInput"] input,
+[data-testid="stTextInput"] input { color: var(--texte) !important; background: transparent !important; }
+[data-testid="stSelectbox"] svg, [data-testid="stMultiSelect"] svg, [data-testid="stDateInput"] svg { fill: var(--texte-2) !important; color: var(--texte-2) !important; }
+[data-testid$="VirtualDropdown"], [data-testid$="VirtualDropdown"] *,
+[role="listbox"], [role="listbox"] [role="option"], [data-testid="portal"] [role="dialog"] {
+    background-color: #16243a !important; color: var(--texte) !important;
+}
+[role="listbox"] [role="option"]:hover, [role="listbox"] [role="option"][aria-selected="true"],
+[role="listbox"] [role="option"][data-focused="true"], [role="listbox"] [role="option"][data-hovered="true"] {
+    background-color: #1f3352 !important; }
+[data-testid$="VirtualDropdown"] { border: 1px solid var(--bordure) !important; }
+button[data-variant="segmented_control"] {
+    background-color: #16243a !important; border-color: var(--bordure) !important; color: var(--texte-2) !important;
+}
+button[data-variant="segmented_control"] p { color: var(--texte-2) !important; }
+button[data-variant="segmented_control"][aria-checked="true"] {
+    background-color: rgba(77, 143, 224, 0.25) !important; border-color: var(--primaire) !important;
+}
+button[data-variant="segmented_control"][aria-checked="true"] p { color: #dbe9fb !important; }
+[data-testid="stPopoverButton"], button[kind="secondary"], [data-testid="stBaseLinkButton-secondary"] {
+    background-color: #16243a !important; border-color: var(--bordure) !important; color: var(--texte) !important;
+}
+[data-testid="stPopoverButton"] p, button[kind="secondary"] p, [data-testid="stBaseLinkButton-secondary"] p,
+[data-testid="stPopoverButton"] [data-testid="stIconMaterial"] { color: var(--texte) !important; }
+section[data-testid="stSidebar"] [data-testid="stPopoverButton"] { background-color: transparent !important; }
+section[data-testid="stSidebar"] [data-testid="stPopoverButton"]:hover { background-color: #13233a !important; }
+[data-testid="stPopoverBody"], [data-testid="stPopoverBody"] * { color: var(--texte); }
 .constat { box-shadow: none; }
 .constat.alerte { background: rgba(255, 138, 128, 0.07); }
 .constat.attention { background: rgba(240, 169, 91, 0.07); }

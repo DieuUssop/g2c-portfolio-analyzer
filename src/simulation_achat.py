@@ -79,3 +79,19 @@ def nouveaux_constats(avant, apres):
         return {(c["dimension"], c["titre"]): c for c in r["constats"] if c["niveau"] != "ok"}
     a, b = cles(avant), cles(apres)
     return [b[k] for k in b if k not in a], [a[k] for k in a if k not in b]
+
+
+def res_avec_achat(res, ticker, montant):
+    """Résultat d'analyse « comme si » l'achat était fait, pour un titre DÉJÀ détenu : la ligne gagne
+    « montant » euros de valeur au dernier cours, les poids sont recalculés. Instantané : pas de nouveau
+    téléchargement ni de nouvelle analyse (revue du 23/11/2026 : la simulation prenait une minute).
+    Renvoie (résultat modifié, quantité achetée)."""
+    positions = res["positions"].copy()
+    if ticker not in positions.index:
+        raise KeyError(ticker)
+    cours = float(positions.at[ticker, "cours"])
+    quantite = float(montant) / cours if cours else 0.0
+    positions.at[ticker, "quantite"] = float(positions.at[ticker, "quantite"]) + quantite
+    positions.at[ticker, "valeur"] = float(positions.at[ticker, "valeur"]) + float(montant)
+    positions["poids_pct"] = positions["valeur"] / positions["valeur"].sum() * 100
+    return dict(res, positions=positions), quantite

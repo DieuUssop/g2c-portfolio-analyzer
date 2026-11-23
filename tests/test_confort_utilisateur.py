@@ -189,23 +189,29 @@ def test_livret_a_meme_argent_memes_dates():
 # ----------------------------------------------------------------------
 # « Ce qu'il faut retenir »
 # ----------------------------------------------------------------------
-def _res(twr=0.08, ecart=0.02, solde=100.0, jours=200):
-    return {"indicateurs": {"twr_annualise": twr},
-            "avances": {"twr_portefeuille_meme_periode": 0.30, "twr_indice": 0.30 - ecart},
-            "resume": {"gain_total": 1_000.0, "solde_especes": solde}, "jours_de_cotation": jours}
+def _res(gain=1_000.0, solde=100.0, jours=200):
+    return {"indicateurs": {"twr_annualise": 0.08},
+            "avances": {"twr_portefeuille_meme_periode": 0.30, "twr_indice": 0.28},
+            "resume": {"gain_total": gain, "montant_investi": 10_000.0, "solde_especes": solde},
+            "jours_de_cotation": jours}
 
 
 def test_ce_qu_il_faut_retenir():
     alerte = {"dimension": "concentration", "niveau": "alerte", "titre": "Ligne trop grosse : {nom}",
               "pistes": ["Alléger {nom}"], "valeurs": {"nom": "LVMH"}}
-    p = synthese.phrases(_res(), [alerte], "MSCI World")
+    # revue du 23/11/2026 : performance RÉELLE (gain, gain ÷ coût d'achat) et même argent dans l'indice
+    plus = {"indice": 10_500.0, "portefeuille": 11_000.0, "ecart_indice": 500.0}
+    p = synthese.phrases(_res(), [alerte], "MSCI World", meme_argent=plus)
     assert len(p) == 3
-    assert "mieux que" in p[0][2] and p[0][3]["indice"] == "MSCI World"
+    assert "de plus que" in p[0][2] and p[0][3]["indice"] == "MSCI World" and "10" in p[0][3]["rendement"]
+    assert "TWR" not in p[0][2] and p[0][0] == "positive"
     assert p[1][0] == "alerte" and p[1][3]["nom"] == "LVMH"
     assert p[2][1] == "Piste :" and p[2][2] == "Alléger {nom}"
-    p = synthese.phrases(_res(ecart=-0.03, solde=-50), [], "MSCI World")
-    assert "moins que" in p[0][2] and p[1][0] == "ok" and p[2][0] == "attention"
+    moins = {"indice": 11_500.0, "portefeuille": 11_000.0, "ecart_indice": -500.0}
+    p = synthese.phrases(_res(gain=-106.0, solde=-50), [], "MSCI World", meme_argent=moins)
+    assert "de moins que" in p[0][2] and p[0][0] == "negative" and p[1][0] == "ok" and p[2][0] == "attention"
     assert "récent" in synthese.phrases(_res(jours=5), [])[0][2]
+    assert "{ecart}" not in synthese.phrases(_res(), [])[0][2]          # sans comparaison : gain seul
 
 
 # ----------------------------------------------------------------------
@@ -284,3 +290,71 @@ def test_analyse_gardee_en_memoire_sans_st_cache(monkeypatch):
         assert analyse.analyse_memorisee(b"date,type\n") == {"n": 3}            # « Actualiser les cours »
     finally:
         analyse.oublier_resultats()
+
+
+# ----------------------------------------------------------------------
+# Revue visuelle du 23/11/2026
+# ----------------------------------------------------------------------
+def test_meme_argent_dans_l_indice():
+    jours = pd.bdate_range("2024-01-02", periods=4)
+    histo = pd.DataFrame({"flux": [1000.0, 0.0, 1000.0, 0.0], "valeur": [1000.0, 1100.0, 2200.0, 2300.0]},
+                         index=jours)
+    indice = pd.Series([100.0, 110.0, 110.0, 121.0], index=jours)
+    serie = livret_a.dans_indice(histo, indice)
+    # 1 000 € à 100 = 10 parts ; 1 000 € à 110 = 9,09 parts ; 19,09 parts × 121
+    assert serie.iloc[-1] == pytest.approx((10 + 1000 / 110) * 121)
+    c = livret_a.comparer_tout(histo, indice, 2_350.0)
+    assert c["portefeuille"] == pytest.approx(2_350.0)              # une seule source : la carte du haut
+    assert c["ecart_indice"] == pytest.approx(2_350.0 - serie.iloc[-1])
+    assert c["ecart_livret"] == pytest.approx(2_350.0 - c["livret"])
+    assert livret_a.comparer_tout(histo, None, 2_350.0)["indice"] is None
+
+
+def test_versement_necessaire_pour_la_cible():
+    valeurs = pd.Series({"Actions Monde": 7_000.0, "Obligations": 3_000.0})
+    # cible 50 / 50 : il faut 14 000 € au total, donc 4 000 € de plus, sans rien vendre
+    assert allocation.versement_necessaire(valeurs, pd.Series({"Actions Monde": 50.0, "Obligations": 50.0})) \
+        == pytest.approx(4_000.0)
+    assert allocation.versement_necessaire(valeurs, pd.Series({"Actions Monde": 70.0, "Obligations": 30.0})) \
+        == pytest.approx(0.0)
+
+
+def test_simulation_instantanee_d_un_titre_detenu():
+    positions = pd.DataFrame({"nom": ["A", "B"], "quantite": [10.0, 5.0], "cours": [100.0, 200.0],
+                              "valeur": [1_000.0, 1_000.0], "poids_pct": [50.0, 50.0]}, index=["A", "B"])
+    res = {"positions": positions, "prix_hist": pd.DataFrame()}
+    apres, quantite = simulation_achat.res_avec_achat(res, "A", 1_000)
+    assert quantite == pytest.approx(10.0)
+    assert apres["positions"].at["A", "valeur"] == pytest.approx(2_000.0)
+    assert apres["positions"].at["A", "poids_pct"] == pytest.approx(2_000 / 3_000 * 100)
+    assert res["positions"].at["A", "valeur"] == pytest.approx(1_000.0)      # l'original n'est pas modifié
+    with pytest.raises(KeyError):
+        simulation_achat.res_avec_achat(res, "Z", 100)
+
+
+def test_portefeuille_d_exemple_sans_division_en_attente():
+    exemple = pd.read_csv("data/transactions_diversifie.csv")
+    keyence = exemple[(exemple["ticker"] == "6861.T") & (exemple["type"] == "ACHAT")]
+    assert keyence["quantite"].iloc[0] == 195                       # 39 actions × 5 (division du 19/11/2026)
+
+
+def test_fenetre_agrandie_sous_windows(monkeypatch):
+    import lanceur
+    monkeypatch.setattr(lanceur.os, "name", "nt")
+    assert lanceur.options_fenetre() == ["--start-maximized"]
+    monkeypatch.setattr(lanceur.os, "name", "posix")
+    assert lanceur.options_fenetre() == ["--window-size=1280,800"]
+
+
+def test_heros_et_mode_nuit():
+    from src import interface, theme
+    bloc = interface.heros(("Valeur actuelle", "6 728 €", "Avec les espèces : 6 763 €"),
+                           ("Coût d'achat des titres", "6 908 €", "au PRU"),
+                           ("Gain total", "−113 €", "−1,63 %", "negative",
+                            [("Latentes", -180.0, True), ("Réalisées", 67.0, True)]),
+                           lambda x, signe=False: f"{x:+.0f} €")
+    assert "heros-grand" in bloc and "−1,63 %" in bloc and "Coût d&#x27;achat" in bloc
+    # composants récents de Streamlit (react-aria) couverts par le mode nuit
+    for selecteur in ('button[data-variant="segmented_control"]', '[data-testid="stPopoverButton"]',
+                      'VirtualDropdown', '.react-aria-ComboBox'):
+        assert selecteur in theme.CSS_NUIT

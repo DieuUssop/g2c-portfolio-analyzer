@@ -92,6 +92,22 @@ def _consultation(transactions, choix_types, choix_titres):
     filtre = transactions["type"].isin(choix_types)
     if choix_titres:
         filtre &= transactions["nom"].isin(choix_titres)
+    # Période et recherche (revue du 23/11/2026)
+    dates = pd.to_datetime(transactions["date"])
+    a, b = st.columns([2, 3])
+    periode = a.date_input(t("Période"), value=(dates.min().date(), dates.max().date()),
+                           min_value=dates.min().date(), max_value=dates.max().date(), format="DD/MM/YYYY",
+                           key="periode_transactions")
+    recherche = b.text_input(t("Rechercher"), placeholder=t("Nom, ticker ou montant…"), key="recherche_transactions")
+    if isinstance(periode, (tuple, list)) and len(periode) == 2:
+        filtre &= (dates >= pd.Timestamp(periode[0])) & (dates <= pd.Timestamp(periode[1]))
+    if recherche and recherche.strip():
+        mot = recherche.strip().lower()
+        # concaténation élément par élément (pandas 3 + pyarrow : pas de « + » entre colonnes de texte)
+        texte = pd.Series([f"{n} {tk} {p}".lower() for n, tk, p in
+                           zip(transactions["nom"], transactions["ticker"], transactions["prix"])],
+                          index=transactions.index)
+        filtre &= texte.str.contains(mot, regex=False)
     selection = transactions[filtre].sort_values("date", ascending=False)
     selection = selection.assign(montant_total=montant_total(selection))
     colonnes = [c for c in ["date", "type", "ticker", "nom", "quantite", "prix", "frais", "montant_total", "devise",
@@ -105,7 +121,7 @@ def _consultation(transactions, choix_types, choix_titres):
             "type": st.column_config.TextColumn(t("Type")),
             "ticker": st.column_config.TextColumn("Ticker"),
             "nom": st.column_config.TextColumn(t("Titre")),
-            "quantite": st.column_config.NumberColumn(t("Quantité"), format="%d"),
+            "quantite": st.column_config.NumberColumn(t("Quantité"), format=langues.nombre_colonne("%g")),
             "prix": st.column_config.NumberColumn(t("Prix unitaire (€)"), format=langues.eur_colonne("%.2f"),
                                                   help=t("Prix d'un titre ; pour un dividende, un versement, un "
                                                          "retrait ou des frais : le montant de l'opération")),
@@ -115,9 +131,9 @@ def _consultation(transactions, choix_types, choix_titres):
                 help=t("Achat : −(quantité × prix + frais) · vente : quantité × prix − frais · dividende : net reçu "
                        "· versement + · retrait et frais −")),
             "devise": st.column_config.TextColumn(t("Devise")),
-            "prix_devise": st.column_config.NumberColumn(t("Prix en devise"), format="%.2f",
+            "prix_devise": st.column_config.NumberColumn(t("Prix en devise"), format=langues.nombre_colonne("%.2f"),
                                                          help=t("Prix saisi, avant conversion en euros")),
-            "taux_change": st.column_config.NumberColumn(t("Taux de change"), format="%.4f",
+            "taux_change": st.column_config.NumberColumn(t("Taux de change"), format=langues.nombre_colonne("%.4f"),
                                                          help=t("1 € en devise, le jour de l'opération (taux "
                                                                 "utilisé pour la conversion en euros)")),
         },
@@ -323,9 +339,9 @@ def effet_change(tableau, positions):
                 "nom": st.column_config.TextColumn(t("Titre")),
                 "devise": st.column_config.TextColumn(t("Devise"), width="small"),
                 "taux_achat": st.column_config.NumberColumn(
-                    t("Taux à l'achat"), format="%.4f",
+                    t("Taux à l'achat"), format=langues.nombre_colonne("%.4f"),
                     help=t("1 € en devise : taux moyen des achats encore détenus")),
-                "taux_actuel": st.column_config.NumberColumn(t("Taux actuel"), format="%.4f",
+                "taux_actuel": st.column_config.NumberColumn(t("Taux actuel"), format=langues.nombre_colonne("%.4f"),
                                                              help=t("1 € en devise aujourd'hui")),
                 "effet_marche": st.column_config.NumberColumn(
                     t("Effet marché"), format=langues.eur_colonne("%+.0f"),
