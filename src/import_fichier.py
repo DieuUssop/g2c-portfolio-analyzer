@@ -173,7 +173,7 @@ for _code, _suffixe in {
         "KRX": ".KS", "KOSDAQ": ".KQ", "TPE": ".TW", "NSE": ".NS", "BOM": ".BO", "SHA": ".SS", "SHE": ".SZ",
         "JSE": ".JO", "TLV": ".TA", "BMV": ".MX", "WSE": ".WA", "SGX": ".SI", "NZE": ".NZ", "TSXV": ".V",
         "KSE": ".KS", "TWSE": ".TW", "SEHKNTL": ".SS", "SEHKSZSE": ".SZ", "MEXI": ".MX", "BOVESPA": ".SA",
-        "GA": ".AT", "TI": ".IS", "MK": ".KL", "IJ": ".JK", "TB": ".BK", "CP": ".PR", "IT": ".TA",
+        "KQ": ".KQ", "GA": ".AT", "TI": ".IS", "MK": ".KL", "IJ": ".JK", "TB": ".BK", "CP": ".PR", "IT": ".TA",
         "SEOUL": ".KS", "COREE": ".KS", "TAIPEI": ".TW", "TAIWAN": ".TW", "BOMBAY": ".BO", "MUMBAI": ".NS",
         "SHANGHAI": ".SS", "SHENZHEN": ".SZ", "SINGAPOUR": ".SI", "SINGAPORE": ".SI", "JOHANNESBURG": ".JO",
         "TEL AVIV": ".TA", "SAO PAULO": ".SA", "MEXICO": ".MX", "VARSOVIE": ".WA", "WARSAW": ".WA",
@@ -212,8 +212,20 @@ def normaliser_symbole_courtier(valeur):
     m = MOTIF_SYMBOLE_PLACE.match(haut)
     if m and m.group(2) in PLACES and len(m.group(2)) >= 3 and not convertir_code_global(haut):
         racine = m.group(1)
-        return racine + PLACES[m.group(2)] if "." not in racine else racine
+        return _code_avec_place(racine, PLACES[m.group(2)]) if "." not in racine else racine
     return texte
+
+
+# Places dont les codes sont des chiffres de longueur fixe : un tableur retire souvent les zéros du début
+# (005930 -> 5930) ; on les remet (revue du 26/11/2026).
+LONGUEUR_CODES = {".HK": 4, ".KS": 6, ".KQ": 6, ".SS": 6, ".SZ": 6}
+
+
+def _code_avec_place(racine, suffixe):
+    """« 5930 » + « .KS » -> « 005930.KS » ; « 700 » + « .HK » -> « 0700.HK »."""
+    if racine.isdigit() and suffixe in LONGUEUR_CODES:
+        racine = racine.zfill(LONGUEUR_CODES[suffixe])
+    return racine + suffixe
 
 
 def suffixe_de_place(place):
@@ -226,15 +238,21 @@ def convertir_code_global(code):
     ticker Yahoo Finance. Ex. 'MC FP' -> 'MC.PA', 'EPA:MC' -> 'MC.PA', 'AAPL US Equity' -> 'AAPL',
     'NESN.S' -> 'NESN.SW', 'NASDAQ:AAPL' -> 'AAPL'. Renvoie None si le code n'a pas ces formes."""
     texte = re.sub(r"\s+(EQUITY|EQ)$", "", re.sub(r"\s+", " ", str(code).strip().upper()))
+    m = re.match(r"^.+?\(([^()]+)\)$", texte)                           # « SAMSUNG ELECTRONICS (005930 KRX) »
+    if m:
+        interieur = m.group(1).strip()
+        if "." in interieur and interieur[interieur.rfind("."):] in SUFFIXES_YAHOO and MOTIF_TICKER.match(interieur):
+            return interieur                                             # « LVMH (MC.PA) »
+        return convertir_code_global(interieur)
+    m = re.match(r"^(\d[0-9A-Z\-]{2,11})\s+([A-Z]{3,14})$", texte)        # code chiffré + place : « 005930 KRX »
+    if m and m.group(2) in PLACES:                       # (pas « EURONEXT PARIS » ni « ESE SBF » : déjà traités)
+        return _code_avec_place(m.group(1), PLACES[m.group(2)])
     m = re.match(r"^([A-Z0-9\-/]{1,12})\s+([A-Z]{2})$", texte)            # Bloomberg "MC FP"
     if m and m.group(2) in PLACES:
-        racine = m.group(1).replace("/", "-")
-        if PLACES[m.group(2)] == ".HK" and racine.isdigit():
-            racine = racine.zfill(4)                     # Tencent "700 HK" -> "0700.HK"
-        return racine + PLACES[m.group(2)]
+        return _code_avec_place(m.group(1).replace("/", "-"), PLACES[m.group(2)])   # "700 HK" -> "0700.HK"
     m = re.match(r"^([A-Z]{2,14}):([A-Z0-9.\-]{1,12})$", texte)           # Google "EPA:MC"
     if m and m.group(1) in PLACES:
-        return m.group(2) + PLACES[m.group(1)]
+        return _code_avec_place(m.group(2), PLACES[m.group(1)])
     m = re.match(r"^([A-Z0-9.\-]{1,12}):([A-Z]{2,14})$", texte)           # "MC:EPA", "MC:FP"
     if m and m.group(2) in PLACES:
         return m.group(1) + PLACES[m.group(2)]
@@ -1134,6 +1152,14 @@ def _score_nom(nom_colonne, champ):
     return 0.0
 
 
+def _codes_numeriques(serie):
+    """Vrai si la colonne contient des codes de titres numériques (005930, 2330, 0700) : 4 à 6 chiffres,
+    sans décimale ni séparateur (revue du 26/11/2026 : la colonne Symbol de Samsung était prise pour les frais)."""
+    valeurs = serie.astype(str).str.strip()
+    valeurs = valeurs[(valeurs != "") & (valeurs.str.lower() != "nan")]
+    return bool(len(valeurs)) and float(valeurs.str.fullmatch(r"\d{4,6}").mean()) >= 0.8
+
+
 def profil_colonne(serie):
     """Ce que contient une colonne : part de dates, d'ISIN, de nombres, d'entiers..."""
     valeurs = serie.astype(str).str.strip()
@@ -1233,6 +1259,8 @@ def proposer_correspondance(tableau_ou_colonnes):
                     "date": p.get("dates", 0), "devise": p.get("devises", 0),
                     "type": 1.0,
                 }.get(champ, 1 - p.get("nombres", 0))
+                if champ == "identifiant" and nom >= 3 and _codes_numeriques(tableau[c]):
+                    plausible = 1.0            # « Symbol » = 005930 (Séoul), 2330 (Taïwan), 0700 (Hong Kong)
                 score = nom * max(plausible, 0.2) + _score_contenu(p, champ)
             if score >= 2:
                 candidats.append((score, champ, c))
@@ -1250,7 +1278,8 @@ def proposer_correspondance(tableau_ou_colonnes):
     #    celle où quantité × prix ± frais = montant tombe juste le plus souvent.
     restants = [f for f in numeriques if proposition[f] is None]
     libres = [c for c in colonnes_utiles if c not in prises and not profils[c].get("vide")
-              and profils[c]["nombres"] >= 0.8 and profils[c]["dates"] < 0.5][:6]
+              and profils[c]["nombres"] >= 0.8 and profils[c]["dates"] < 0.5
+              and _score_nom(c, "identifiant") < 3][:6]           # « Symbol » 005930 n'est pas un montant
     if restants and libres:
         meilleur, score_max = None, -math.inf
         for choix in itertools.product(libres + [None], repeat=len(restants)):
@@ -1914,6 +1943,65 @@ def harmoniser_devises(transactions, info_devises, historique, mode="auto"):
     return t, rapport
 
 
+# Places « jumelles » : un même pays, deux marchés, et des relevés qui ne disent pas lequel (« KRX » = Séoul,
+# KOSPI ou KOSDAQ). Si Yahoo n'a aucun cours pour l'un, on essaie l'autre (revue du 26/11/2026).
+PLACES_JUMELLES = {".KS": ".KQ", ".KQ": ".KS", ".TW": ".TWO", ".TWO": ".TW"}
+
+
+def _a_des_cours(ticker):
+    try:
+        import yfinance as yf
+        return not yf.Ticker(ticker).history(period="1mo").empty
+    except Exception:
+        return False
+
+
+def corriger_places_jumelles(transactions, historique, a_des_cours=_a_des_cours):
+    """Remplace 247540.KS par 247540.KQ (KOSDAQ) quand Yahoo n'a aucun cours pour le premier mais en a pour le
+    second. Sans Internet (historique None) : rien n'est changé. Renvoie (transactions, {ancien: nouveau})."""
+    if historique is None or transactions.empty:
+        return transactions, {}
+    changes = {}
+    for tk in transactions["ticker"].unique():
+        suffixe = tk[tk.rfind("."):] if "." in str(tk) else ""
+        if suffixe not in PLACES_JUMELLES:
+            continue
+        serie = historique[tk] if tk in getattr(historique, "columns", []) else None
+        if serie is not None and serie.notna().any():
+            continue
+        autre = tk[: -len(suffixe)] + PLACES_JUMELLES[suffixe]
+        if a_des_cours(autre):
+            changes[tk] = autre
+    if changes:
+        transactions = transactions.assign(ticker=transactions["ticker"].replace(changes))
+    return transactions, changes
+
+
+def _ticker_par_code_chiffre(code):
+    """« 005930 » (ou « 5930 ») -> « 005930.KS » si un seul titre connu (tables d'actions et d'ETF, base locale)
+    a ce code ; sinon None."""
+    code = str(code).strip()
+    if not code.isdigit():
+        return None
+    try:
+        from . import base_titres
+        tickers = {t for t, _ in list(base_titres.ISIN_ACTIONS.values()) + list(base_titres.ISIN_ETF.values())}
+        try:
+            tickers |= set(base_titres.lire_titres().index)
+        except Exception:
+            pass
+    except Exception:
+        return None
+    trouves = {t for t in tickers if "." in str(t) and str(t).split(".")[0].lstrip("0") == code.lstrip("0")
+               and str(t).split(".")[0].isdigit()}
+    principaux = {t for t in trouves if t[t.rfind("."):] not in SUFFIXES_SECONDAIRES}
+    exacts = {t for t in principaux if t.split(".")[0] == code}
+    for groupe in (exacts, principaux):
+        if len(groupe) == 1:
+            return groupe.pop()
+    return None
+
+
 def donnees_de_marche(transactions, chemin_cache=None):
     """Devises et cours historiques nécessaires à harmoniser_devises (connexion Internet)."""
     from pathlib import Path
@@ -1982,6 +2070,13 @@ def importer_automatiquement(brut, chercher=None, marche=donnees_de_marche):
     correspondances_titres, noms_trouves = {}, {}
 
     # Tickers sans place de cotation (MC, AIR, TSLA) : identifiés grâce aux cours du marché
+    # Codes chiffrés connus (005930 = Samsung à Séoul, 2330 = TSMC à Taïwan) : sans Internet et sans essayer
+    # les places européennes (revue du 26/11/2026)
+    for c in list(courts):
+        connu = _ticker_par_code_chiffre(c)
+        if connu:
+            correspondances_titres[c] = connu
+            courts.remove(c)
     if courts:
         provisoire, _ = appliquer_correspondance(tableau, correspondance)
         restants = [c for c in courts if (provisoire["ticker"] == c.upper()).any()]   # sans colonne "place"
@@ -2019,6 +2114,9 @@ def importer_automatiquement(brut, chercher=None, marche=donnees_de_marche):
             "pdf_avis", "pdf_ocr", "pdf_contenu", "pdf_modele", "pdf_lignes")
         transactions["nom"] = [noms_trouves.get(tk, n) if tout_remplacer or _est_un_code(n, tk) else n
                                for tk, n in zip(transactions["ticker"], transactions["nom"])]
+    # « SAMSUNG ELECTRONICS CO LTD (005930 KRX) » -> nom « SAMSUNG ELECTRONICS CO LTD » (le code est devenu le ticker)
+    transactions["nom"] = [re.sub(r"\s*\([^()]*\)\s*$", "", str(n)) if convertir_code_global(n) == tk else n
+                           for tk, n in zip(transactions["ticker"], transactions["nom"])]
     resume["ignorees"] = rapport["ignorees"]
 
     # Devises : vérification avec les cours du marché (si Internet est disponible)
@@ -2026,6 +2124,12 @@ def importer_automatiquement(brut, chercher=None, marche=donnees_de_marche):
         info, historique = marche(transactions)
     except Exception:
         info, historique = {}, None
+    transactions, resume["places_corrigees"] = corriger_places_jumelles(transactions, historique)
+    if resume["places_corrigees"]:
+        try:
+            info, historique = marche(transactions)       # cours du bon marché (KOSDAQ au lieu de KOSPI…)
+        except Exception:
+            pass
     if resume.get("source_pdf") in ("pdf_contenu", "pdf_ocr", "pdf_avis"):
         # Avis d'opéré lu par son contenu : si plusieurs lectures étaient cohérentes, le cours du
         # marché ce jour-là départage (src/lecture_pdf.py)
