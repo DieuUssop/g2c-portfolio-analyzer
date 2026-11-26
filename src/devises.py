@@ -27,15 +27,14 @@ from pathlib import Path
 
 import pandas as pd
 
+from . import places
+
 CHEMIN_CACHE_DEVISES = Path(__file__).resolve().parent.parent / "data" / "cache_devises.csv"
 
 # Devise selon le suffixe du ticker Yahoo (utilisé si Yahoo ne répond pas).
-SUFFIXES = {
-    ".PA": "EUR", ".AS": "EUR", ".DE": "EUR", ".F": "EUR", ".MI": "EUR", ".MC": "EUR",
-    ".BR": "EUR", ".LS": "EUR", ".HE": "EUR", ".VI": "EUR", ".IR": "EUR",
-    ".L": "GBp", ".SW": "CHF", ".TO": "CAD", ".T": "JPY", ".HK": "HKD", ".AX": "AUD",
-    ".ST": "SEK", ".CO": "DKK", ".OL": "NOK",
-}
+# Table unique des places : src/places.py (revue du 26/11/2026 : Séoul, Taïwan, Johannesburg… manquaient).
+SUFFIXES = {s: v[0] for s, v in places.PLACES_COTATION.items() if s}
+SUFFIXES.update(places.PLACES_SECONDAIRES)
 INDICES_CONNUS = {
     "^FCHI": "EUR", "^STOXX50E": "EUR", "^GDAXI": "EUR",
     "^GSPC": "USD", "^IXIC": "USD", "^DJI": "USD", "^FTSE": "GBP", "^N225": "JPY",
@@ -46,17 +45,14 @@ def devise_par_suffixe(ticker):
     """Devise probable d'après le code du ticker (sans Internet)."""
     if ticker in INDICES_CONNUS:
         return INDICES_CONNUS[ticker]
-    if "." in ticker:
-        suffixe = ticker[ticker.rfind("."):]
-        return SUFFIXES.get(suffixe, "EUR")
-    return "USD"          # pas de suffixe : action américaine (AAPL, MSFT...)
+    return places.devise(ticker)      # pas de suffixe : action américaine (AAPL, MSFT...) -> USD
 
 
 def normaliser(devise):
     """Renvoie (devise, facteur). Les actions de Londres sont cotées en
     PENCE (GBp) : 1 250 GBp = 12,50 GBP, d'où un facteur de 0,01."""
-    if devise in ("GBp", "GBX"):
-        return "GBP", 0.01
+    if devise in places.SOUS_UNITES:           # pence de Londres, cents de Johannesburg, agorot de Tel-Aviv
+        return places.SOUS_UNITES[devise]
     return (devise or "EUR").upper(), 1.0
 
 

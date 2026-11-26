@@ -333,7 +333,9 @@ def test_simulation_instantanee_d_un_titre_detenu():
 
 
 def test_portefeuille_d_exemple_sans_division_en_attente():
-    exemple = pd.read_csv("data/transactions_diversifie.csv")
+    # chemin à partir de ce fichier : le test passe aussi quand pytest est lancé depuis un autre dossier
+    from pathlib import Path
+    exemple = pd.read_csv(Path(__file__).resolve().parent.parent / "data" / "transactions_diversifie.csv")
     keyence = exemple[(exemple["ticker"] == "6861.T") & (exemple["type"] == "ACHAT")]
     assert keyence["quantite"].iloc[0] == 195                       # 39 actions × 5 (division du 19/11/2026)
 

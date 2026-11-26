@@ -378,7 +378,7 @@ Dans la rubrique « Affichage » de la barre latérale, le sélecteur **Expert �
 | Mode | Ce qui est affiché |
 |---|---|
 | Expert (par défaut) | Tous les onglets et les quatre espaces de travail, et toutes les petites cartes en haut de page |
-| Essentiel | Les onglets du quotidien : Vue d'ensemble, Positions, Expositions, Allocation cible, Transactions ; les espaces Analyse du portefeuille et Manuel et aide ; le grand bloc (valeur, coût d'achat des titres, gain total) et la carte Solde espèces |
+| Essentiel | Les onglets du quotidien : Vue d'ensemble, Positions, Expositions, Allocation cible, Actualités, Transactions ; les espaces Analyse du portefeuille et Manuel et aide ; le grand bloc (valeur, coût d'achat des titres, gain total) et la carte Solde espèces |
 
 ### Bon à savoir
 

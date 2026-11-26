@@ -205,3 +205,7 @@ estimation de mes dividendes des 12 prochains mois;analyse-dividendes
 aurais-je mieux fait de tout mettre sur un livret a;analyse-livret-a
 où investir mon prochain versement;analyse-allocation-cible
 tester un achat avant de le faire;analyse-simulateur
+ou voir les actualites de mes actions;analyse-actualites
+quand est le prochain dividende de mes titres;analyse-actualites,analyse-dividendes
+suivre une action que je n'ai pas;analyse-surveillance
+creer une alerte quand une action baisse;analyse-surveillance

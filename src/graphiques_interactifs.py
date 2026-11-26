@@ -197,8 +197,57 @@ def _selecteur_periode(fig):
 # ======================================================================
 # Onglet "Vue d'ensemble"
 # ======================================================================
-def fig_valeur_et_apports(histo):
-    """Valeur du portefeuille et argent investi au fil du temps."""
+# Événements marqués sur la courbe d'évolution (revue du 26/11/2026) : catégorie -> (libellé, symbole, couleur)
+EVENEMENTS = {
+    "achat": ("Achats", "triangle-up", "#1c5cab"),
+    "vente": ("Ventes", "triangle-down", ROUGE),
+    "dividende": ("Dividendes", "circle", "#d4a017"),
+    "versement": ("Versements et retraits", "square", GRIS),
+}
+_CATEGORIE = {"ACHAT": "achat", "VENTE": "vente", "DIVIDENDE": "dividende", "COUPON": "dividende",
+              "VERSEMENT": "versement", "RETRAIT": "versement"}
+
+
+def evenements_portefeuille(transactions, especes=None, max_par_jour=4):
+    """Opérations à marquer sur la courbe, regroupées par jour et par catégorie :
+    DataFrame (date, categorie, montant, texte). Montants en euros : achat = quantité × prix + frais ;
+    vente = quantité × prix − frais ; dividende = montant reçu ; retrait compté en négatif.
+    texte : une ligne par opération (« Achat · LVMH · 1 250 € »), au plus max_par_jour puis « + n autres »."""
+    morceaux = [transactions] + ([especes] if especes is not None and len(especes) else [])
+    tout = pd.concat([m for m in morceaux if m is not None and len(m)], ignore_index=True) if any(
+        m is not None and len(m) for m in morceaux) else pd.DataFrame()
+    if tout.empty:
+        return pd.DataFrame(columns=["date", "categorie", "montant", "texte"])
+    tout = tout[tout["type"].isin(_CATEGORIE)].copy()
+    tout["categorie"] = tout["type"].map(_CATEGORIE)
+    quantite = pd.to_numeric(tout.get("quantite"), errors="coerce").fillna(0.0)
+    prix = pd.to_numeric(tout["prix"], errors="coerce").fillna(0.0)
+    frais = pd.to_numeric(tout.get("frais"), errors="coerce").fillna(0.0) if "frais" in tout else 0.0
+    montant = prix.copy()
+    montant[tout["type"] == "ACHAT"] = (quantite * prix + frais)[tout["type"] == "ACHAT"]
+    montant[tout["type"] == "VENTE"] = (quantite * prix - frais)[tout["type"] == "VENTE"]
+    montant[tout["type"] == "RETRAIT"] = -prix.abs()[tout["type"] == "RETRAIT"]
+    tout["montant"] = montant
+    tout["date"] = pd.to_datetime(tout["date"]).dt.normalize()
+    libelles = {"ACHAT": "Achat", "VENTE": "Vente", "DIVIDENDE": "Dividende", "COUPON": "Coupon",
+                "VERSEMENT": "Versement", "RETRAIT": "Retrait"}
+    noms = tout["nom"].astype(str).tolist() if "nom" in tout else tout["ticker"].astype(str).tolist()
+    tout["ligne"] = [t(libelles[ty]) + ("" if ty in ("VERSEMENT", "RETRAIT") else " · " + n) + " · "
+                     + eur(f"{m:,.0f}" if anglais() else f"{m:,.0f}".replace(",", "\u202f")) for ty, n, m in zip(tout["type"], noms, tout["montant"])]
+    sortie = []
+    for (jour, cat), groupe in tout.groupby(["date", "categorie"], sort=True):
+        lignes = list(groupe["ligne"])
+        texte = "<br>".join(lignes[:max_par_jour])
+        if len(lignes) > max_par_jour:
+            texte += "<br>" + t("+ {n} autres", n=len(lignes) - max_par_jour)
+        sortie.append({"date": jour, "categorie": cat, "montant": float(groupe["montant"].sum()), "texte": texte})
+    return pd.DataFrame(sortie)
+
+
+def fig_valeur_et_apports(histo, evenements=None):
+    """Valeur du portefeuille et argent investi au fil du temps ; evenements (evenements_portefeuille) :
+    achats ▲, ventes ▼, dividendes ● et versements ■ posés sur la courbe de valeur (cliquer la légende
+    pour les masquer)."""
     fig = go.Figure()
     fig.add_trace(go.Scatter(
         x=histo.index, y=histo["apports_nets"], name=t("Argent investi (apports nets)"),
@@ -211,6 +260,21 @@ def fig_valeur_et_apports(histo):
         fill="tonexty", fillcolor="rgba(42, 120, 214, 0.08)",
         hovertemplate=eur("%{y:,.0f}") + f"<extra>{t('Valeur')}</extra>",
     ))
+    if evenements is not None and len(evenements):
+        valeur = histo["valeur"]
+        for cat, (nom, symbole, couleur) in EVENEMENTS.items():
+            ev = evenements[evenements["categorie"] == cat]
+            ev = ev[(ev["date"] >= valeur.index[0]) & (ev["date"] <= valeur.index[-1])]
+            if ev.empty:
+                continue
+            y = valeur.reindex(valeur.index.union(ev["date"])).ffill().reindex(ev["date"]).values
+            fig.add_trace(go.Scatter(
+                x=ev["date"], y=y, name=t(nom), mode="markers",
+                marker=dict(symbol=symbole, size=9 if cat != "dividende" else 7, color=couleur,
+                            line=dict(width=1, color="white")),
+                customdata=ev["texte"], hovertemplate="%{customdata}<extra></extra>",
+                visible=True if cat != "dividende" or len(ev) <= 40 else "legendonly",
+            ))
     _style(fig, hauteur=440)
     fig.update_layout(hovermode="x unified")
     fig.update_yaxes(tickformat=",.0f", **_axe_euros("y"))

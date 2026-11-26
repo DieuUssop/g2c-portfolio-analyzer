@@ -2,8 +2,8 @@
 diagnostic « Signaler un problème ». À mettre à jour à chaque nouvelle version."""
 import datetime
 
-VERSION = "2026.11.23"            # revue visuelle du 23/11/2026
-DATE_VERSION = datetime.date(2026, 11, 23)
+VERSION = "2026.11.26"            # actualités, liste de surveillance, alertes, places hors Europe
+DATE_VERSION = datetime.date(2026, 11, 26)
 
 
 def age_en_jours(aujourd_hui=None):

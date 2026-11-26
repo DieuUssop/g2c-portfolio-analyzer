@@ -3,19 +3,20 @@
 
 This chapter explains, tab by tab, the "Portfolio analysis" workspace: the overview and the world map, holdings, performance, risk, exposures and real diversification, and then the viewing of transactions. Each indicator has its own entry: the exact formula used by the software, the intuition, a worked example, how to read it and its limits. The Optimisation and Projection tabs are covered in a separate chapter.
 
-## The nine analysis tabs: what is where?
-<!-- fiche: analyse-onglets | questions: what are the tabs in the portfolio analysis ; where do I find volatility ; which tab has the VaR ; where can I see my capital gains ; i am looking for the correlations ; where is the table of my holdings ; what is each tab for ; where are the transactions | mots: tabs, Overview, Holdings, Performance, Risk, Exposures, Optimisation, Projection, Transactions, navigation | aller: Analyse du portefeuille -->
+## The ten analysis tabs: what is where?
+<!-- fiche: analyse-onglets | questions: what are the tabs in the portfolio analysis ; where do I find volatility ; which tab has the VaR ; where can I see my capital gains ; i am looking for the correlations ; where is the table of my holdings ; what is each tab for ; where are the transactions | mots: tabs, Overview, Holdings, Performance, Risk, Exposures, News, Optimisation, Projection, Transactions, navigation | aller: Analyse du portefeuille -->
 
-The "Portfolio analysis" workspace has nine tabs, displayed at the top of the main area below the key figures (only five in Essential mode: Overview, Holdings, Exposures, Target allocation, Transactions).
+The "Portfolio analysis" workspace has ten tabs, displayed at the top of the main area below the key figures (only six in Essential mode: Overview, Holdings, Exposures, Target allocation, News, Transactions).
 
 | Tab | What you find there |
 |---|---|
 | [[Overview]] | Change in value and invested capital over time, allocation by holding, world map, breakdowns by asset class, region and sector, gains, dividends and fees |
 | [[Holdings]] | The table of positions held (quantity, cost basis (PRU), price, value, gain, weight) and the chart of unrealised gains by holding |
-| [[Performance]] | TWR, IRR (TRI), gap versus the benchmark, base-100 curve, returns by calendar year, drawdown, beta, alpha, correlation, tracking error, information ratio |
+| [[Performance]] | Return, IRR (TRI), the same money placed in the index or in a Livret A, base-100 curve, returns by calendar year, drawdown, beta, alpha, correlation, tracking error, information ratio |
 | [[Risk]] | Sharpe, Sortino, VaR and CVaR, distribution of daily returns compared with the normal distribution, skewness, kurtosis, Jarque-Bera test |
 | [[Exposures]] | Diagnosis across six dimensions (geography, sectors, currencies, concentration, interest rates, real diversification), findings and suggestions, correlations between holdings |
 | [[Target allocation]] | Your targets per bucket (World equities, emerging markets, bonds…), where to invest the next contribution without selling anything, and the "What if I bought…" simulator |
+| [[News]] | Recent articles about your companies, your watchlist, price alerts, each company's profile and the calendar of results and dividends |
 | [[Optimisation]] | Markowitz efficient frontier and compared allocations (chapter devoted to optimisation and projection) |
 | [[Projection]] | Monte Carlo simulation of future value (same chapter) |
 | [[Transactions]] | The transaction history, filterable and downloadable; editing transactions is described in the chapter on importing |
@@ -115,6 +116,10 @@ You buy €1,000 of securities (fees included), then receive €30 in dividends.
 ### Tips
 
 The 1M, 6M, YTD, 1Y and All buttons choose the period; hovering shows both values at the same date. A transaction entered on a day without trading (a Saturday, for example) is attached to the next trading day.
+
+### Transactions on the curve
+
+Your transactions are placed on the blue curve: **▲ purchases**, **▼ sales**, **● dividends** and **■ deposits and withdrawals**. Transactions on the same day are grouped; hovering over a symbol gives the detail ("Purchase · LVMH · €1,250"). Click a type in the legend to hide or show it again; beyond 40 dividends, they are hidden at first to keep the curve readable.
 
 ## The "Worldwide presence" map
 <!-- fiche: analyse-carte-monde | questions: how do i read the world map ; why is the us dark when i have no american stocks ; the map doesnt show up ; my bonds are not on the map ; what does not on the map mean ; how do i see the securities of a country ; why isnt gold on the map ; geographic map of my portfolio | mots: world map, geography, country, equity portion, choropleth, not on the map, geographic exposure, world | aller: Analyse du portefeuille/Vue d'ensemble -->
@@ -380,7 +385,11 @@ All calculations are done **in euros**. A security quoted in another currency is
 
 `Price in euros = price in currency / rate (number of currency units for €1)`
 
-London shares, quoted in pence, are first divided by 100. Fees remain in euros.
+London shares, quoted in pence, are first divided by 100; likewise Johannesburg (quoted in rand cents) and Tel Aviv (in agorot). Fees remain in euros.
+
+### Exchanges outside Europe and the United States
+
+The software knows about forty exchanges: Seoul (won, KRW), Taiwan, Shanghai, Shenzhen, Hong Kong, Tokyo, India, Singapore, Australia, Brazil, Mexico, South Africa, Poland, Turkey… For each one it knows the trading currency, the country and the region (useful without Internet), and finds the Yahoo ticker from an ISIN of that country (KR7005930003 → 005930.KS, Samsung Electronics). The Samsung certificate listed in London (SMSN.IL) is in dollars.
 
 ### Two effects in performance
 
@@ -1716,6 +1725,53 @@ The **Change** column gives the difference between before and after. The **new**
 ### Why an "allocation" volatility?
 
 The purchase has no history: the portfolio's past volatility would hardly move. So the volatility of the new allocation is calculated (today's weights × covariances of the securities over 3 years). A new security needs the Internet for its prices.
+
+## The News tab: articles about your companies
+<!-- fiche: analyse-actualites | questions: where can I see news about my shares ; articles about the companies in my portfolio ; news of my securities ; like tradingview ; next results date ; when is the next dividend ; why did my share jump today ; company profile ; the news does not show | mots: news, articles, press, feed, company profile, calendar, results, dividend, Yahoo Finance, Google News | aller: Analyse du portefeuille/Actualités -->
+
+The [[News]] tab gathers what is happening with the companies you hold or follow.
+
+### From top to bottom
+
+1. **Four cards**: the number of articles in the last 7 days, the biggest move of the last session (beyond ± 5%), the next known results and the next dividend.
+2. **News feed**: the most recent articles first, grouped by day. Filter by company or by a word in the title; a click opens the article on the publisher's site. If a holding has moved a lot, a box gives the effect in euros on your holding.
+3. **My watchlist** and **Price alerts** (next entry).
+4. In Expert mode: the **company profile** (business, market cap, P/E, dividend yield, 1-year change, your weight and your gain) and the **portfolio calendar** (upcoming results and dividend ex-dates).
+
+### Sources
+
+Yahoo Finance and, if the box is ticked, Google News (free public feed, in French or English depending on "Language of the articles"). Only the **title, source, date and link** are shown: the text stays on the publisher's site. No automatic summary is produced.
+
+### When is the feed downloaded?
+
+Only when you click [[Update the news]] (Internet needed). The last feed is kept on the computer: it can still be read without Internet, with the date of the update. Results and dividend dates come from Yahoo Finance, which does not know all of them.
+
+### Limits
+
+Yahoo Finance articles are often in English. The move shown is that of the last session in the history, in euros (currency effect included for a foreign security).
+
+## The watchlist and price alerts
+<!-- fiche: analyse-surveillance | questions: follow a share I do not own ; add a company to watch ; watchlist ; remove a holding from the news ; be warned when a share falls below a price ; create a price alert ; why are my etfs not in the news ; alert when a share falls 5 % | mots: watchlist, follow, alert, price alert, threshold, warn, hide, show again | aller: Analyse du portefeuille/Actualités -->
+
+### The list
+
+Your holdings are added **automatically** ("Held" badge). ETFs and funds, which have little news of their own, are hidden at first. Add a company you do not own with the "Add a company" box (name, ticker or ISIN): it appears with the "Followed" badge.
+
+- **✕** on a holding only removes it from the feed: it stays in the portfolio; "Show again" brings it back.
+- **✕** on a followed company removes it from the list, with its alerts.
+
+The list is kept with the portfolio: encrypted in your space if you are signed in, for the session otherwise.
+
+### Alerts
+
+In "New alert", choose the company, the condition and the threshold:
+
+| Condition | Threshold |
+|---|---|
+| Price above / below | A price, in the trading currency (won for Samsung, dollars for Apple) |
+| Daily fall / rise of at least | A percentage, for example 5 |
+
+Alerts are checked **each time the software opens** (Internet needed); an alert reached is shown in an orange box below the key figures. Nothing is sent: no e-mail, no notification.
 
 ## Viewing the transaction history (Transactions tab)
 <!-- fiche: analyse-transactions | questions: where do i see all my transactions ; filter transactions by security ; show only dividends ; export my transactions to csv ; why is the price in euros in the history ; price in currency column ; how many transactions in my portfolio ; history of purchases and sales | mots: transactions, history, filter, CSV export, purchases, sales, dividends, viewing, price in currency | aller: Analyse du portefeuille/Transactions | chiffres: nb_operations -->

@@ -378,7 +378,7 @@ In the "Display" section of the sidebar, the **Expert · Essential** selector ch
 | Mode | What is shown |
 |---|---|
 | Expert (default) | All tabs and the four workspaces, and all the small cards at the top of the page |
-| Essential | The everyday tabs: Overview, Holdings, Exposures, Target allocation, Transactions; the Portfolio analysis and Manual and help workspaces; the large block (value, cost of the securities, total gain) and the Cash balance card |
+| Essential | The everyday tabs: Overview, Holdings, Exposures, Target allocation, News, Transactions; the Portfolio analysis and Manual and help workspaces; the large block (value, cost of the securities, total gain) and the Cash balance card |
 
 ### Good to know
 

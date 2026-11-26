@@ -38,7 +38,7 @@ améliorée par les promotions suivantes.
    ne pas la remplacer par une base de test.
 4. **Jamais de valeur fausse en silence.** En cas de doute à l'import, ouvrir le formulaire
    « Compléter l'opération » ou afficher un avertissement plutôt que deviner.
-5. **Tout doit passer les tests** : `python -m pytest` (368 tests au 23/11/2026). Toute
+5. **Tout doit passer les tests** : `python -m pytest` (379 tests au 26/11/2026). Toute
    correction ou fonctionnalité ajoute au moins un test.
 6. **Pas de code en double** : une amélioration de lecture doit profiter à tous les chemins
    (PDF texte, PDF image, photo, CSV, Excel).
@@ -117,6 +117,8 @@ python diagnostic_pdf.py relevé.pdf --anonyme    # ce que l'application lit dan
 | `simulation_achat.py` | Simulateur « Et si j'achetais… » : achat fictif, volatilité ex ante, constats avant / après ; `res_avec_achat` = simulation instantanée d'un titre déjà détenu |
 | `livret_a.py` | Le même argent sur un Livret A (taux officiels depuis 2008, `TAUX_LIVRET_A` à compléter) et dans l'indice (`dans_indice`, `comparer_tout`) |
 | `synthese.py` | Les trois phrases de « Ce qu'il faut retenir » (règles simples, sans IA ; performance réelle comparée au même argent dans l'indice) |
+| `actualites.py` | Articles (Yahoo Finance, Google Actualités RSS), fiche société, rendez-vous, variations du jour, cache `data/cache_actualites.json` |
+| `surveillance.py` | Liste de surveillance (lignes détenues + sociétés suivies) et alertes de cours |
 | `export_excel.py` | Bouton « Excel » : classeur Résumé, Positions, Performance mensuelle, Transactions, Dividendes, Diagnostic |
 | `indices.py` | Indices de référence (dont composites 20/80, 60/40, 80/20) |
 | `version.py` | Numéro de version (date) |
@@ -129,6 +131,7 @@ python diagnostic_pdf.py relevé.pdf --anonyme    # ce que l'application lit dan
 | `base_titres.py` | Base locale des titres (ISIN, ticker, nom, classement), mémoire des titres reconnus |
 | `base_officielle.py` | Lecture des listes officielles Euronext et Xetra |
 | `classement.py` | Classe d'actifs, région, pays, secteur de chaque titre ; ETF PEA par swap |
+| `places.py` | TABLE UNIQUE des places de cotation : suffixe Yahoo → devise, pays, région, préfixes ISIN ; sous-unités (pence, cents ZAc, agorot ILA) |
 | `composition_etf.py` | Composition des indices et des ETF (pays, secteurs), libellés abrégés, ETF connus |
 
 ### `src/` — import des fichiers
@@ -153,6 +156,7 @@ python diagnostic_pdf.py relevé.pdf --anonyme    # ce que l'application lit dan
 | `vues_ligne.py` | Courbe d'une seule ligne (valeur, cours et PRU, comparaison à l'indice) : `portfolio.suivi_ligne` ; Vue d'ensemble et Performance (`bloc` est un `st.fragment`) |
 | `vues_bienvenue.py` | Carte « Bienvenue », bandeau d'exemple, « Ce qu'il faut retenir », mode Essentiel / Expert |
 | `vues_allocation.py` | Onglet « Allocation cible » et simulateur « Et si j'achetais… » |
+| `vues_actualites.py` | Onglet « Actualités » (fil, liste de surveillance, alertes, fiche, agenda) et bandeau des alertes en haut de page |
 | `vues_revenus.py` | Encadrés « Dividendes et coupons » (Positions) et « Le même argent ailleurs » (indice et Livret A, Performance) ; `meme_argent` |
 | `vues_compte.py`, `comptes.py`, `coffre.py` | Comptes utilisateurs, chiffrement (PBKDF2 + AES) ; type de compte (PEA, CTO…), versions et journal des modifications, sauvegardes hebdomadaires |
 | `manuel.py`, `vues_manuel.py` | Manuel et assistant « Poser une question » (hors connexion, sans IA générative) |
@@ -224,6 +228,11 @@ python diagnostic_pdf.py relevé.pdf --anonyme    # ce que l'application lit dan
   rendements annuels (« performance des titres »).
 - **Keyence (6861.T)** : la division par 5 de 2024 est déjà appliquée dans `data/transactions_diversifie.csv`
   (quantités × 5, prix ÷ 5), pour ne pas afficher de division en attente.
+- **Places de cotation** : une nouvelle place s'ajoute UNIQUEMENT dans `places.PLACES_COTATION` (devise, pays,
+  région, préfixe ISIN) ; `tests/test_places.py` échoue si un suffixe de `import_fichier.SUFFIXES_YAHOO` ou un code
+  de `import_fichier.PLACES` n'y figure pas. Johannesburg (ZAc) et Tel-Aviv (ILA) cotent en centièmes, comme Londres.
+- **Actualités** : rien n'est téléchargé à l'ouverture (bouton « Mettre à jour ») ; seuls titre, source, date et lien
+  sont affichés (droits d'auteur) ; tests avec des réponses fictives (`lire_yahoo`, `lire_texte`).
 - **Livret A** : compléter `livret_a.TAUX_LIVRET_A` à chaque changement de taux (1er février, 1er août).
 - **Mac** : `installateur/compatibilite_mac.py` (lancé par `fabriquer_mac.sh`) remplace les bibliothèques
   compilées pour un macOS > 12 ; l'application doit s'ouvrir sur macOS 12 et plus (puces Apple).

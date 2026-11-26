@@ -110,6 +110,13 @@ ISIN_ACTIONS = {
     "US0231351067": ("AMZN", "Amazon.com Inc."), "US02079K3059": ("GOOGL", "Alphabet Inc. (A)"),
     "US30303M1027": ("META", "Meta Platforms Inc."), "US67066G1040": ("NVDA", "NVIDIA Corporation"),
     "US88160R1014": ("TSLA", "Tesla Inc."),
+    # Grandes valeurs d'Asie (revue du 26/11/2026 : Samsung n'était pas reconnu)
+    "KR7005930003": ("005930.KS", "Samsung Electronics"),
+    "KR7005931001": ("005935.KS", "Samsung Electronics (actions de préférence)"),
+    "US7960508882": ("SMSN.IL", "Samsung Electronics (certificat GDR, Londres, en dollars)"),
+    "KR7000660001": ("000660.KS", "SK Hynix"),
+    "TW0002330008": ("2330.TW", "Taiwan Semiconductor Manufacturing (TSMC)"),
+    "US8740391003": ("TSM", "Taiwan Semiconductor Manufacturing (TSMC, ADR)"),
 }
 
 _memoire_paquets = {}            # paquets déjà lus : {chemin: (date de modification, tableau)}
@@ -365,6 +372,23 @@ def memoriser(identifiant, ticker, nom="", source="recherche"):
 
 
 def chercher_localement(identifiant):
+    """Comme _chercher_dans_la_base, puis, si rien n'est trouvé, dans les tables d'ETF et d'actions connues
+    par leur ticker ou leur nom (« Samsung », « 005930.KS » : revue du 26/11/2026)."""
+    resultats = _chercher_dans_la_base(identifiant)
+    if resultats:
+        return resultats
+    cle, nom = _cle(identifiant), normaliser_nom(identifiant)
+    trouves = []
+    for table, genre in ((ISIN_ETF, "ETF"), (ISIN_ACTIONS, "EQUITY")):
+        for ticker, nom_titre in table.values():
+            if ticker.upper() == cle or (len(nom) >= 3 and nom in normaliser_nom(nom_titre)):
+                if ticker not in {t["symbol"] for t in trouves}:
+                    trouves.append({"symbol": ticker, "longname": nom_titre, "quoteType": genre, "local": True,
+                                    "table": True})
+    return trouves
+
+
+def _chercher_dans_la_base(identifiant):
     """Cherche un titre sans Internet : dans la mémoire, puis dans la fiche des
     titres (code ISIN, ticker, nom). Renvoie une liste de résultats au même
     format que le moteur de recherche de Yahoo ({"symbol", "longname", ...})."""

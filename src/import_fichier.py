@@ -38,6 +38,8 @@ import unicodedata
 
 import pandas as pd
 
+from . import places
+
 COLONNES = ["date", "type", "ticker", "nom", "quantite", "prix", "frais"]
 
 # Champs que l'utilisateur fait correspondre à une colonne de son fichier
@@ -85,7 +87,7 @@ NOMS_RECONNUS = {
 # Colonnes à ne jamais interpréter (notes libres)
 NOMS_EXCLUS = {"commentaire", "commentaires", "remarque", "remarques", "note", "notes", "observation",
                "observations", "comment", "comments", "memo", "info", "infos", "information"}
-DEVISES = {"EUR", "USD", "GBP", "GBX", "CHF", "JPY", "CAD", "AUD", "HKD", "DKK", "SEK", "NOK", "CNY", "SGD"}
+DEVISES = set(places.DEVISES_CONNUES)        # table unique des places (revue du 26/11/2026 : KRW, TWD, INR… manquaient)
 MOTIF_DATE = re.compile(r"^\d{1,4}[/\-.]\d{1,2}[/\-.]\d{1,4}")
 
 # Types d'opération reconnus (mots-clés, sans accents, en minuscules)
@@ -123,6 +125,7 @@ MOTIF_TICKER = re.compile(r"^[A-Z0-9^][A-Z0-9\-=&]{0,11}(\.[A-Z]{1,3})?$")
 SUFFIXES_YAHOO = {".PA", ".DE", ".F", ".AS", ".BR", ".MC", ".MI", ".LS", ".L", ".SW", ".T", ".TO", ".V", ".AX",
                   ".HK", ".CO", ".ST", ".HE", ".OL", ".VI", ".IR", ".NZ", ".SI", ".KS", ".SA", ".MX", ".JO",
                   ".TW", ".SS", ".SZ", ".NS", ".BO", ".WA", ".PR", ".AT", ".IS", ".TA", ".BK", ".JK", ".KL"}
+SUFFIXES_YAHOO |= {s for s in places.PLACES_COTATION if s}       # .KQ (KOSDAQ), .TWO… : table unique
 # Codes de place -> suffixe Yahoo ("" = États-Unis). Valent pour :
 #   Bloomberg  "MC FP", "AAPL US Equity"      Google Finance "EPA:MC", "NASDAQ:AAPL"
 #   Reuters    "LVMH.PA", "AAPL.O", "NESN.S"  codes MIC "XPAR", "XNAS" et noms "Euronext Paris"
@@ -133,7 +136,7 @@ PLACES = {
     "UR": "", "UA": "", "UP": "", "JP": ".T", "JT": ".T", "CN": ".TO", "CT": ".TO", "AU": ".AX", "AT": ".AX",
     "HK": ".HK", "DC": ".CO", "SS": ".ST", "FH": ".HE", "NO": ".OL", "AV": ".VI", "ID": ".IR",
     "SQ": ".MC", "UV": "", "UF": "", "KS": ".KS", "TT": ".TW", "IN": ".NS", "IS": ".NS", "IB": ".BO",
-    "BZ": ".SA", "MM": ".MX", "SP": ".SI", "NZ": ".NZ", "SJ": ".JO", "PW": ".WA", "LI": ".L",
+    "BZ": ".SA", "MM": ".MX", "SP": ".SI", "NZ": ".NZ", "SJ": ".JO", "PW": ".WA", "LI": ".IL",       # LI = Londres international (GDR : SMSN LI)
     # Google Finance
     "EPA": ".PA", "ETR": ".DE", "FRA": ".F", "AMS": ".AS", "EBR": ".BR", "BME": ".MC", "BIT": ".MI",
     "ELI": ".LS", "LON": ".L", "SWX": ".SW", "VTX": ".SW", "NASDAQ": "", "NYSE": "", "NYSEARCA": "",
@@ -160,6 +163,23 @@ PLACES = {
     "NEW YORK": "", "NYSE ARCA": "", "TOKYO": ".T", "TORONTO": ".TO", "SYDNEY": ".AX", "HONG KONG": ".HK",
     "COPENHAGUE": ".CO", "STOCKHOLM": ".ST", "HELSINKI": ".HE", "OSLO": ".OL", "VIENNE": ".VI",
 }
+# Places d'Asie, d'Amérique latine, d'Europe de l'Est, d'Afrique (revue du 26/11/2026) : codes MIC, Google,
+# Interactive Brokers, Bloomberg et noms usuels ; setdefault : un code déjà connu garde son sens.
+for _code, _suffixe in {
+        "XKRX": ".KS", "XKOS": ".KQ", "XTAI": ".TW", "ROCO": ".TWO", "XNSE": ".NS", "XBOM": ".BO", "XSHG": ".SS",
+        "XSHE": ".SZ", "XJSE": ".JO", "XTAE": ".TA", "BVMF": ".SA", "XMEX": ".MX", "XWAR": ".WA", "XPRA": ".PR",
+        "XATH": ".AT", "XIST": ".IS", "XSES": ".SI", "XKLS": ".KL", "XIDX": ".JK", "XBKK": ".BK", "XNZE": ".NZ",
+        "XTSX": ".V",
+        "KRX": ".KS", "KOSDAQ": ".KQ", "TPE": ".TW", "NSE": ".NS", "BOM": ".BO", "SHA": ".SS", "SHE": ".SZ",
+        "JSE": ".JO", "TLV": ".TA", "BMV": ".MX", "WSE": ".WA", "SGX": ".SI", "NZE": ".NZ", "TSXV": ".V",
+        "KSE": ".KS", "TWSE": ".TW", "SEHKNTL": ".SS", "SEHKSZSE": ".SZ", "MEXI": ".MX", "BOVESPA": ".SA",
+        "GA": ".AT", "TI": ".IS", "MK": ".KL", "IJ": ".JK", "TB": ".BK", "CP": ".PR", "IT": ".TA",
+        "SEOUL": ".KS", "COREE": ".KS", "TAIPEI": ".TW", "TAIWAN": ".TW", "BOMBAY": ".BO", "MUMBAI": ".NS",
+        "SHANGHAI": ".SS", "SHENZHEN": ".SZ", "SINGAPOUR": ".SI", "SINGAPORE": ".SI", "JOHANNESBURG": ".JO",
+        "TEL AVIV": ".TA", "SAO PAULO": ".SA", "MEXICO": ".MX", "VARSOVIE": ".WA", "WARSAW": ".WA",
+        "PRAGUE": ".PR", "ATHENES": ".AT", "ATHENS": ".AT", "ISTANBUL": ".IS", "WELLINGTON": ".NZ",
+        "KUALA LUMPUR": ".KL", "JAKARTA": ".JK", "BANGKOK": ".BK"}.items():
+    PLACES.setdefault(_code, _suffixe)
 # Suffixes Reuters (RIC) qui diffèrent de ceux de Yahoo
 SUFFIXES_REUTERS = {".O": "", ".N": "", ".OQ": "", ".A": "", ".P": "", ".K": "", ".S": ".SW", ".VX": ".SW",
                     ".MA": ".MC", ".I": ".IR"}
@@ -231,6 +251,8 @@ SUFFIXE_PAR_PAYS = {
     "AU": [".AX"], "DK": [".CO"], "SE": [".ST"], "FI": [".HE"], "NO": [".OL"], "HK": [".HK"],
     "AT": [".VI"], "IE": [".PA", ".DE", ".AS", ".MI", ".L", ""], "LU": [".PA", ".DE", ".AS", ".MI", ".L", ""],
 }
+for _pays, _places in places.suffixes_par_pays_isin().items():     # Corée (KR -> .KS), Taïwan, Inde… (26/11/2026)
+    SUFFIXE_PAR_PAYS.setdefault(_pays, _places)
 
 
 # ======================================================================
@@ -445,7 +467,8 @@ MESSAGE_TEXTE_CODE = ("Le texte de ce PDF est « codé » (il s'affiche correcte
                       "formulaire, ou installez la reconnaissance de caractères (requirements-ocr.txt).")
 COLONNES_AVIS = ["Date", "Sens", "ISIN", "Libellé", "Quantité", "Cours", "Devise", "Frais", "Montant"]
 _NOMBRE = r"([+\-]?\d[\d \u00a0\u202f.,']*\d|[+\-]?\d)"
-_DEVISE = r"(EUR|USD|GBP|GBX|CHF|JPY|CAD|AUD|HKD|DKK|SEK|NOK|€|\$|£)"
+_DEVISE = (r"(EUR|USD|GBP|GBX|CHF|JPY|CAD|AUD|HKD|DKK|SEK|NOK|KRW|TWD|INR|CNY|SGD|NZD|ZAR|BRL|MXN|PLN|CZK|ILS|HUF"
+           r"|€|\$|£|₩)")
 MOTIFS_AVIS = {
     "date": re.compile(r"(?:date\s*(?:d['’]\s*ex[ée]cution|d['’]\s*op[ée]ration|de\s*n[ée]gociation|"
                        r"d['’]\s*ex[ée]c\.?|de\s*l['’]\s*op[ée]ration)|ex[ée]cut[ée]e?\s*le|trade\s*date|"
@@ -1511,7 +1534,7 @@ def _meilleur_resultat(resultats, isin=None):
     return min(utiles, key=rang)
 
 
-SUFFIXES_SECONDAIRES = {".XC", ".XD", ".IL", ".SG", ".DU", ".MU", ".BE", ".HM", ".HA", ".TI", ".NE", ".AQ"}
+SUFFIXES_SECONDAIRES = set(places.PLACES_SECONDAIRES)
 
 
 def _suffixe(symbole):
@@ -1547,11 +1570,11 @@ def regrouper_cotations(transactions):
 def _place_preferee(symbole, isin):
     """Vrai si le ticker est coté sur la place préférée pour cet ISIN (Paris pour un ISIN français, ou pour
     un ETF irlandais / luxembourgeois)."""
-    places = SUFFIXE_PAR_PAYS.get(isin[:2], [])
-    if not places:
+    preferees = SUFFIXE_PAR_PAYS.get(isin[:2], [])
+    if not preferees:
         return True
     suffixe = symbole[symbole.rfind("."):] if "." in symbole else ""
-    return suffixe == places[0]
+    return suffixe == preferees[0]
 
 
 def resoudre_identifiants(valeurs, noms=None, tickers_connus=(), chercher=None, memoire=True):

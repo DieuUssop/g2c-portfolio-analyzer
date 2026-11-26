@@ -2,6 +2,7 @@
 __pycache__/
 .pytest_cache/
 data/cache_*.csv
+data/cache_actualites.json
 data/historique.csv
 data/transactions_sauvegarde.csv
 graphique_*.png

@@ -25,6 +25,7 @@ from pathlib import Path
 import pandas as pd
 
 from . import composition_etf
+from . import places
 
 CHEMIN_CACHE = Path(__file__).resolve().parent.parent / "data" / "cache_classement.csv"
 NON_CLASSE = "Non classé"
@@ -88,7 +89,7 @@ def _table(groupes):
 
 
 ACTIONS_FR = _table({
-    "Technologie": "CAP.PA STMPA.PA DSY.PA SOP.PA ATO.PA WLN.PA SOI.PA ATE.PA AUB.PA OVH.PA LSS.PA",
+    "Technologie": "005930.KS 005935.KS SMSN.IL 000660.KS 2330.TW TSM CAP.PA STMPA.PA DSY.PA SOP.PA ATO.PA WLN.PA SOI.PA ATE.PA AUB.PA OVH.PA LSS.PA",
     "Santé": "SAN.PA EL.PA BIM.PA ERF.PA IPN.PA VIRP.PA ORP.PA EMEIS.PA CLARI.PA DBV.PA NANO.PA GNFT.PA "
              "VLA.PA ALHYG.PA ABVX.PA BOI.PA",
     "Finance": "BNP.PA GLE.PA ACA.PA CS.PA AMUN.PA EDEN.PA SCR.PA TKO.PA MF.PA COFA.PA ABCA.PA RF.PA ANTIN.PA",
@@ -105,15 +106,11 @@ ACTIONS_FR = _table({
 })
 
 # Place de cotation (suffixe Yahoo) -> (pays, région du projet)
-PAYS_PAR_SUFFIXE = {
-    "": ("États-Unis", "États-Unis"), ".PA": ("France", "Europe"), ".DE": ("Allemagne", "Europe"),
-    ".F": ("Allemagne", "Europe"), ".AS": ("Pays-Bas", "Europe"), ".BR": ("Belgique", "Europe"),
-    ".MC": ("Espagne", "Europe"), ".MI": ("Italie", "Europe"), ".LS": ("Portugal", "Europe"),
-    ".IR": ("Irlande", "Europe"), ".VI": ("Autriche", "Europe"), ".HE": ("Finlande", "Europe"),
-    ".CO": ("Danemark", "Europe"), ".ST": ("Suède", "Europe"), ".OL": ("Norvège", "Europe"),
-    ".L": ("Royaume-Uni", "Royaume-Uni"), ".SW": ("Suisse", "Suisse"), ".T": ("Japon", "Japon"),
-    ".TO": ("Canada", "Canada"), ".AX": ("Australie", "Asie-Pacifique"), ".HK": ("Hong Kong", "Asie-Pacifique"),
-}
+# Certificats (ADR, GDR) cotés hors du pays de la société : le pays de la place serait faux (26/11/2026)
+PAYS_DES_CERTIFICATS = {"SMSN.IL": "Corée du Sud", "TSM": "Taïwan", "BABA": "Chine", "PDD": "Chine",
+                        "JD": "Chine", "BIDU": "Chine", "INFY": "Inde", "HDB": "Inde", "IBN": "Inde"}
+# Pays et région de la place de cotation : table unique src/places.py (revue du 26/11/2026)
+PAYS_PAR_SUFFIXE = {s: (v[1], v[2]) for s, v in places.PLACES_COTATION.items()}
 # Pays du siège (Yahoo Finance, en anglais) -> pays du projet
 PAYS_ANGLAIS = {
     "United States": "États-Unis", "France": "France", "Germany": "Allemagne", "Netherlands": "Pays-Bas",
@@ -308,7 +305,8 @@ def classer(ticker, nom="", fiche=None, yahoo=None):
 
     secteur = (normaliser_secteur(fiche.get("secteur")) or ACTIONS_FR.get(ticker, "")
                or normaliser_secteur(yahoo.get("secteur")))
-    pays = fiche.get("pays") or PAYS_ANGLAIS.get(yahoo.get("pays", ""), "") or pays_place
+    pays = (fiche.get("pays") or PAYS_ANGLAIS.get(yahoo.get("pays", ""), "") or PAYS_DES_CERTIFICATS.get(ticker)
+            or pays_place)
     region = fiche.get("region") or (composition_etf.region_du_pays(pays) if pays else "") or region_place
     return {"classe": fiche.get("classe") or "Actions", "region": region or NON_CLASSE, "pays": pays,
             "secteur": secteur or NON_CLASSE, "pea_synthetique": False, "indice": ""}

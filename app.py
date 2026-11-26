@@ -34,7 +34,7 @@ from src import config, images, langues, lecture, market_data, mouvements, theme
 from src import graphiques_interactifs as gi
 from src import interface as ui
 from src import vues_ligne
-from src import consolidation, export_excel, vues_allocation, vues_bienvenue, vues_revenus
+from src import consolidation, export_excel, vues_actualites, vues_allocation, vues_bienvenue, vues_revenus
 from src import analyse as module_analyse
 from src import (expositions, fond_de_carte, import_fichier, indices, vues_compte, vues_conseil, vues_signalement,
                  vues_transactions,
@@ -690,6 +690,12 @@ with st.container(key="petites_cartes"):
                 # Crayon du solde espèces : saisir soi-même le solde disponible (point de départ des calculs)
                 vues_transactions.crayon_solde(res, contenu, cible_portefeuille, session_compte)
 
+# Alertes de cours atteintes (liste de surveillance, onglet Actualités : src/vues_actualites.py)
+try:
+    vues_actualites.bandeau_alertes(res, cible_portefeuille, session_compte)
+except Exception:
+    pass
+
 # ======================================================================
 # ONGLETS
 # ======================================================================
@@ -708,7 +714,7 @@ if espace == "Gestion d'actifs":
 
 # Onglets : tous en mode Expert ; ceux du quotidien en mode Essentiel (src/vues_bienvenue.py)
 TOUS_LES_ONGLETS = ["Vue d'ensemble", "Positions", "Performance", "Risque", "Expositions", "Allocation cible",
-                    "Optimisation", "Projection", "Transactions"]
+                    "Actualités", "Optimisation", "Projection", "Transactions"]
 ONGLETS_VISIBLES = [o for o in TOUS_LES_ONGLETS if mode == "expert" or o in vues_bienvenue.ONGLETS_ESSENTIELS]
 onglets = dict(zip(ONGLETS_VISIBLES, st.tabs([t(o) for o in ONGLETS_VISIBLES])))
 transparence = expositions.transparence(positions)        # ETF répartis selon leur indice (src/expositions.py)
@@ -764,7 +770,8 @@ if "Vue d'ensemble" in onglets:
         gauche, droite = st.columns([2, 1], gap="medium")
         with gauche:              # tout le portefeuille, ou une seule ligne (fragment : src/vues_ligne.py)
             vues_ligne.bloc(res, "vue_ensemble", nom_court, code_indice, graphique, t("Évolution du portefeuille"),
-                            t("Valeur de marché et capital investi (apports nets)"), gi.fig_valeur_et_apports(histo))
+                            t("Valeur de marché, capital investi (apports nets) et opérations"),
+                            gi.fig_valeur_et_apports(histo, gi.evenements_portefeuille(res["transactions"], res.get("especes"))))
         with droite, st.container(border=True):
             html(ui.titre_section(t("Répartition"), t("Poids de chaque ligne dans la valeur totale")))
             graphique(gi.fig_repartition(positions))
@@ -1088,6 +1095,13 @@ if "Allocation cible" in onglets:
     with onglets["Allocation cible"]:
         vues_allocation.afficher(res, contenu, cible_portefeuille, session_compte, analyser_avec_avancement, graphique,
                                  profil=st.session_state.get("profil_expositions") or "Équilibré")
+
+# ----------------------------------------------------------------------
+# 5 ter. Actualités, liste de surveillance et alertes de cours : src/vues_actualites.py
+# ----------------------------------------------------------------------
+if "Actualités" in onglets:
+    with onglets["Actualités"]:
+        vues_actualites.afficher(res, cible_portefeuille, session_compte, mode)
 
 # ----------------------------------------------------------------------
 # 6. Optimisation de Markowitz

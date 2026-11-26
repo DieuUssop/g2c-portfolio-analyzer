@@ -20,7 +20,7 @@ from src.vues_manuel import CHIFFRES
 RACINE = Path(__file__).resolve().parent.parent
 ESPACES_ONGLETS = {
     "Analyse du portefeuille": {"Vue d'ensemble", "Positions", "Performance", "Risque", "Expositions",
-                                "Optimisation", "Projection", "Transactions"},
+                                "Allocation cible", "Actualités", "Optimisation", "Projection", "Transactions"},
     "Conseil patrimonial": {"Fiscalité", "Stress tests"},
     "Gestion d'actifs": {"Attribution de performance", "Budget de risque", "Backtest de stratégies"},
     "Manuel et aide": set(),

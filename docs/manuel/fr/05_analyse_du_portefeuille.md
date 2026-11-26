@@ -3,19 +3,20 @@
 
 Ce chapitre explique, onglet par onglet, l'espace « Analyse du portefeuille » : la vue d'ensemble et la carte du monde, les positions, la performance, le risque, les expositions et la diversification réelle, puis la consultation des transactions. Chaque indicateur a sa fiche : la formule exacte utilisée par le logiciel, l'intuition, un exemple chiffré, la manière de le lire et ses limites. Les onglets Optimisation et Projection sont traités dans un chapitre à part.
 
-## Les neuf onglets de l'analyse : que trouver où ?
-<!-- fiche: analyse-onglets | questions: quels sont les onglets de l'analyse du portefeuille ; ou trouver la volatilité ; dans quel onglet est la var ; ou voir mes plus-values ; je cherche les corrélations ; ou est le tableau de mes lignes ; à quoi sert chaque onglet ; ou sont les transactions | mots: onglets, Vue d'ensemble, Positions, Performance, Risque, Expositions, Optimisation, Projection, Transactions, navigation | aller: Analyse du portefeuille -->
+## Les dix onglets de l'analyse : que trouver où ?
+<!-- fiche: analyse-onglets | questions: quels sont les onglets de l'analyse du portefeuille ; ou trouver la volatilité ; dans quel onglet est la var ; ou voir mes plus-values ; je cherche les corrélations ; ou est le tableau de mes lignes ; à quoi sert chaque onglet ; ou sont les transactions | mots: onglets, Vue d'ensemble, Positions, Performance, Risque, Expositions, Actualités, Optimisation, Projection, Transactions, navigation | aller: Analyse du portefeuille -->
 
-L'espace « Analyse du portefeuille » compte neuf onglets, affichés en haut de la zone principale sous les chiffres clés (cinq seulement en mode Essentiel : Vue d'ensemble, Positions, Expositions, Allocation cible, Transactions).
+L'espace « Analyse du portefeuille » compte dix onglets, affichés en haut de la zone principale sous les chiffres clés (six seulement en mode Essentiel : Vue d'ensemble, Positions, Expositions, Allocation cible, Actualités, Transactions).
 
 | Onglet | Ce que vous y trouvez |
 |---|---|
 | [[Vue d'ensemble]] | Évolution de la valeur et du capital investi, répartition par ligne, carte du monde, répartitions par classe d'actifs, région et secteur, plus-values, dividendes et frais |
 | [[Positions]] | Le tableau des lignes détenues (quantité, PRU, cours, valeur, plus-value, poids) et le graphique des plus-values latentes par ligne |
-| [[Performance]] | TWR, TRI, écart avec l'indice, courbe en base 100, rendements par année civile, drawdown, bêta, alpha, corrélation, tracking error, ratio d'information |
+| [[Performance]] | Rendement, TRI, le même argent placé dans l'indice ou sur un Livret A, courbe en base 100, rendements par année civile, drawdown, bêta, alpha, corrélation, tracking error, ratio d'information |
 | [[Risque]] | Sharpe, Sortino, VaR et CVaR, distribution des rendements quotidiens comparée à la loi normale, asymétrie, kurtosis, test de Jarque-Bera |
 | [[Expositions]] | Diagnostic en six dimensions (géographie, secteurs, devises, concentration, taux, diversification réelle), constats et pistes, corrélations entre les lignes |
 | [[Allocation cible]] | Vos objectifs par poche (Actions Monde, émergentes, obligations…), où investir le prochain versement sans rien vendre, et le simulateur « Et si j'achetais… » |
+| [[Actualités]] | Les articles récents sur vos sociétés, votre liste de surveillance, les alertes de cours, la fiche de chaque société et l'agenda des résultats et dividendes |
 | [[Optimisation]] | Frontière efficiente de Markowitz et répartitions comparées (chapitre consacré à l'optimisation et à la projection) |
 | [[Projection]] | Simulation de Monte-Carlo de la valeur future (même chapitre) |
 | [[Transactions]] | L'historique des opérations, filtrable et téléchargeable ; la modification des opérations est décrite dans le chapitre sur l'import |
@@ -114,7 +115,11 @@ Vous achetez pour 1 000 € (frais compris), puis touchez 30 € de dividende. L
 
 ### Astuces
 
-Les boutons 1M, 6M, YTD, 1A et Tout choisissent la période ; le survol réunit les deux valeurs à la même date. Une opération saisie un jour sans cotation (un samedi, par exemple) est rattachée au jour de bourse suivant.
+Les boutons 1M, 6M, YTD, 1A et Tout choisissent la période ; le survol réunit les deux valeurs à la même date.
+
+### Les opérations sur la courbe
+
+Vos opérations sont posées sur la courbe bleue : **▲ achats**, **▼ ventes**, **● dividendes** et **■ versements et retraits**. Les opérations d'un même jour sont regroupées ; le survol d'un symbole donne le détail (« Achat · LVMH · 1 250 € »). Cliquez sur un type dans la légende pour le masquer ou le réafficher ; au-delà de 40 dividendes, ils sont masqués au départ pour garder la courbe lisible. Une opération saisie un jour sans cotation (un samedi, par exemple) est rattachée au jour de bourse suivant.
 
 ## La carte « Présence dans le monde »
 <!-- fiche: analyse-carte-monde | questions: comment lire la carte du monde ; pourquoi les états-unis sont foncés alors que je n'ai pas d'action américaine ; la carte ne s'affiche pas ; mes obligations ne sont pas sur la carte ; que veut dire hors carte ; comment voir les titres d'un pays ; pourquoi l'or n'apparaît pas sur la carte ; carte géographique de mon portefeuille | mots: carte du monde, géographie, pays, poche actions, choroplèthe, hors carte, exposition géographique, monde | aller: Analyse du portefeuille/Vue d'ensemble -->
@@ -380,7 +385,11 @@ Tous les calculs se font **en euros**. Un titre coté dans une autre devise est 
 
 `Prix en euros = prix en devise / taux (nombre d'unités de devise pour 1 €)`
 
-Les actions de Londres, cotées en pence, sont d'abord divisées par 100. Les frais restent en euros.
+Les actions de Londres, cotées en pence, sont d'abord divisées par 100 ; de même pour Johannesburg (cotée en cents de rand) et Tel-Aviv (en agorot). Les frais restent en euros.
+
+### Places hors d'Europe et des États-Unis
+
+Le logiciel connaît une quarantaine de places : Séoul (won, KRW), Taïwan, Shanghai, Shenzhen, Hong Kong, Tokyo, Inde, Singapour, Australie, Brésil, Mexique, Afrique du Sud, Pologne, Turquie… Pour chacune, il sait la devise de cotation, le pays et la région (utiles sans Internet), et retrouve le ticker Yahoo à partir d'un ISIN du pays (KR7005930003 → 005930.KS, Samsung Electronics). Le certificat de Samsung coté à Londres (SMSN.IL) est en dollars.
 
 ### Deux effets dans la performance
 
@@ -1716,6 +1725,53 @@ La colonne **Variation** donne l'écart entre avant et après. Les constats **no
 ### Pourquoi une volatilité « de la répartition » ?
 
 L'achat n'a pas d'histoire : la volatilité passée du portefeuille ne bougerait presque pas. On calcule donc celle de la nouvelle répartition (poids d'aujourd'hui × covariances des titres sur 3 ans). Un nouveau titre demande Internet pour ses cours.
+
+## L'onglet Actualités : les articles sur vos sociétés
+<!-- fiche: analyse-actualites | questions: ou voir les actualités de mes actions ; articles sur les entreprises de mon portefeuille ; news de mes titres ; comme tradingview ; prochaine date de résultats ; quand est le prochain dividende ; pourquoi mon action a bondi aujourd'hui ; fiche de la société ; les actualités ne s'affichent pas | mots: actualités, articles, news, presse, fil, fiche société, agenda, résultats, dividende, Yahoo Finance, Google Actualités | aller: Analyse du portefeuille/Actualités -->
+
+L'onglet [[Actualités]] rassemble ce qui se passe sur les sociétés que vous détenez ou suivez.
+
+### De haut en bas
+
+1. **Quatre cartes** : le nombre d'articles des 7 derniers jours, la plus forte variation de la dernière séance (au-delà de ± 5 %), les prochains résultats et le prochain dividende connus.
+2. **Fil d'actualité** : les articles les plus récents d'abord, regroupés par jour. Filtrez par société ou par mot du titre ; un clic ouvre l'article sur le site de l'éditeur. Si une ligne a beaucoup bougé, un encadré donne l'effet en euros sur votre ligne.
+3. **Ma liste de surveillance** et **Alertes de cours** (fiche suivante).
+4. En mode Expert : la **fiche société** (activité, capitalisation, PER, rendement du dividende, variation sur un an, votre poids et votre plus-value) et l'**agenda du portefeuille** (résultats et dates de détachement des dividendes à venir).
+
+### Les sources
+
+Yahoo Finance et, si la case est cochée, Google Actualités (flux public gratuit, en français ou en anglais selon le choix « Langue des articles »). Seuls le **titre, la source, la date et le lien** sont affichés : le texte reste sur le site de l'éditeur. Aucun résumé automatique n'est produit.
+
+### Quand le fil est-il téléchargé ?
+
+Uniquement quand vous cliquez sur [[Mettre à jour les actualités]] (Internet nécessaire). Le dernier fil est gardé sur l'ordinateur : il reste consultable sans Internet, avec la date de la mise à jour. Les dates de résultats et de dividendes viennent de Yahoo Finance, qui ne les connaît pas toutes.
+
+### Limites
+
+Les articles de Yahoo Finance sont souvent en anglais. La variation affichée est celle de la dernière séance de l'historique, en euros (effet de change compris pour un titre étranger).
+
+## La liste de surveillance et les alertes de cours
+<!-- fiche: analyse-surveillance | questions: suivre une action que je n'ai pas ; ajouter une entreprise à surveiller ; liste de surveillance ; watchlist ; retirer une ligne des actualités ; être prévenu quand une action passe sous un prix ; créer une alerte de cours ; pourquoi mes etf ne sont pas dans les actualités ; alerte quand une action baisse de 5 % | mots: liste de surveillance, watchlist, suivre, alerte, alerte de cours, seuil, prévenir, masquer, réafficher | aller: Analyse du portefeuille/Actualités -->
+
+### La liste
+
+Vos lignes détenues y entrent **automatiquement** (badge « Détenue »). Les ETF et fonds, qui ont peu d'actualités propres, sont masqués au départ. Ajoutez une société que vous ne possédez pas avec la case « Ajouter une société » (nom, ticker ou ISIN) : elle apparaît avec le badge « Suivie ».
+
+- **✕** sur une ligne détenue la retire seulement du fil : elle reste dans le portefeuille ; « Réafficher » la remet.
+- **✕** sur une société suivie la retire de la liste, avec ses alertes.
+
+La liste est gardée avec le portefeuille : chiffrée dans votre espace si vous êtes connecté, pour la session sinon.
+
+### Les alertes
+
+Dans « Nouvelle alerte », choisissez la société, la condition et le seuil :
+
+| Condition | Seuil |
+|---|---|
+| Cours au-dessus de / en dessous de | Un cours, dans la devise de cotation (won pour Samsung, dollars pour Apple) |
+| Baisse / hausse du jour d'au moins | Un pourcentage, par exemple 5 |
+
+Les alertes sont vérifiées **à chaque ouverture du logiciel** (Internet nécessaire) ; une alerte atteinte s'affiche dans un encadré orange sous les chiffres clés. Rien n'est envoyé : ni e-mail, ni notification.
 
 ## Consulter l'historique des opérations (onglet Transactions)
 <!-- fiche: analyse-transactions | questions: ou voir toutes mes transactions ; filtrer les opérations par titre ; afficher seulement les dividendes ; exporter mes transactions en csv ; pourquoi le prix est en euros dans l'historique ; colonne prix en devise ; combien d'opérations dans mon portefeuille ; historique des achats et ventes | mots: transactions, opérations, historique, filtre, export CSV, achats, ventes, dividendes, consultation, prix en devise | aller: Analyse du portefeuille/Transactions | chiffres: nb_operations -->

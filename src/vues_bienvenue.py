@@ -17,7 +17,7 @@ from .langues import t
 
 MODES = {"expert": "Expert", "essentiel": "Essentiel"}
 # Mode Essentiel : les onglets utiles au quotidien (le reste est dans le mode Expert)
-ONGLETS_ESSENTIELS = ["Vue d'ensemble", "Positions", "Expositions", "Allocation cible", "Transactions"]
+ONGLETS_ESSENTIELS = ["Vue d'ensemble", "Positions", "Expositions", "Allocation cible", "Actualités", "Transactions"]
 ESPACES_ESSENTIELS = ["Analyse du portefeuille", "Manuel et aide"]
 
 
